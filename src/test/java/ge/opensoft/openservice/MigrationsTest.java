@@ -1,0 +1,519 @@
+package ge.opensoft.openservice;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.mock.env.MockEnvironment;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+class MigrationsTest {
+    @TempDir Path root;
+
+    MockEnvironment configuration(boolean postgres) throws Exception {
+        String url = "jdbc:sqlite:" + root.resolve("migration.db");
+        if (postgres) {
+            URI uri =
+                    URI.create(DockerDatabase.url().replace("postgresql+psycopg:", "postgresql:"));
+            String schema = "migration_" + UUID.randomUUID().toString().replace("-", "");
+            url =
+                    "jdbc:postgresql://"
+                            + uri.getHost()
+                            + ":"
+                            + uri.getPort()
+                            + uri.getPath()
+                            + "?user=openservice&password=disposable-integration-password";
+            try (var connection = DriverManager.getConnection(url);
+                    var statement = connection.createStatement()) {
+                statement.execute("CREATE SCHEMA " + schema);
+            }
+            url += "&currentSchema=" + schema;
+        }
+        return new MockEnvironment()
+                .withProperty("DATABASE_URL", url)
+                .withProperty("SECRET_KEY", "migration-test-secret")
+                .withProperty("ADMIN_PASSWORD", "migration-test-password");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void passwordRecoveryIsAtomicAndSingleUseUnderConcurrency(boolean postgres) throws Exception {
+        var store = new Store(configuration(postgres));
+        String token, target;
+        try (var db = store.open()) {
+            target =
+                    db.one("SELECT user_id FROM os_user WHERE name='admin'")
+                            .get("user_id")
+                            .toString();
+            token =
+                    RecoveryLinks.issue(
+                                    db,
+                                    target,
+                                    target,
+                                    Values.map("current_password", "migration-test-password"))
+                            .get("reset_path")
+                            .toString()
+                            .substring(9);
+            db.connection.commit();
+        }
+        try (var db = store.open()) {
+            RecoveryLinks.recover(db, token, "rolled-back-password");
+            db.connection.rollback();
+            assertTrue(
+                    Passwords.matches(
+                            db.one("SELECT password FROM os_user WHERE user_id=?", target)
+                                    .get("password")
+                                    .toString(),
+                            "migration-test-password"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_recovery"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_security_event"));
+        }
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var start = new CountDownLatch(1);
+            List<Future<Integer>> results = new ArrayList<>();
+            for (int n = 0; n < 2; n++)
+                results.add(
+                        executor.submit(() -> {
+                            start.await();
+                            try (var db = store.open()) {
+                                try {
+                                    RecoveryLinks.recover(db, token, "accepted-reset-password");
+                                    db.connection.commit();
+                                    return 200;
+                                } catch (Values.Failure failure) {
+                                    db.connection.rollback();
+                                    return failure.status;
+                                }
+                            }
+                        }));
+            start.countDown();
+            var statuses =
+                    List.of(
+                            results.get(0).get(30, TimeUnit.SECONDS),
+                            results.get(1).get(30, TimeUnit.SECONDS));
+            assertEquals(1, statuses.stream().filter(status -> status == 200).count());
+            assertEquals(1, statuses.stream().filter(status -> status == 400).count());
+        }
+        try (var db = store.open()) {
+            assertEquals(0, db.count("SELECT COUNT(*) FROM os_recovery"));
+            assertEquals(2, db.count("SELECT COUNT(*) FROM os_security_event"));
+            var user =
+                    db.one(
+                            "SELECT password,auth_revision,active FROM os_user WHERE user_id=?",
+                            target);
+            assertTrue(
+                    Passwords.matches(user.get("password").toString(), "accepted-reset-password"));
+            assertEquals(1L, ((Number) user.get("auth_revision")).longValue());
+            assertEquals(1, ((Number) user.get("active")).intValue());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void onlyOneConcurrentInvitationAcceptanceCreatesAnAccount(boolean postgres) throws Exception {
+        var store = new Store(configuration(postgres));
+        String token;
+        try (var db = store.open()) {
+            String actor =
+                    db.one("SELECT user_id FROM os_user WHERE name='admin'")
+                            .get("user_id")
+                            .toString();
+            token =
+                    Invitations.issue(
+                                    db,
+                                    actor,
+                                    Values.map("name", "ConcurrentInvite", "role", "agent"))
+                            .get("accept_path")
+                            .toString()
+                            .substring(6);
+            db.connection.commit();
+        }
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var start = new CountDownLatch(1);
+            List<Future<Integer>> results = new ArrayList<>();
+            for (int n = 0; n < 2; n++)
+                results.add(
+                        executor.submit(() -> {
+                            start.await();
+                            try (var db = store.open()) {
+                                try {
+                                    Invitations.accept(db, token, "invitation-test-password");
+                                    db.connection.commit();
+                                    return 200;
+                                } catch (Values.Failure failure) {
+                                    db.connection.rollback();
+                                    return failure.status;
+                                }
+                            }
+                        }));
+            start.countDown();
+            var statuses =
+                    List.of(
+                            results.get(0).get(30, TimeUnit.SECONDS),
+                            results.get(1).get(30, TimeUnit.SECONDS));
+            assertEquals(1, statuses.stream().filter(status -> status == 200).count());
+            assertEquals(1, statuses.stream().filter(status -> status == 400).count());
+        }
+        try (var db = store.open()) {
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_user WHERE name='ConcurrentInvite'"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_invitation WHERE state='accepted'"));
+            assertEquals(2, db.count("SELECT COUNT(*) FROM os_security_event"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void concurrentPasswordChangesCannotReuseThePreviousSecret(boolean postgres) throws Exception {
+        var store = new Store(configuration(postgres));
+        String id;
+        try (var db = store.open()) {
+            id = db.one("SELECT user_id FROM os_user WHERE name='admin'").get("user_id").toString();
+        }
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var start = new CountDownLatch(1);
+            List<Future<Integer>> results = new ArrayList<>();
+            for (String next : List.of("first-new-password", "second-new-password"))
+                results.add(
+                        executor.submit(() -> {
+                            start.await();
+                            try (var db = store.open()) {
+                                try {
+                                    Service.changePassword(
+                                            db,
+                                            id,
+                                            Values.map(
+                                                    "current_password",
+                                                    "migration-test-password",
+                                                    "new_password",
+                                                    next));
+                                    db.connection.commit();
+                                    return 200;
+                                } catch (Values.Failure failure) {
+                                    db.connection.rollback();
+                                    return failure.status;
+                                }
+                            }
+                        }));
+            start.countDown();
+            var statuses =
+                    List.of(
+                            results.get(0).get(30, TimeUnit.SECONDS),
+                            results.get(1).get(30, TimeUnit.SECONDS));
+            assertEquals(1, statuses.stream().filter(status -> status == 200).count());
+            assertEquals(1, statuses.stream().filter(status -> status == 400).count());
+        }
+        try (var db = store.open()) {
+            var user = db.one("SELECT password,auth_revision FROM os_user WHERE user_id=?", id);
+            assertFalse(
+                    Passwords.matches(user.get("password").toString(), "migration-test-password"));
+            assertEquals(1, ((Number) user.get("auth_revision")).longValue());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void legacyUpgradeIsAtomicRepeatableAndPreservesData(boolean postgres) throws Exception {
+        var config = configuration(postgres);
+        var store = new Store(config);
+        try (var db = store.open()) {
+            db.update(
+                    "INSERT INTO os_attachment(sys_id,record_id,name,content) VALUES(?,?,?,?)",
+                    "legacy",
+                    "parent",
+                    "file.bin",
+                    new byte[] {0, 1, -1});
+            db.update("ALTER TABLE os_attachment DROP COLUMN content_type");
+            db.update("DROP TABLE os_migration");
+            db.connection.commit();
+        }
+        new Store(config);
+        new Store(config.withProperty("ADMIN_PASSWORD", "changed-bootstrap-password"));
+        try (var db = store.open()) {
+            assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
+            var file = db.one("SELECT * FROM os_attachment WHERE sys_id='legacy'");
+            assertArrayEquals(new byte[] {0, 1, -1}, (byte[]) file.get("content"));
+            assertEquals("application/octet-stream", file.get("content_type"));
+            assertTrue(
+                    Passwords.matches(
+                            (String)
+                                    db.one("SELECT password FROM os_user WHERE name='admin'")
+                                            .get("password"),
+                            "migration-test-password"));
+            db.update("INSERT INTO os_migration(version,name) VALUES(99,'future')");
+            db.connection.commit();
+        }
+        assertThrows(SQLException.class, () -> new Store(config));
+        try (var db = store.open()) {
+            db.update("DELETE FROM os_migration");
+            db.update("INSERT INTO os_migration(version,name) VALUES(0,'invalid')");
+            db.connection.commit();
+        }
+        assertThrows(SQLException.class, () -> new Store(config));
+        try (var db = store.open()) {
+            db.update("DELETE FROM os_migration");
+            db.update("ALTER TABLE os_attachment DROP COLUMN content_type");
+            db.connection.commit();
+        }
+        // Failure after DDL must roll back both the schema change and its journal entry.
+        try (var db = store.open()) {
+            Migrations.lock(db);
+            Migrations.apply(db);
+            assertThrows(
+                    SQLException.class, () -> db.update("INSERT INTO missing_table VALUES(1)"));
+            db.connection.rollback();
+        }
+        try (var db = store.open()) {
+            assertEquals(0, db.count("SELECT COUNT(*) FROM os_migration"));
+            try (var columns =
+                    db.connection
+                            .getMetaData()
+                            .getColumns(
+                                    null,
+                                    db.connection.getSchema(),
+                                    "os_attachment",
+                                    "content_type")) {
+                assertFalse(columns.next());
+            }
+        }
+        new Store(config);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void legacyIdentitiesBackfillWithoutChangingCredentials(boolean postgres) throws Exception {
+        var config = configuration(postgres);
+        var store = new Store(config);
+        String hash;
+        try (var db = store.open()) {
+            hash =
+                    (String)
+                            db.one("SELECT password FROM os_user WHERE name='admin'")
+                                    .get("password");
+            db.update("DROP INDEX ix_os_user_identity");
+            db.update("ALTER TABLE os_user DROP COLUMN user_id");
+            db.update("DELETE FROM os_migration WHERE version>=2");
+            db.update("INSERT INTO os_user(name,password,role) VALUES('legacy',?,'reader')", hash);
+            db.connection.commit();
+        }
+        new Store(config);
+        List<Map<String, Object>> before;
+        try (var db = store.open()) {
+            before = db.all("SELECT * FROM os_user ORDER BY name");
+            assertEquals(2, before.size());
+            for (var user : before) {
+                assertTrue(user.get("user_id").toString().matches("[0-9a-f]{32}"));
+                assertEquals(hash, user.get("password"));
+            }
+            assertNotEquals(before.get(0).get("user_id"), before.get(1).get("user_id"));
+            assertThrows(
+                    SQLException.class,
+                    () ->
+                            db.update(
+                                    "UPDATE os_user SET user_id=? WHERE name='legacy'",
+                                    before.get(0).get("user_id")));
+            db.connection.rollback();
+        }
+        new Store(config);
+        try (var db = store.open()) {
+            assertEquals(before, db.all("SELECT * FROM os_user ORDER BY name"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void adoptsAlreadyUpgradedInstallationsWithoutReplacingMetadata(boolean postgres)
+            throws Exception {
+        var config = configuration(postgres);
+        var store = new Store(config);
+        try (var db = store.open()) {
+            db.update(
+                    "INSERT INTO os_attachment(sys_id,record_id,name,content,content_type)"
+                            + " VALUES(?,?,?,?,?)",
+                    "existing",
+                    "parent",
+                    "file.pdf",
+                    new byte[] {7},
+                    "application/pdf");
+            db.update("DROP TABLE os_migration");
+            db.connection.commit();
+        }
+        new Store(config);
+        try (var db = store.open()) {
+            assertEquals(
+                    "application/pdf",
+                    db.one("SELECT content_type FROM os_attachment WHERE sys_id='existing'")
+                            .get("content_type"));
+            assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void concurrentDeactivationKeepsAnActiveAdministrator(boolean postgres) throws Exception {
+        var store = new Store(configuration(postgres));
+        String admin, second;
+        try (var db = store.open()) {
+            Service.createAccount(
+                    db,
+                    Values.map(
+                            "name",
+                            "SecondAdmin",
+                            "password",
+                            "test-only-password-long",
+                            "role",
+                            "admin"));
+            admin =
+                    db.one("SELECT user_id FROM os_user WHERE name='admin'")
+                            .get("user_id")
+                            .toString();
+            second =
+                    db.one("SELECT user_id FROM os_user WHERE name='SecondAdmin'")
+                            .get("user_id")
+                            .toString();
+            db.connection.commit();
+            assertEquals(
+                    403,
+                    assertThrows(
+                                    Values.Failure.class,
+                                    () ->
+                                            Service.changeActive(
+                                                    db,
+                                                    "missing",
+                                                    second,
+                                                    Values.map("active", false)))
+                            .status);
+        }
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var start = new CountDownLatch(1);
+            List<Future<Integer>> results = new ArrayList<>();
+            for (String target : List.of(admin, second))
+                results.add(
+                        executor.submit(() -> {
+                            start.await();
+                            try (var db = store.open()) {
+                                try {
+                                    Service.changeActive(
+                                            db, admin, target, Values.map("active", false));
+                                    db.connection.commit();
+                                    return 200;
+                                } catch (Values.Failure failure) {
+                                    db.connection.rollback();
+                                    return failure.status;
+                                }
+                            }
+                        }));
+            start.countDown();
+            var statuses =
+                    List.of(
+                            results.get(0).get(30, TimeUnit.SECONDS),
+                            results.get(1).get(30, TimeUnit.SECONDS));
+            assertEquals(1, statuses.stream().filter(status -> status == 200).count());
+            assertTrue(
+                    statuses.stream().allMatch(status -> Set.of(200, 403, 409).contains(status)));
+        }
+        try (var db = store.open()) {
+            assertEquals(
+                    1, db.count("SELECT COUNT(*) FROM os_user WHERE active=1 AND role='admin'"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void concurrentDemotionKeepsAnActiveAdministrator(boolean postgres) throws Exception {
+        var store = new Store(configuration(postgres));
+        String admin, second;
+        try (var db = store.open()) {
+            Service.createAccount(
+                    db,
+                    Values.map(
+                            "name",
+                            "SecondAdmin",
+                            "password",
+                            "test-only-password-long",
+                            "role",
+                            "admin"));
+            admin =
+                    db.one("SELECT user_id FROM os_user WHERE name='admin'")
+                            .get("user_id")
+                            .toString();
+            second =
+                    db.one("SELECT user_id FROM os_user WHERE name='SecondAdmin'")
+                            .get("user_id")
+                            .toString();
+            db.connection.commit();
+            assertEquals(
+                    403,
+                    assertThrows(
+                                    Values.Failure.class,
+                                    () ->
+                                            Service.changeRole(
+                                                    db,
+                                                    "missing",
+                                                    second,
+                                                    Values.map("role", "reader")))
+                            .status);
+        }
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var start = new CountDownLatch(1);
+            List<Future<Integer>> results = new ArrayList<>();
+            for (String target : List.of(admin, second))
+                results.add(
+                        executor.submit(() -> {
+                            start.await();
+                            try (var db = store.open()) {
+                                try {
+                                    Service.changeRole(
+                                            db, admin, target, Values.map("role", "reader"));
+                                    db.connection.commit();
+                                    return 200;
+                                } catch (Values.Failure failure) {
+                                    db.connection.rollback();
+                                    return failure.status;
+                                }
+                            }
+                        }));
+            start.countDown();
+            var statuses =
+                    List.of(
+                            results.get(0).get(30, TimeUnit.SECONDS),
+                            results.get(1).get(30, TimeUnit.SECONDS));
+            assertEquals(1, statuses.stream().filter(status -> status == 200).count());
+            assertTrue(
+                    statuses.stream().allMatch(status -> Set.of(200, 403, 409).contains(status)));
+        }
+        try (var db = store.open()) {
+            assertEquals(
+                    1, db.count("SELECT COUNT(*) FROM os_user WHERE active=1 AND role='admin'"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void concurrentFreshStartupSerializesBootstrapAndMigration(boolean postgres) throws Exception {
+        var config = configuration(postgres);
+        try (var executor = Executors.newFixedThreadPool(4)) {
+            var start = new CountDownLatch(1);
+            List<Future<Store>> futures = new ArrayList<>();
+            for (int i = 0; i < 4; i++)
+                futures.add(
+                        executor.submit(() -> {
+                            start.await();
+                            return new Store(config);
+                        }));
+            start.countDown();
+            for (var future : futures) {
+                try (var db = future.get(30, TimeUnit.SECONDS).open()) {
+                    assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
+                    assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
+                    assertEquals(7, db.count("SELECT COUNT(*) FROM os_schema"));
+                }
+            }
+        }
+    }
+}
