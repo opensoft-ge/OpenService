@@ -110,7 +110,7 @@ Terraform is unchanged by this migration; its separate provider validation and m
 
 Cloud configurations provide HTTPS; secure cookies are enabled outside the loopback Docker demo. Each deployment starts with a single application instance with embedded Tomcat. PostgreSQL locks protect record updates; optional `If-Match` revisions prevent lost updates. Startup applies ordered transactional upgrades with a migration journal and serialized schema changes. Follow the [upgrade procedure](docs/platform-foundations.md#ordered-database-upgrades-adopt-02-os-026), using a database backup and planned downtime; rolling upgrades and restore targets remain unverified.
 
-SSO, granular ACL/domain isolation, rate limiting, malware scanning, background workers, email delivery, business-rule scripts and high availability are not implemented. Treat this version as a local evaluation foundation, not a hardened production service. Licensed under the [MIT License](LICENSE), preserving the licence already selected in the OpenSoft GitHub repository.
+SSO, granular ACL/domain isolation, rate limiting, malware scanning, background workers, email delivery, business-rule scripts and high availability are not implemented. Treat this version as a local evaluation foundation, not a hardened production service. Licensed under the [Apache License 2.0](LICENSE). Earlier MIT notices are preserved; see [third-party and prior-licence notices](THIRD_PARTY_NOTICES.md).
 
 ## Count aggregates
 
@@ -121,3 +121,7 @@ Reusable typed tables, workflow policies and atomic configuration promotion are 
 [Numeric analytics](docs/analytics.md) is available from each workspace for configured integer/decimal fields.
 
 A [disposable PostgreSQL restore drill](docs/recovery.md) verifies configuration, data, attachments, credentials and record-access controls in a fresh database.
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, validation and contribution terms.

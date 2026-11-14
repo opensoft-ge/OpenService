@@ -1,6 +1,10 @@
 # Third-party notices
 
-OpenService's original application code is offered under the root [MIT license](LICENSE). That license does not replace the licenses of third-party components.
+OpenService's original application code is offered under the root [Apache License 2.0](LICENSE). That license does not replace the licenses of third-party components.
+
+## Earlier OpenService material
+
+Earlier revisions were distributed under MIT. The original copyright and permission notice is retained in [licenses/MIT-previous-OpenService.txt](licenses/MIT-previous-OpenService.txt) and packaged with the application. The Apache 2.0 release does not revoke prior MIT grants.
 
 ## Source-distributed tooling
 
@@ -15,7 +19,7 @@ The license and notice were retrieved from the Apache Maven Wrapper `maven-wrapp
 
 [The runtime license inventory](docs/runtime-licenses.json) records the 46 runtime/repackaging artifacts inspected for the Java build, with license declarations from their published Maven POMs and parent POMs. Bouncy Castle's notice was extracted from its shipped `org.bouncycastle.LICENSE` class; a [copy is included](licenses/Bouncy-Castle.txt). Spring Boot's repackaging tools use the project's Apache 2.0 license.
 
-Most dependencies declare Apache 2.0. SLF4J and Checker Framework annotations declare MIT; PostgreSQL JDBC declares BSD-2-Clause. Logback declares EPL-2.0 / LGPL-2.1 alternatives, and Jakarta Annotations declares EPL-2.0 / GPL2 with Classpath Exception alternatives. The inventory preserves those declarations rather than assigning the application's MIT license to dependencies. Consult the actual component license for its options and obligations.
+Most dependencies declare Apache 2.0. SLF4J and Checker Framework annotations declare MIT; PostgreSQL JDBC declares BSD-2-Clause. Logback declares EPL-2.0 / LGPL-2.1 alternatives, and Jakarta Annotations declares EPL-2.0 / GPL2 with Classpath Exception alternatives. The inventory preserves those declarations rather than assigning the application's Apache 2.0 licence to dependencies. Consult the actual component license for its options and obligations.
 
 Dependencies are resolved from Maven repositories; their source is not vendored in this repository. A packaged Spring Boot JAR contains nested dependency JARs with their own metadata and available notices. Binary distributors must preserve applicable notices and satisfy the selected dependency licenses, including any source availability obligations. A POM inventory is evidence about declarations, not a legal clearance or a complete binary-distribution compliance audit.
 

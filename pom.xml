@@ -11,6 +11,13 @@
   <artifactId>openservice</artifactId>
   <version>0.2.0-SNAPSHOT</version>
   <name>OpenService</name>
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
   <properties>
     <java.version>27</java.version>
     <jacoco.version>0.8.16</jacoco.version>
@@ -62,7 +69,7 @@
         <directory>.</directory>
         <targetPath>META-INF/openservice</targetPath>
         <includes>
-          <include>LICENSE</include><include>THIRD_PARTY_NOTICES.md</include>
+          <include>LICENSE</include><include>NOTICE</include><include>THIRD_PARTY_NOTICES.md</include>
           <include>licenses/**</include><include>docs/runtime-licenses.json</include>
           <include>docs/provenance.md</include>
         </includes>

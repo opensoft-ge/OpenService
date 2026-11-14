@@ -4,7 +4,7 @@ WORKDIR /build
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
 COPY src/main src/main
-COPY LICENSE THIRD_PARTY_NOTICES.md ./
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md ./
 COPY licenses licenses
 COPY docs/runtime-licenses.json docs/provenance.md docs/
 RUN --mount=type=cache,target=/root/.m2,sharing=locked ./mvnw -B -Dmaven.test.skip=true package
