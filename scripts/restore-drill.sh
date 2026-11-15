@@ -114,6 +114,13 @@ if [ "$drill_source_version" -ge 17 ]; then
     api -X POST -H 'Content-Type: application/json' --data '{}' \
         "$drill_address/api/openservice/users/$drill_required/require-password-change" | jq -e '.result.required == true' >/dev/null
 fi
+if [ "$drill_source_version" -ge 18 ]; then
+    jq -n --arg password "$drill_password" '{name:"RestoreApiOnly",password:$password,role:"reader"}' > "$drill_directory/api-only.json"
+    api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/api-only.json" "$drill_address/api/openservice/users" >/dev/null
+    drill_api_only=$(docker exec "$drill_prefix-source-db" psql -At -U openservice -d openservice -c "SELECT user_id FROM os_user WHERE name='RestoreApiOnly'")
+    api -X POST -H 'Content-Type: application/json' --data '{"api_only":true}' \
+        "$drill_address/api/openservice/users/$drill_api_only/access-mode" | jq -e '.result.api_only == true' >/dev/null
+fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null
 snapshot_delivery() {
@@ -138,6 +145,11 @@ snapshot_password_requirements() {
         -c 'SELECT row_to_json(q) FROM (SELECT user_id,password_reset_required FROM os_user ORDER BY user_id) q' > "$drill_directory/$1-password-requirements.jsonl"
 }
 if [ "$drill_source_version" -ge 17 ]; then snapshot_password_requirements source; fi
+snapshot_access_modes() {
+    docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+        -c 'SELECT row_to_json(q) FROM (SELECT user_id,api_only FROM os_user ORDER BY user_id) q' > "$drill_directory/$1-access-modes.jsonl"
+}
+if [ "$drill_source_version" -ge 18 ]; then snapshot_access_modes source; fi
 docker exec "$drill_prefix-source-db" pg_dump -U openservice -d openservice -Fc > "$drill_directory/backup.dump"
 docker stop "$drill_prefix-source-db" >/dev/null
 start_database restored
@@ -146,6 +158,14 @@ start_application restored
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored
+if [ "$drill_source_version" -ge 18 ]; then
+    snapshot_access_modes restored
+    cmp "$drill_directory/source-access-modes.jsonl" "$drill_directory/restored-access-modes.jsonl"
+    drill_status=$(curl --max-time 30 -sS -o /dev/null -w '%{http_code}' --user "RestoreApiOnly:$drill_password" "$drill_address/account")
+    [ "$drill_status" = 403 ]
+    curl --max-time 30 -fsS --user "RestoreApiOnly:$drill_password" "$drill_address/api/openservice/me" | jq -e '.result.name == "RestoreApiOnly"' >/dev/null
+    echo 'PASS: API-only access survives restore, denying browser access while permitting authorized API requests.'
+fi
 if [ "$drill_source_version" -ge 17 ]; then
     snapshot_password_requirements restored
     cmp "$drill_directory/source-password-requirements.jsonl" "$drill_directory/restored-password-requirements.jsonl"

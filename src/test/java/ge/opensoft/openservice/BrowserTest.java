@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void apiOnlyAccountsLoseBrowserAccessAndCanBeRestored() throws Exception {
+        AccessModeBrowserAcceptance.run(this);
+    }
+
+    @Test
     void provisionedAccountsRequireReplacementByDefaultInTheBrowser() throws Exception {
         ProvisioningPasswordBrowserAcceptance.run(this);
     }

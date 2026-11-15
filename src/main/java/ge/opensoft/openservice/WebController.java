@@ -138,6 +138,8 @@ public class WebController {
                 if (path.startsWith("/api/")) throw new Failure(401, "Authentication required");
                 return redirect("/login");
             }
+            if (!publicPath && AccessMode.apiOnly(user) && !path.startsWith("/api/"))
+                throw new Failure(403, "This account permits API access only");
             if (!publicPath
                     && PasswordReset.required(user)
                     && !Set.of("/password-required", "/api/openservice/me/password", "/logout")
@@ -637,6 +639,29 @@ public class WebController {
                     "password-required",
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
+        }
+        Matcher accessMode =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/access-mode")
+                        .matcher(path);
+        if (accessMode.matches()) {
+            boolean api = path.startsWith("/api/");
+            method(method, api ? new String[] {"GET", "POST"} : new String[] {"POST"});
+            c.admin();
+            c.noQuery();
+            c.uniqueQuery();
+            String id = accessMode.group(1);
+            if (method.equals("GET")) return json(map("result", AccessMode.state(c.db, id)), 200);
+            Object input =
+                    api
+                            ? body(c)
+                            : map(
+                                    "api_only",
+                                    Service.flag(
+                                            Map.of("api_only", c.parameter("api_only", "")),
+                                            "api_only"));
+            var result = AccessMode.change(c.db, c.user.get("user_id").toString(), id, input);
+            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + id);
         }
         Matcher passwordRequirement =
                 Pattern.compile(
@@ -1756,6 +1781,8 @@ public class WebController {
                                 account,
                                 "passwordChangeRequired",
                                 PasswordReset.state(c.db, id).get("required"),
+                                "apiOnly",
+                                AccessMode.state(c.db, id).get("api_only"),
                                 "error",
                                 error,
                                 "roles",

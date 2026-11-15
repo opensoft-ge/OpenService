@@ -103,13 +103,13 @@ All local roles may use `GET /account` and `POST /account/sessions/revoke` with 
 
 ## Administrative account state
 
-Administrators may `PATCH /api/openservice/users/{user_id}/status` with exactly `{"active":true}` or `{"active":false}`. Success returns the target's ID, name, local role and boolean active state. Invalid input/query arguments return 400, unknown IDs 404, unauthorized actors 403, and attempts to deactivate the last active administrator 409. Identical state updates are idempotent. The `/admin/accounts/{user_id}` page offers the same operation with CSRF-protected forms.
+Administrators may `PATCH /api/openservice/users/{user_id}/status` with exactly `{"active":true}` or `{"active":false}`. Success returns the target's ID, name, local role and boolean active state. Invalid input/query arguments return 400, unknown IDs 404, unauthorized actors 403, and attempts to deactivate the last active browser-enabled administrator 409. Identical state updates are idempotent. The `/admin/accounts/{user_id}` page offers the same operation with CSRF-protected forms.
 
 Inactive accounts cannot authenticate through login, existing browser sessions or Basic requests. Reactivation preserves the identity/password but requires a fresh browser login. The account and its historic records are retained. State changes serialize and recheck administrator authority to protect the last active administrator under concurrent requests. This does not cancel already-running transactions or implement record/field ACLs.
 
 ## Administrative role changes
 
-`PATCH /api/openservice/users/{user_id}/role` requires an active administrator and exactly `{"role":"reader"}`, `{"role":"agent"}` or `{"role":"admin"}`. It returns 200 with ID/name/role/active fields; errors follow the account-state endpoint. The final active administrator cannot be demoted. Effective changes revoke browser sessions; Basic credentials remain valid under the new permissions. Inactive accounts stay inactive. The account-detail page has a separate role form (`operation=role`) with CSRF protection. Repeating the current role does not revoke sessions.
+`PATCH /api/openservice/users/{user_id}/role` requires an active administrator and exactly `{"role":"reader"}`, `{"role":"agent"}` or `{"role":"admin"}`. It returns 200 with ID/name/role/active fields; errors follow the account-state endpoint. The final active browser-enabled administrator cannot be demoted. Effective changes revoke browser sessions; Basic credentials remain valid under the new permissions. Inactive accounts stay inactive. The account-detail page has a separate role form (`operation=role`) with CSRF protection. Repeating the current role does not revoke sessions.
 
 ## Self-service password changes
 
@@ -246,3 +246,7 @@ All newly set passwords (account creation, invitation acceptance, self-service c
 ## Required credential replacement
 
 Administrators can GET/POST `/api/openservice/users/{id}/require-password-change`; POST accepts an empty object and enforces replacement before ordinary browser/API access, including Basic-authenticated calls. The existing password-change endpoint and recovery can satisfy the requirement. See [behavior, allowed routes, audit and upgrade contract](required-password-change.md).
+
+## API-only accounts
+
+Administrator GET/POST `/api/openservice/users/{id}/access-mode` reads or sets strict boolean `api_only`. Changes revoke sessions/security links and audit before/after values; ordinary browser access is denied even with valid Basic credentials. API authorization and required password replacement still apply. The last active browser-enabled administrator is protected across mode, role and deactivation changes. See [contract and operational limits](api-only-accounts.md).

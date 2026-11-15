@@ -56,6 +56,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void integrationAccountsCannotUseBrowserAccessOrBypassPolicies() throws Exception {
+        AccessModeAcceptance.run(this);
+    }
+
+    @Test
     void administratorProvisioningCanRequireFirstLoginReplacement() throws Exception {
         ProvisioningPasswordAcceptance.run(this);
     }

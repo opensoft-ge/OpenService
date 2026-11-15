@@ -40,6 +40,7 @@ final class Authentication {
                 password.codePointCount(0, password.length()) <= 1024
                         && Passwords.matches(
                                 user == null ? DUMMY : user.get("password").toString(), password);
+        if (user != null && mechanism.equals("browser") && AccessMode.apiOnly(user)) valid = false;
         if (user != null && valid) {
             db.update("DELETE FROM os_auth_attempt WHERE identity_hash=?", key);
             AuthenticationEvents.record(db, name, key, mechanism, "succeeded");

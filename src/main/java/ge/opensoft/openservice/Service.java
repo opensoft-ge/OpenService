@@ -455,9 +455,7 @@ public final class Service {
         requireAccountAdministrator(db, actorId);
         var user = account(db, userId);
         if (user.get("active").equals(active)) return user;
-        if (user.get("role").equals("admin")
-                && !active
-                && db.count("SELECT COUNT(*) FROM os_user WHERE role='admin' AND active=1") <= 1)
+        if (!active && AccessMode.lastBrowserAdministrator(db, userId))
             throw new Failure(409, "Keep at least one active administrator");
         db.update("UPDATE os_user SET active=? WHERE user_id=?", active ? 1 : 0, userId);
         revokeSessions(db, userId);
@@ -487,9 +485,7 @@ public final class Service {
         var user = account(db, userId);
         String role = value.get("role").toString();
         if (user.get("role").equals(role)) return user;
-        if (user.get("role").equals("admin")
-                && user.get("active").equals(true)
-                && db.count("SELECT COUNT(*) FROM os_user WHERE role='admin' AND active=1") <= 1)
+        if (AccessMode.lastBrowserAdministrator(db, userId))
             throw new Failure(409, "Keep at least one active administrator");
         db.update("UPDATE os_user SET role=? WHERE user_id=?", role, userId);
         revokeSessions(db, userId);
