@@ -10,7 +10,7 @@ Use JSON and authenticated Basic requests, or a logged-in session with `X-CSRF-T
 | `PATCH` or `PUT` at the same route | Update provided fields; optional `If-Match: "revision"` |
 | `DELETE` at the same route | Administrator-only deletion; 204; preserves deletion audit |
 | `GET /api/openservice/schema` | OpenService-owned dictionary; not the native sys_dictionary API |
-| `POST /api/openservice/users` | Admin-only creation with name, password (15–1024 characters) and admin/agent/reader role |
+| `POST /api/openservice/users` | Admin-only creation with name, password (15–1024 characters), role and optional first-sign-in password replacement |
 | `POST /api/openservice/import/{table}?dry_run=true` | Preview migration; `false` commits an error-free batch |
 | `GET /export/{table}` | Export current records merged with preserved source-only fields |
 | `GET /export/{table}?source=true` | Export original imported rows; native records use current values |
@@ -18,7 +18,7 @@ Use JSON and authenticated Basic requests, or a logged-in session with `X-CSRF-T
 
 ## Local accounts
 
-`POST /api/openservice/users` requires exactly three JSON keys: `name`, `password`, and `role`. Names contain 1–80 ASCII letters or digits and are case-sensitive; passwords contain 15–1024 characters; roles are `admin`, `agent`, `reader`, or `requester`. A successful creation returns 201 with `{"result":{"name":"...","role":"..."}}`. Invalid fields or a duplicate name return 400 using the existing error envelope. Duplicate creation never changes an existing account. The 1024-character maximum is now enforced on both the API and browser form; the earlier API had no explicit maximum.
+`POST /api/openservice/users` requires `name`, `password`, and `role`, with optional boolean `require_password_change` (default false when omitted). Unknown keys and non-boolean flags are rejected. When true, creation and the password-replacement requirement are atomic; ordinary workspace and API access remain blocked until a successful change or recovery. The browser Create account form defaults to requiring a replacement, preserves the selection after validation failures and permits an explicit opt-out. Invitation recipients choose their own password and are not implicitly flagged. Names contain 1–80 ASCII letters or digits and are case-sensitive; passwords contain 15–1024 characters; roles are `admin`, `agent`, `reader`, or `requester`. A successful creation returns 201 with `{"result":{"name":"...","role":"..."}}`. Invalid fields or a duplicate name return 400 using the existing error envelope. Duplicate creation never changes an existing account. The 1024-character maximum is now enforced on both the API and browser form; the earlier API had no explicit maximum.
 
 The original OpenService browser workspace is `GET /admin/accounts`: administrator-only, 25 users per page ordered by stored username, with the current account identified. Only IDs, names, roles and activation state are selected for the list; password hashes are never rendered. Optional `page` defaults to `1`; only a single positive integer of up to six digits is accepted, and pages beyond the list return 400. Unknown parameters also return 400. Database collation determines name ordering.
 

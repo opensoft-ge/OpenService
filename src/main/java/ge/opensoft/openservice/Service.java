@@ -539,13 +539,19 @@ public final class Service {
     public static Map<String, Object> createManagedAccount(Store.Db db, Object body, String actorId)
             throws Exception {
         requireAccountAdministrator(db, actorId);
-        var result = createAccount(db, body);
+        var value = new LinkedHashMap<>(object(body));
+        Object requirement = value.getOrDefault("require_password_change", false);
+        if (!(requirement instanceof Boolean))
+            throw new Failure(400, "require_password_change must be a boolean");
+        value.remove("require_password_change");
+        var result = createAccount(db, value);
         String target =
                 db.one("SELECT user_id FROM os_user WHERE name=?", result.get("name"))
                         .get("user_id")
                         .toString();
         SecurityEvents.record(
                 db, actorId, target, "account.created", map("role", result.get("role")));
+        if ((Boolean) requirement) PasswordReset.require(db, actorId, target);
         return result;
     }
 

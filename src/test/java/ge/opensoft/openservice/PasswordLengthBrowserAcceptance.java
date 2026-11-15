@@ -29,6 +29,7 @@ final class PasswordLengthBrowserAcceptance {
             assertThat(page.getByRole(AriaRole.ALERT)).containsText("15–1024");
             assertEquals("", password.inputValue());
             ReleaseBrowserAcceptance.accessible(page);
+            page.getByLabel("Password change at first sign-in").selectOption("false");
             password.fill("🌟".repeat(1024));
             assertEquals(2048, password.inputValue().length());
             page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Create account"))

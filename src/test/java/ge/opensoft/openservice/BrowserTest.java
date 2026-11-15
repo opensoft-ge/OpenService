@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void provisionedAccountsRequireReplacementByDefaultInTheBrowser() throws Exception {
+        ProvisioningPasswordBrowserAcceptance.run(this);
+    }
+
+    @Test
     void administratorRequiredPasswordChangeIsAccessibleAndCannotBeBypassed() throws Exception {
         PasswordRequirementBrowserAcceptance.run(this);
     }
@@ -1323,6 +1328,7 @@ class BrowserTest {
                         page.getByLabel("Role", new Page.GetByLabelOptions().setExact(true))
                                 .inputValue());
                 for (var entry : Map.of(agent, "agent", reader, "reader").entrySet()) {
+                    page.getByLabel("Password change at first sign-in").selectOption("false");
                     page.getByLabel("Username", new Page.GetByLabelOptions().setExact(true))
                             .fill(entry.getKey());
                     page.getByLabel("Password", new Page.GetByLabelOptions().setExact(true))

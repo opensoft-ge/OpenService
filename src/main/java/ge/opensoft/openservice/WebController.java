@@ -1776,10 +1776,27 @@ public class WebController {
         var args = queryArguments(c);
         var directory = AccountDirectory.list(c.db, args);
         int page = (Integer) directory.get("page");
-        var values = map("name", "", "role", "reader");
+        var values = map("name", "", "role", "reader", "require_password_change", "true");
         String error = null;
         if (method.equals("POST")) {
-            values = map("name", c.parameter("name", ""), "role", c.parameter("role", "reader"));
+            // Servlet parameters place URL values before form values. Keep directory filters
+            // separate from account fields, including the shared "role" parameter name.
+            var form = new LinkedHashMap<String, String>();
+            for (var entry : c.http.getParameterMap().entrySet()) {
+                int offset = args.containsKey(entry.getKey()) ? 1 : 0;
+                if (entry.getValue().length > offset + 1)
+                    throw new Failure(400, "Repeated form parameter");
+                if (entry.getValue().length > offset)
+                    form.put(entry.getKey(), entry.getValue()[offset]);
+            }
+            values =
+                    map(
+                            "name",
+                            form.getOrDefault("name", ""),
+                            "role",
+                            form.getOrDefault("role", "reader"),
+                            "require_password_change",
+                            form.getOrDefault("require_password_change", "false"));
             try {
                 var account =
                         Service.createManagedAccount(
@@ -1790,7 +1807,9 @@ public class WebController {
                                         "role",
                                         values.get("role"),
                                         "password",
-                                        c.parameter("password", "")),
+                                        form.getOrDefault("password", ""),
+                                        "require_password_change",
+                                        Service.flag(form, "require_password_change")),
                                 c.user.get("user_id").toString());
                 c.session.setAttribute(
                         "flash",

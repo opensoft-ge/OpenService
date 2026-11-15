@@ -56,6 +56,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorProvisioningCanRequireFirstLoginReplacement() throws Exception {
+        ProvisioningPasswordAcceptance.run(this);
+    }
+
+    @Test
     void requiredPasswordReplacementBlocksSessionsAndApiBypasses() throws Exception {
         PasswordRequirementAcceptance.run(this);
     }
