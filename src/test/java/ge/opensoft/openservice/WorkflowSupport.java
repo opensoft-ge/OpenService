@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void accountSecurityJournalIsScopedPageableAndDownloadable() throws Exception { AccountSecurityEventsAcceptance.run(this); }
+
+    @Test
     void accountDirectoryFiltersAuthenticationPoliciesWithoutGrantingAccess() throws Exception { AccountPolicyDirectoryAcceptance.run(this); }
 
     @Test

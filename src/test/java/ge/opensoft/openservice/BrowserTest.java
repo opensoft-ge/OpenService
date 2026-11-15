@@ -50,6 +50,9 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanInvestigateAccountSecurityChanges() throws Exception { AccountSecurityEventsBrowserAcceptance.run(this); }
+
+    @Test
     void administratorCanFindAccountsByAuthenticationPolicy() throws Exception { AccountPolicyDirectoryBrowserAcceptance.run(this); }
 
     @Test

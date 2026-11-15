@@ -396,3 +396,7 @@ If the issuing account was removed outside the normal deactivation workflow, its
 ### Find accounts by browser and Basic authentication policy
 
 GET `/api/openservice/users` and `/admin/accounts` additionally accept `channel` (empty/browser/api) and `basic` (empty/allowed/blocked). Filters combine with q/role/status/page. Sanitized result rows additionally include numeric `api_only` and `allow_basic` flags (0/1), consistent with existing active. Invalid/repeated parameters return 400. Administrator-only; no passwords, hashes, email or tokens are exposed. Flags describe configured policy only; account activation, reset and credential conditions still govern access.
+
+### Browse and download security changes for one account
+
+GET `/api/openservice/users/{id}/security-events` or `/admin/accounts/{id}/security-events` accepts only before (32 lowercase hex event ID belonging to this target) and download=true/false. Administrator-only; unknown account 404, invalid/foreign/unavailable cursor or unknown/repeated parameters 400. Returns account, result (up to 100 target-account events newest-first) and next_before. Download exports the same page as JSON with fixed attachment filename; it does not export the entire history. Events identify actor and target with sanitized detail; no new authentication secrets are exposed. New arrivals do not shift an already-issued cursor.

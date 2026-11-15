@@ -986,6 +986,16 @@ public class WebController {
                                     "nextBefore",
                                     result.get("next_before")));
         }
+        Matcher accountSecurity = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/security-events").matcher(path);
+        if (accountSecurity.matches()) {
+            method(method,"GET"); c.admin();
+            var journal = AccountSecurityEvents.page(c.db,c.user.get("user_id").toString(),accountSecurity.group(1),queryArguments(c));
+            boolean download = (Boolean)journal.get("download");
+            if(download) disposition(c,"account-security-events.json");
+            if(path.startsWith("/api/") || download) return json(map("account",journal.get("account"),"result",journal.get("result"),"next_before",journal.get("next_before")),200);
+            String before = journal.get("before").toString();
+            return view(c,"account-security-events",map("table","accounts","account",journal.get("account"),"events",journal.get("result"),"nextBefore",journal.get("next_before"),"downloadQuery",before.isEmpty()?"download=true":"download=true&before="+before));
+        }
         Matcher accountAuthentication = Pattern.compile(
                 "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/authentication-events").matcher(path);
         if (accountAuthentication.matches()) {

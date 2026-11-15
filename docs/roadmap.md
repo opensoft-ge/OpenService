@@ -458,3 +458,7 @@ ADOPT-04/09, PARITY-08/10: invitation issue/replacement/revocation have transact
 ## OS-N10-15 — Find accounts by browser and Basic authentication policy (implemented)
 
 ADOPT-08/09, PARITY-08: account directory exposes and filters browser/API-only and Basic allow/block policy. OS-DISC-API-AUTH-POLICY remains partial; tracking-before-enforcement/defaults/scheduling are missing P1/M2, dependent on channel telemetry and controlled policy. Require affected-account visibility, recovery continuity and boundary-time enforcement. Configured flags do not establish effective authentication eligibility. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-16 — Browse and download security changes for one account (implemented)
+
+ADOPT-09, PARITY-08/10: administrator account-targeted security journal and bounded JSON downloads are implemented. Separate audit viewer privileges, group/role/ACL trails and table-specific retention remain missing P1/M2, dependent on composable permissions, object event capture and retention policy. Require denied viewer mutations, correct subject isolation and cleanup evidence. No native audit or SIEM parity claim. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
