@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 20;
+    static final int VERSION = 21;
 
     private Migrations() {}
 
@@ -272,6 +272,17 @@ final class Migrations {
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(20,?)",
                     "preserve withdrawn review attempts");
+        }
+        if (version < 21) {
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_browser_session(session_id VARCHAR(32) PRIMARY"
+                        + " KEY,session_hash VARCHAR(64) NOT NULL UNIQUE,user_id VARCHAR(32) NOT"
+                        + " NULL,auth_revision BIGINT NOT NULL,created_at BIGINT NOT NULL,last_seen"
+                        + " BIGINT NOT NULL,expires_at BIGINT NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_browser_session_user ON os_browser_session(user_id)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(21,?)",
+                    "browser session inventory");
         }
     }
 

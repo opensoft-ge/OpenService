@@ -50,10 +50,16 @@ abstract class WorkflowSupport {
                             "os_requester_record",
                             "os_email_enrollment",
                             "os_password_exclusion",
-                            "os_approval")) db.update("DELETE FROM " + table);
+                            "os_approval",
+                            "os_browser_session")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
+    }
+
+    @Test
+    void ownBrowserSessionInventoryIsPrivateAndEnforced() throws Exception {
+        BrowserSessionsAcceptance.run(this);
     }
 
     @Test

@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void privateBrowserSessionInventoryIsAccessible() throws Exception {
+        BrowserSessionsBrowserAcceptance.run(this);
+    }
+
+    @Test
     void peerReviewGatesTheActualBrowserTransition() throws Exception {
         ApprovalGateBrowserAcceptance.run(this);
     }

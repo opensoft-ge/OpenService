@@ -43,6 +43,33 @@ class MigrationsTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
+    void browserInventoryUpgradeIsTransactionalAndRepeatable(boolean postgres) throws Exception {
+        var environment = configuration(postgres);
+        var store = new Store(environment);
+        try (var db = store.open()) {
+            db.update("DROP TABLE os_browser_session");
+            db.update("DELETE FROM os_migration WHERE version>=21");
+            db.connection.commit();
+            Migrations.apply(db);
+            assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
+            db.connection.rollback();
+            assertEquals(20, db.count("SELECT COUNT(*) FROM os_migration"));
+        }
+        store = new Store(environment);
+        try (var db = store.open()) {
+            BrowserSessions.register(db, db.one("SELECT * FROM os_user WHERE name='admin'"),
+                    "persisted-test-session", System.currentTimeMillis());
+            db.connection.commit();
+        }
+        store = new Store(environment);
+        try (var db = store.open()) {
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_browser_session"));
+            assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
     void passwordRecoveryIsAtomicAndSingleUseUnderConcurrency(boolean postgres) throws Exception {
         var store = new Store(configuration(postgres));
         String token, target;

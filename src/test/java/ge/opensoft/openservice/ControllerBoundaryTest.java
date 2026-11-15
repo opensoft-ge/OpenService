@@ -105,6 +105,14 @@ class ControllerBoundaryTest {
                             db.one("SELECT user_id FROM os_user WHERE name='admin'")
                                     .get("user_id"));
         }
+        try (var db = instance.open()) {
+            BrowserSessions.register(
+                    db,
+                    db.one("SELECT * FROM os_user WHERE name='admin'"),
+                    empty.getSession().getId(),
+                    System.currentTimeMillis());
+            db.connection.commit();
+        }
         empty.getSession().setAttribute("auth_revision", 0L);
         empty.getSession().setAttribute("authenticated_at", System.currentTimeMillis());
         empty.addHeader("X-CSRF-Token", "known-csrf");

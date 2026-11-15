@@ -132,7 +132,9 @@ public class WebController {
                                     ((Number) user.get("auth_revision")).longValue())
                             || !SessionLifetime.valid(
                                     session.getAttribute("authenticated_at"),
-                                    System.currentTimeMillis()))) {
+                                    System.currentTimeMillis())
+                            || !BrowserSessions.touch(
+                                    db, user, session.getId(), System.currentTimeMillis()))) {
                 session.invalidate();
                 session = request.getSession(true);
                 session.setAttribute("csrf", csrf());
@@ -601,12 +603,17 @@ public class WebController {
                                 c.parameter("password", ""),
                                 "browser");
                 if (user == null) throw new Failure(401, "Incorrect username or password");
+                if (c.db.postgres) c.db.all("SELECT pg_advisory_xact_lock(18439,4)");
+                Authentication.requireCurrent(c.db, user);
+                BrowserSessions.remove(c.db, c.session.getId());
                 c.http.changeSessionId();
                 Collections.list(c.session.getAttributeNames()).forEach(c.session::removeAttribute);
                 c.session.setAttribute("user", user.get("user_id"));
                 c.session.setAttribute(
                         "auth_revision", ((Number) user.get("auth_revision")).longValue());
-                c.session.setAttribute("authenticated_at", System.currentTimeMillis());
+                long issued = System.currentTimeMillis();
+                BrowserSessions.register(c.db, user, c.session.getId(), issued);
+                c.session.setAttribute("authenticated_at", issued);
                 c.session.setAttribute("csrf", csrf());
                 return redirect(PasswordReset.required(user) ? "/password-required" : "/");
             }
@@ -614,6 +621,7 @@ public class WebController {
         }
         if (path.equals("/logout")) {
             method(method, "POST");
+            BrowserSessions.remove(c.db, c.session.getId());
             c.session.invalidate();
             return redirect("/login");
         }
@@ -790,6 +798,25 @@ public class WebController {
                             AuthenticationEvents.METHODS,
                             "downloadQuery",
                             before.isEmpty() ? "download=true" : "download=true&before=" + before));
+        }
+        if (Set.of("/account/sessions", "/api/openservice/me/sessions").contains(path)) {
+            method(method, "GET");
+            c.noQuery();
+            var sessions =
+                    BrowserSessions.mine(
+                            c.db, c.user, c.session.getId(), System.currentTimeMillis());
+            return path.startsWith("/api/")
+                    ? json(sessions, 200)
+                    : view(
+                            c,
+                            "sessions",
+                            map(
+                                    "table",
+                                    "account",
+                                    "sessions",
+                                    sessions.get("result"),
+                                    "truncated",
+                                    sessions.get("truncated")));
         }
         if (path.equals("/account")) {
             method(method, "GET");

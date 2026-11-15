@@ -54,7 +54,7 @@ class ApprovalResubmissionTest {
             db.update(
                     "CREATE UNIQUE INDEX old_review_unique ON"
                         + " os_approval(record_id,record_revision,schema_version,target_state,approver_id)");
-            db.update("DELETE FROM os_migration WHERE version=20");
+            db.update("DELETE FROM os_migration WHERE version>=20");
             db.update("CREATE TABLE approval_upgrade_block(value INTEGER)");
             db.update("CREATE INDEX ix_os_approval_proposal ON approval_upgrade_block(value)");
             db.connection.commit();
@@ -69,7 +69,7 @@ class ApprovalResubmissionTest {
         var upgraded = new Store(env);
         try (var db = upgraded.open()) {
             assertEquals(original, db.all("SELECT * FROM os_approval ORDER BY sequence"));
-            assertEquals(20, db.count("SELECT COUNT(*) FROM os_migration"));
+            assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
             var admin = ApprovalTest.as(db, "admin");
             Approvals.request(
                     db, "incident", record, admin, ApprovalAcceptance.proposal("Reviewer"));
