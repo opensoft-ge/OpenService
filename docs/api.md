@@ -392,3 +392,7 @@ GET `/api/openservice/invitation-directory` accepts only `q` (literal username s
 Existing invitation issue/revoke endpoints keep their response shapes. Successful issuance now records `invitation.issued`; each actual revocation, explicit or caused by replacement, records `invitation.revoked`. Both use the existing administrator-only security journal and page download. Actor is the acting administrator; target account is the original issuing administrator (the invitee might not yet have an account). Details contain only invite_id, invited_username and invited_role. Repeated revocation records no additional event. State and events commit/rollback together.
 
 If the issuing account was removed outside the normal deactivation workflow, its stable ID remains in the event and its unavailable name is labelled `Removed account`; invitation revocation still succeeds.
+
+### Find accounts by browser and Basic authentication policy
+
+GET `/api/openservice/users` and `/admin/accounts` additionally accept `channel` (empty/browser/api) and `basic` (empty/allowed/blocked). Filters combine with q/role/status/page. Sanitized result rows additionally include numeric `api_only` and `allow_basic` flags (0/1), consistent with existing active. Invalid/repeated parameters return 400. Administrator-only; no passwords, hashes, email or tokens are exposed. Flags describe configured policy only; account activation, reset and credential conditions still govern access.

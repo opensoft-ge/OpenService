@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void accountDirectoryFiltersAuthenticationPoliciesWithoutGrantingAccess() throws Exception { AccountPolicyDirectoryAcceptance.run(this); }
+
+    @Test
     void invitationLifecycleHasTransactionalSecretFreeAudit() throws Exception { InvitationAuditAcceptance.run(this); }
 
     @Test
@@ -1370,7 +1373,7 @@ abstract class WorkflowSupport {
         var rows = objects(first.get("result"));
         assertEquals(25, rows.size());
         assertEquals("SearchPerson02", rows.getFirst().get("name"));
-        assertEquals(Set.of("user_id", "name", "role", "active"), rows.getFirst().keySet());
+        assertEquals(Set.of("user_id", "name", "role", "active", "api_only", "allow_basic"), rows.getFirst().keySet());
         var second = objects(parsed(get(api + query + "&page=2", auth("admin"))).get("result"));
         assertEquals(3, second.size());
         assertEquals("SearchPerson27", second.getFirst().get("name"));

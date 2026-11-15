@@ -50,6 +50,9 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanFindAccountsByAuthenticationPolicy() throws Exception { AccountPolicyDirectoryBrowserAcceptance.run(this); }
+
+    @Test
     void administratorCanSearchAndPageOlderInvitations() throws Exception { InvitationDirectoryBrowserAcceptance.run(this); }
 
     @Test

@@ -454,3 +454,7 @@ ADOPT-04/09 and PARITY-08: retained invitations are searchable and pageable beyo
 ## OS-N10-14 — Audit invitation issuance, replacement and revocation (implemented)
 
 ADOPT-04/09, PARITY-08/10: invitation issue/replacement/revocation have transactional sanitized journal evidence. Configurable security-table/field audit selection is merged into PARITY-08/10, missing P2/M2, dependent on stable event schema and restricted configuration; require selected change capture with secret suppression and denied unauthorized changes. SIEM export, tamper evidence and retention remain missing. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-15 — Find accounts by browser and Basic authentication policy (implemented)
+
+ADOPT-08/09, PARITY-08: account directory exposes and filters browser/API-only and Basic allow/block policy. OS-DISC-API-AUTH-POLICY remains partial; tracking-before-enforcement/defaults/scheduling are missing P1/M2, dependent on channel telemetry and controlled policy. Require affected-account visibility, recovery continuity and boundary-time enforcement. Configured flags do not establish effective authentication eligibility. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
