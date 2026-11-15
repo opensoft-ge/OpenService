@@ -417,3 +417,7 @@ Discovery merges [official Log Export Service/SIEM guidance](https://support.ser
 ## OS-N10-01 — scoped integration credentials (implemented)
 
 ADOPT-08/09, OS-PARITY-03/08; blueprint A4(e). [Current contract, acceptance and official research](paired-cycles-next10-2026-11-15.md#cycle-1--os-n10-01-scoped-read-only-integration-keys). Original header-only, table-bound read keys; not ServiceNow token-format/OAuth conformance. Rotations, write scopes, outbound aliases, enterprise identity and production qualification remain unimplemented. Discovery merges slow-pattern trends into the existing monitoring/analytics backlog (P1/M2); details and next research are in the roadmap/report.
+
+## OS-N10-02 — integration key rotation (implemented)
+
+ADOPT-08/09, OS-PARITY-03/08; blueprint A4(e). [Local rotation contract and evidence](paired-cycles-next10-2026-11-15.md#cycle-2--os-n10-02-rotate-an-integration-key). No native ServiceNow rotation/API parity claim. Discovery adds OS-DISC-API-KEY-SUSPEND and merges child bindings into OS-DISC-CONNECTION-ALIASES; both remain missing P1/M2 with dependencies/acceptance in the roadmap/report.

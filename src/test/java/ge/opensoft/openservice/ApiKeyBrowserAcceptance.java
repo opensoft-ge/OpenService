@@ -43,6 +43,16 @@ final class ApiKeyBrowserAcceptance {
             assertTrue(page.getByLabel("New API key").inputValue().startsWith("osk_"));
             assertThat(page.locator("tbody tr")).hasCount(1);
             ReleaseBrowserAcceptance.accessible(page);
+            String original = page.getByLabel("New API key").inputValue();
+            var rotate =
+                    page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Rotate key Nightly report"));
+            rotate.focus();
+            rotate.press("Enter");
+            assertNotEquals(original, page.getByLabel("New API key").inputValue());
+            assertThat(page.locator("tbody tr")).hasCount(1);
+            ReleaseBrowserAcceptance.accessible(page);
             page.getByRole(
                             AriaRole.BUTTON,
                             new Page.GetByRoleOptions().setName("Revoke key Nightly report"))

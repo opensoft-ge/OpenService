@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void apiKeyRotationPreservesScopeAndExpiry() throws Exception { ApiKeyRotationAcceptance.run(this); }
+
+    @Test
     void scopedApiKeysEnforceAccountAndTableBoundaries() throws Exception { ApiKeyAcceptance.run(this); }
 
     @Test

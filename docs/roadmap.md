@@ -398,3 +398,9 @@ Discovery merges [official Log Export Service/SIEM guidance](https://support.ser
 Scoped, expiring read-only integration keys extend ADOPT-08/09 and OS-PARITY-03/08; [contract and research](paired-cycles-next10-2026-11-15.md#cycle-1--os-n10-01-scoped-read-only-integration-keys). API authentication policy remains partial; OAuth/MFA/SSO and M1–M3 remain open. Read-only table keys are the selected slice; rotation, write scopes and credential-only account policies remain candidates.
 
 Discovery checkpoint, 15 November 2026: Brazil token/scope documentation and current release notes inspected. Merge daily slow-pattern snapshots into OS-PARITY-07/10 performance monitoring, missing P1/M2, depending on telemetry and bounded retention; acceptance requires reproducible deterioration detection and no sensitive query data in unauthorized views. See the report for exact sources/dates. Next: credential rotation and outbound connection lifecycle.
+
+### New batch cycle 2 — OS-N10-02 (implemented)
+
+Selected atomic secret rotation with unchanged scope/expiry, ADOPT-08/09 and OS-PARITY-03/08. [Contract, acceptance and research](paired-cycles-next10-2026-11-15.md#cycle-2--os-n10-02-rotate-an-integration-key). Remaining candidates are scoped writes, per-key suspension and credential-only accounts; OAuth/MFA/SSO and operational qualification remain open.
+
+Discovery checkpoint, 15 November: OS-DISC-API-KEY-SUSPEND added (missing P1/M2, OS-PARITY-03/08; requires stored state, deny suspended credentials and forbid authority restoration on resume). Child connection bindings merged into OS-DISC-CONNECTION-ALIASES (missing P1/M2; depends on outbound secret storage/runtime and isolated child credentials). Official sources and precise scope are in the report. Next: scoped writes and credential suspension.

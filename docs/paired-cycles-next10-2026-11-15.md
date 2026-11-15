@@ -8,7 +8,8 @@ Stack verification: [Spring Boot system requirements](https://docs.spring.io/spr
 
 | Cycle | New capability | Validation / commit |
 |---|---|---|
-| 1 | Scoped, expiring read-only integration keys | 586 tests; exact Java/JS gates passed |
+| 1 | Scoped, expiring read-only integration keys | 586 tests; exact Java/JS gates passed; `d137c5f` |
+| 2 | Rotate a key without extending scope or expiry | 588 tests; exact Java/JS gates passed |
 
 ## Cycle 1 — OS-N10-01: scoped read-only integration keys
 
@@ -29,3 +30,17 @@ QA follow-up: all 586 tests passed, but the exact gate correctly rejected three 
 Final QA round: reviewed the entire change against the fixed base, including the repaired assertions, templates, authentication dispatch, migration and documentation. No new/reopened defects and no further repairs. Final clean `env JAVA_HOME=<pinned-temurin-27> sh scripts/verify.sh` passed 586 tests, zero failures/errors/skips. Whole Java: 4931/4931 lines, 2667/2667 branches, 292/292 methods; all 53 production Java files passed the bundled exact gate. JavaScript: migrations 75/75 lines, 49/49 branches, 12/12 functions; theme 36/36 lines, 15/15 branches, 6/6 functions. Templates passed real Chromium keyboard, desktop/mobile and both-theme accessibility checks; final screenshots were visually reviewed. No threshold/instrumentation changes. Sources/tests were unchanged throughout the final gate. Raw evidence is local under `/tmp/openservice-next10-evidence/01`; `docs/validation.md` records the accepted checkpoint.
 
 Touched executable files, exact covered/total: `ApiKeys.java` 65/65 lines, 46/46 branches, 5/5 methods; `Migrations.java` 131/131, 74/74, 3/3; `WebController.java` 1763/1763, 911/911, 41/41. HTML is non-executable for JaCoCo and is verified by the browser acceptance above.
+
+## Cycle 2 — OS-N10-02: rotate an integration key
+
+Base: `d137c5f6e74ee7acaafb3282cfee766ff23a013b`. ADOPT-08/09, OS-PARITY-03/08. The preceding key lifecycle had issue/revoke but no way to replace a secret while preserving its existing authority/lifetime. Selected bounded replacement through API and the administrator page; no overlap window, automatic client update, expiry extension or outbound vault is included.
+
+Acceptance: old credential denied immediately, new credential accepted only in the existing scope, unchanged metadata/expiry/count, account isolation, expired/revoked/access-revision denial, administrator/CSRF/method/query checks, rollback/restart, secret-free audit, and keyboard/light/dark browser journey. Repeated authorized rotation replaces the secret again. Baseline is cycle 1's accepted clean gate; the focused three-test SQLite/PostgreSQL/Chromium run passed. Final review/gates pending.
+
+Research refreshed 15 November: [Brazil API key configuration](https://www.servicenow.com/docs/r/platform-security/authentication/configure-api-key.html), updated 10 September, and [OWASP secrets management](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html). Rotation is a local security lifecycle extension; the retrieved vendor configuration page does not establish the exact rotation contract. The same-day Java/Spring GA verification remains applicable and pins are unchanged.
+
+Discovery: the API-key documentation establishes a per-key active state; OS-DISC-API-KEY-SUSPEND is missing P1/M2 under OS-PARITY-03/08. It requires stored credential state and must deny suspended keys across routes without restoring expired/revoked account authority when resumed. [Brazil connections and aliases](https://www.servicenow.com/docs/r/platform-security/connections-and-credentials/credentials-connections-alias.html), updated 5 November, extends OS-DISC-CONNECTION-ALIASES with parent/child connection bindings; missing P1/M2, depends on outbound secret storage/runtime, with isolated child credentials and secret-free promotion as acceptance. Current release summary was also refreshed; no additional non-overlapping item was established in this sweep. Next: scoped writes and credential suspension. M1–M3 remain unmet.
+
+Final QA: The complete accumulated diff against d137c5f was reviewed with its surrounding authentication, account-lock and audit contracts. No new/reopened findings, no repairs, and all checks passed. Desktop/mobile screenshots and both-theme accessibility were reviewed. Final clean `sh scripts/verify.sh`: 588 tests, zero failures/errors/skips; Java 4950/4950 lines, 2673/2673 branches, 293/293 methods. All 54 production Java files and both JavaScript files passed the exact skill gate; no scope exclusions or threshold changes. Source/tests remained unchanged during the full gate. JavaScript counters remain migrations 75/75 lines, 49/49 branches, 12/12 functions and theme 36/36 lines, 15/15 branches, 6/6 functions.
+
+Touched executable files (lines, branches, methods): `ApiKeyRotation.java` 11/11, 2/2, 1/1; `WebController.java` 1771/1771, 915/915, 41/41. HTML is exercised by the browser journey. Raw evidence: `/tmp/openservice-next10-evidence/02`.
