@@ -18,9 +18,11 @@ public class Store {
     public final String secret;
     final String migrationOrigins;
     final Environment environment;
+    final int maxBrowserSessions;
 
     public Store(Environment environment) throws Exception {
         this.environment = environment;
+        maxBrowserSessions = SessionLimit.read(environment);
         migrationOrigins = environment.getProperty("MIGRATION_ALLOWED_ORIGINS", "");
         secret = environment.getProperty("SECRET_KEY");
         String password = environment.getProperty("ADMIN_PASSWORD");

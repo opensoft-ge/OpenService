@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void signInEnforcesTheConfiguredSessionLimitAtomically() throws Exception {
+        SessionLimitAcceptance.run(this);
+    }
+
+    @Test
     void individualBrowserRevocationIsIsolatedAndAudited() throws Exception {
         SessionRevocationAcceptance.run(this);
     }

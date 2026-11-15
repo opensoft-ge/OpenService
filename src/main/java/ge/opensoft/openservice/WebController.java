@@ -618,6 +618,7 @@ public class WebController {
                         "auth_revision", ((Number) user.get("auth_revision")).longValue());
                 long issued = System.currentTimeMillis();
                 BrowserSessions.register(c.db, user, c.session.getId(), issued);
+                SessionLimit.enforce(c.db, user, c.session.getId(), store.maxBrowserSessions);
                 c.session.setAttribute("authenticated_at", issued);
                 c.session.setAttribute("csrf", csrf());
                 return redirect(PasswordReset.required(user) ? "/password-required" : "/");
@@ -838,7 +839,9 @@ public class WebController {
                                     "sessions",
                                     sessions.get("result"),
                                     "truncated",
-                                    sessions.get("truncated")));
+                                    sessions.get("truncated"),
+                                    "maximumSessions",
+                                    store.maxBrowserSessions));
         }
         if (path.equals("/account")) {
             method(method, "GET");
