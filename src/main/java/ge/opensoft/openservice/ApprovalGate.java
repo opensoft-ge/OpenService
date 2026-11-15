@@ -61,6 +61,33 @@ final class ApprovalGate {
         return qualified;
     }
 
+    static List<Map<String, Object>> requirements(
+            Store.Db db, Map<String, Object> item, Map<String, Object> definition)
+            throws SQLException {
+        var result = new ArrayList<Map<String, Object>>();
+        for (var destination :
+                (List<?>)
+                        object(definition.get("flow"))
+                                .getOrDefault(object(item.get("data")).get("state"), List.of())) {
+            String target = destination.toString();
+            int minimum = required(definition, target);
+            int count = minimum == 0 ? 0 : qualifying(db, item, definition, target).size();
+            result.add(
+                    map(
+                            "target_state",
+                            target,
+                            "label",
+                            object(definition.get("states")).get(target),
+                            "required",
+                            minimum,
+                            "qualifying",
+                            count,
+                            "approval_satisfied",
+                            count >= minimum));
+        }
+        return result;
+    }
+
     static void update(Store.Db db, Map<String, Object> item) throws SQLException {
         var definition = Service.schema(db, item.get("table").toString());
         var data = object(item.get("data"));

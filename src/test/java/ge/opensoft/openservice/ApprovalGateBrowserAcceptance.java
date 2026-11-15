@@ -58,6 +58,11 @@ final class ApprovalGateBrowserAcceptance {
             assertThat(page.locator("select[name=state]")).hasValue("1");
             page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Record approvals"))
                     .click();
+            assertThat(page.locator("[data-approval-target='2']"))
+                    .containsText("0 qualifying · 1 required");
+            assertThat(page.locator("[data-approval-target='2']"))
+                    .containsText("More approvals needed");
+            ReleaseBrowserAcceptance.accessible(page);
             page.getByLabel("Reviewer username").fill(name);
             page.getByLabel("Proposed state").selectOption("2");
             page.getByLabel("Reason for review")
@@ -70,6 +75,24 @@ final class ApprovalGateBrowserAcceptance {
             assigned.getByLabel("Review comment").fill("The proposed transition is appropriate.");
             assigned.getByRole(
                             AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Record decision"))
+                    .click();
+            assertThat(assigned.locator("[data-approval-target='2']"))
+                    .containsText("0 qualifying · 1 required");
+            page.navigate(url + "/approvals");
+            assertThat(page.locator("[data-approval-target='2']"))
+                    .containsText("1 qualifying · 1 required");
+            assertThat(page.locator("[data-approval-target='2']"))
+                    .containsText("Approval requirement met");
+            ReleaseBrowserAcceptance.accessible(page);
+            page.setViewportSize(390, 844);
+            ReleaseBrowserAcceptance.accessible(page);
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Dark mode"))
+                    .click();
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(Path.of("target/approval-requirements-mobile-dark.png"))
+                            .setFullPage(true));
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Dark mode"))
                     .click();
             page.navigate(url);
             assertThat(page.locator("select[name=state]")).hasValue("1");

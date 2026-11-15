@@ -67,6 +67,12 @@ final class Approvals {
         var safe = new ArrayList<Map<String, Object>>();
         for (var row : rows) safe.add(publicRow(row, item, definition));
         return map(
+                "record_revision",
+                item.get("revision"),
+                "schema_version",
+                version(definition),
+                "requirements",
+                ApprovalGate.requirements(db, item, definition),
                 "result",
                 safe,
                 "next_before",

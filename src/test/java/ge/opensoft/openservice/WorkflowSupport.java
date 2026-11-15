@@ -57,6 +57,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void approvalRequirementsExplainCurrentExecutorCounts() throws Exception {
+        ApprovalRequirementsAcceptance.run(this);
+    }
+
+    @Test
     void approvalPrerequisitesProtectAllRecordWritePaths() throws Exception {
         ApprovalGateAcceptance.run(this);
     }

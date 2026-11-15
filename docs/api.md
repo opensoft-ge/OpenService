@@ -258,3 +258,5 @@ See [assigned-review endpoints](approvals.md#http-contract). These record an aut
 `GET /api/openservice/me/approvals` exposes the [personal assigned-review queue](approvals.md#personal-queue), with status filtering and current-account cursors.
 
 POST `.../approvals/{approval_id}/withdraw` closes a pending review without deciding or executing it; see [withdrawal authorization and input contract](approvals.md#withdrawal).
+
+Record approval GET responses include a current-executor `requirements` snapshot, `record_revision` and `schema_version`. Each destination reports `target_state`, `label`, `required`, `qualifying` and `approval_satisfied`; see [requirement semantics](approvals.md#current-requirement-snapshot). The snapshot does not authorize execution.
