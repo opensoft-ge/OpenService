@@ -50,6 +50,9 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanSearchAndPageOlderInvitations() throws Exception { InvitationDirectoryBrowserAcceptance.run(this); }
+
+    @Test
     void administratorCanInspectAnotherAccountsPermissions() throws Exception { AccountPermissionsBrowserAcceptance.run(this); }
 
     @Test

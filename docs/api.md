@@ -382,3 +382,7 @@ Administrator-only `GET /api/openservice/users/{user_id}/permissions?table=incid
 ### Reduce existing integration keys to read-only
 
 POST `/api/openservice/users/{user_id}/api-keys/read-only` accepts exactly `key_id` (32 lowercase hexadecimal characters) and `reason` (nonblank, at most 500 Unicode code points, no NUL). Returns `result: {key_id, access: "read_only", changed}`. Administrator-only; foreign/missing key 404, invalid input 400, unauthorized 401/403. The matching administrator form is CSRF-protected. Only `can_write` changes; the transaction audits an actual transition. Repeats return changed=false. This never renews or resumes a key, changes its table or bypasses account policy. Mutations waiting on the PostgreSQL application lock recheck the reduced scope before changing records.
+
+### Search and page through every retained invitation
+
+GET `/api/openservice/invitation-directory` accepts only `q` (literal username substring, trimmed, at most 80 Unicode code points, no NUL), `role` (empty or a local role) and `page` (positive integer, at most six digits; default 1). Administrator-only, 25 results per page, sequence descending. Returns `result` containing invitations, total, page, pages, search and filterRole. Empty results have one empty page; out-of-range/invalid/duplicate/unknown parameters return 400. `/admin/invitation-directory` provides the same filters and existing CSRF-protected revocation. Original `/api/openservice/invitations` remains latest-100 without query filters.

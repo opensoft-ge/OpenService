@@ -43,7 +43,7 @@ final class Invitations {
         return result;
     }
 
-    private static Map<String, Object> visible(Store.Db db, Map<String, Object> row)
+    static Map<String, Object> visible(Store.Db db, Map<String, Object> row)
             throws SQLException {
         long expires = ((Number) row.get("expires_at")).longValue();
         String state = row.get("state").toString();

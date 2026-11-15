@@ -1384,6 +1384,13 @@ public class WebController {
                                     c.role())),
                     200);
         }
+        if (path.equals("/admin/invitation-directory") || path.equals("/api/openservice/invitation-directory")) {
+            method(method,"GET"); c.admin(); c.uniqueQuery();
+            var result = InvitationDirectory.list(c.db,c.user.get("user_id").toString(),queryArguments(c));
+            if(path.startsWith("/api/")) return json(map("result",result),200);
+            result.put("table","invitations"); result.put("roles",Service.ROLES);
+            return view(c,"invitation-directory",result);
+        }
         if (path.equals("/admin/invitations")) return invitations(c, method);
         if (path.equals("/api/openservice/invitations")) {
             method(method, "GET", "POST");

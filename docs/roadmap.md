@@ -446,3 +446,7 @@ OS-DISC-03 now has bounded administrator subject-level record-policy diagnosis; 
 ## OS-N10-12 — Reduce existing integration keys to read-only (implemented)
 
 OS-PARITY-03/08 and OS-DISC-API-AUTH-POLICY: bounded reduction of a retained key to read-only; arbitrary OAuth/resource scopes remain missing. New OS-DISC-WORKLOAD-FEDERATION is missing P2/M2, dependent on connector trust/identity configuration; require issuer/audience/expiry rejection, short-lived credentials and auditable mappings. Brazil release notes establish the capability; detailed provider flows remain unverified. Next: invitation directory and account access-mode filters. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-13 — Search and page through every retained invitation (implemented)
+
+ADOPT-04/09 and PARITY-08: retained invitations are searchable and pageable beyond the latest-100 window. State filters and saved views remain missing. OS-DISC-SAVED-FILTERS is missing P2/M2 under PARITY-01/07/08; depends on shared query and membership-aware sharing, with denied unauthorized edits/shares and live data permissions required. Native invitation semantics remain unverified. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.

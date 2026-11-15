@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void invitationDirectoryReachesOlderInvitationsWithoutLeakingSecrets() throws Exception { InvitationDirectoryAcceptance.run(this); }
+
+    @Test
     void integrationKeyCanLoseWriteAuthorityWithoutChangingItsSecret() throws Exception { ApiKeyReadOnlyAcceptance.run(this); }
 
     @Test
