@@ -110,7 +110,8 @@ public class WebController {
                 throw new Failure(413, "Request exceeds 6 MB");
             String path = request.getRequestURI(), method = request.getMethod();
             boolean publicPath =
-                    Set.of("/healthz", "/login", "/forgot", "/static/app.css").contains(path)
+                    Set.of("/healthz", "/login", "/forgot", "/static/app.css", "/static/theme.js")
+                                    .contains(path)
                             || path.matches("/(?:join|recover)/[A-Za-z0-9_-]{32}");
             var user =
                     session.getAttribute("user") == null
@@ -331,9 +332,9 @@ public class WebController {
                         200);
             }
         }
-        if (path.equals("/static/migrations.js")) {
+        if (Set.of("/static/migrations.js", "/static/theme.js").contains(path)) {
             method(method, "GET");
-            try (var input = WebController.class.getResourceAsStream("/static/migrations.js")) {
+            try (var input = WebController.class.getResourceAsStream(path)) {
                 return binary(
                         Objects.requireNonNull(input).readAllBytes(),
                         "text/javascript; charset=utf-8",

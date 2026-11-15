@@ -19,3 +19,5 @@ No formal separation between specification authors and implementers, exhaustive 
 The exact fixture-generator provenance gap remains documented above. Future fixtures should retain their originating test/revision and whether evidence is synthetic or from an authorized reference instance. Public documentation and product names should only identify intended interoperability; they must not imply vendor sponsorship or endorsement.
 
 The 2026-11-15 release qualification updates only the GET `/static/app.css` fixture bytes to the reviewed local stylesheet after accessibility contrast fixes. The gzip fixture is serialized deterministically; the remaining scenarios retain their prior local provenance and are not vendor captures.
+
+The subsequent 2026-11-15 OS-051 theme refresh again updates only that CSS fixture response to the current original stylesheet. The other request inputs, responses and headers are byte-equivalent after JSON decoding. Palette, toggle and screenshot assets are locally authored/generated; the cited theme documentation is a capability reference.

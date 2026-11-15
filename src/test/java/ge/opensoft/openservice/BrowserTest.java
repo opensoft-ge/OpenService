@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void professionalThemesPersistAndRemainAccessible() throws Exception {
+        ThemeBrowserAcceptance.run(this);
+    }
+
+    @Test
     void emailedOnboardingRequesterWorkRecoveryAndOffboardingAreAccessible() throws Exception {
         ReleaseBrowserAcceptance.run(this);
     }

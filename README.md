@@ -126,3 +126,7 @@ A [disposable PostgreSQL restore drill](docs/recovery.md) verifies configuration
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, validation and contribution terms.
+
+## Product experience
+
+See the [professional appearance and dark-mode requirements](docs/product-experience.md), including current implementation status and browser-release acceptance criteria.

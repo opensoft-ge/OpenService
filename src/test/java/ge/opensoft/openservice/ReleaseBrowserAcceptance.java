@@ -17,6 +17,17 @@ import java.util.*;
 
 final class ReleaseBrowserAcceptance {
     static void accessible(Page page) throws Exception {
+        var toggle =
+                page.getByRole(
+                        AriaRole.BUTTON,
+                        new Page.GetByRoleOptions().setName("Dark mode").setExact(true));
+        checkAccessible(page);
+        toggle.click();
+        checkAccessible(page);
+        toggle.click();
+    }
+
+    static void checkAccessible(Page page) throws Exception {
         page.evaluate(
                 Files.readString(
                         Path.of("tools/browser-coverage/node_modules/axe-core/axe.min.js")));
@@ -24,7 +35,8 @@ final class ReleaseBrowserAcceptance {
                 page.evaluate(
                         "async () => (await axe.run(document, {runOnly: {type: 'tag', values:"
                             + " ['wcag2a','wcag2aa','wcag21a','wcag21aa']}})).violations.map(v =>"
-                            + " ({id:v.id, impact:v.impact, nodes:v.nodes.map(n=>n.target)}))");
+                            + " ({id:v.id, impact:v.impact,"
+                            + " nodes:v.nodes.map(n=>({target:n.target,detail:n.failureSummary}))}))");
         assertEquals(List.of(), violations, page.url());
         assertEquals(
                 true,
