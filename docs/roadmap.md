@@ -450,3 +450,7 @@ OS-PARITY-03/08 and OS-DISC-API-AUTH-POLICY: bounded reduction of a retained key
 ## OS-N10-13 — Search and page through every retained invitation (implemented)
 
 ADOPT-04/09 and PARITY-08: retained invitations are searchable and pageable beyond the latest-100 window. State filters and saved views remain missing. OS-DISC-SAVED-FILTERS is missing P2/M2 under PARITY-01/07/08; depends on shared query and membership-aware sharing, with denied unauthorized edits/shares and live data permissions required. Native invitation semantics remain unverified. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-14 — Audit invitation issuance, replacement and revocation (implemented)
+
+ADOPT-04/09, PARITY-08/10: invitation issue/replacement/revocation have transactional sanitized journal evidence. Configurable security-table/field audit selection is merged into PARITY-08/10, missing P2/M2, dependent on stable event schema and restricted configuration; require selected change capture with secret suppression and denied unauthorized changes. SIEM export, tamper evidence and retention remain missing. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.

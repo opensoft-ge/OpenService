@@ -13,7 +13,8 @@ final class SecurityEvents {
             Store.Db db, String actor, String target, String action, Map<String, Object> detail)
             throws SQLException {
         var actorName = db.one("SELECT name FROM os_user WHERE user_id=?", actor).get("name");
-        var targetName = db.one("SELECT name FROM os_user WHERE user_id=?", target).get("name");
+        var targetAccount = db.one("SELECT name FROM os_user WHERE user_id=?", target);
+        var targetName = targetAccount == null ? "Removed account" : targetAccount.get("name");
         db.update(
                 "INSERT INTO"
                     + " os_security_event(event_id,occurred_at,actor_id,actor_name,target_id,target_name,action,detail)"

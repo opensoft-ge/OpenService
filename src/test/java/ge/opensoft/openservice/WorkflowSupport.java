@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void invitationLifecycleHasTransactionalSecretFreeAudit() throws Exception { InvitationAuditAcceptance.run(this); }
+
+    @Test
     void invitationDirectoryReachesOlderInvitationsWithoutLeakingSecrets() throws Exception { InvitationDirectoryAcceptance.run(this); }
 
     @Test

@@ -19,11 +19,10 @@ final class Invitations {
         Service.requireAccountAdministrator(db, actor);
         if (db.one("SELECT user_id FROM os_user WHERE name=?", name) != null)
             throw new Failure(400, "User already exists");
-        db.update(
-                "UPDATE os_invitation SET state='revoked',revoked_by=? WHERE name=? AND"
-                        + " state='pending'",
-                actor,
-                name);
+        for (var previous :
+                db.all(
+                        "SELECT invite_id FROM os_invitation WHERE name=? AND state='pending'",
+                        name)) revoke(db, actor, previous.get("invite_id").toString());
         String id = id(), token = Passwords.token();
         db.update(
                 "INSERT INTO"
@@ -39,12 +38,17 @@ final class Invitations {
                 db.one("SELECT auth_revision FROM os_user WHERE user_id=?", actor)
                         .get("auth_revision"));
         var result = visible(db, db.one("SELECT * FROM os_invitation WHERE invite_id=?", id));
+        SecurityEvents.record(
+                db,
+                actor,
+                actor,
+                "invitation.issued",
+                map("invite_id", id, "invited_username", name, "invited_role", value.get("role")));
         result.put("accept_path", "/join/" + token);
         return result;
     }
 
-    static Map<String, Object> visible(Store.Db db, Map<String, Object> row)
-            throws SQLException {
+    static Map<String, Object> visible(Store.Db db, Map<String, Object> row) throws SQLException {
         long expires = ((Number) row.get("expires_at")).longValue();
         String state = row.get("state").toString();
         if (state.equals("pending")) {
@@ -148,6 +152,18 @@ final class Invitations {
                 "UPDATE os_invitation SET state='revoked',revoked_by=? WHERE invite_id=?",
                 actor,
                 id);
+        SecurityEvents.record(
+                db,
+                actor,
+                row.get("issuer_id").toString(),
+                "invitation.revoked",
+                map(
+                        "invite_id",
+                        id,
+                        "invited_username",
+                        row.get("name"),
+                        "invited_role",
+                        row.get("role")));
         row.put("state", "revoked");
         row.put("revoked_by", actor);
         return visible(db, row);

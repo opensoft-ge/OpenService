@@ -190,7 +190,9 @@ class MigrationsTest {
         try (var db = store.open()) {
             assertEquals(1, db.count("SELECT COUNT(*) FROM os_user WHERE name='ConcurrentInvite'"));
             assertEquals(1, db.count("SELECT COUNT(*) FROM os_invitation WHERE state='accepted'"));
-            assertEquals(2, db.count("SELECT COUNT(*) FROM os_security_event"));
+            assertEquals(3, db.count("SELECT COUNT(*) FROM os_security_event"));
+            for (String action : List.of("invitation.issued", "account.created", "account.invitation_accepted"))
+                assertEquals(1, db.count("SELECT COUNT(*) FROM os_security_event WHERE action=?", action));
         }
     }
 

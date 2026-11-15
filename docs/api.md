@@ -386,3 +386,9 @@ POST `/api/openservice/users/{user_id}/api-keys/read-only` accepts exactly `key_
 ### Search and page through every retained invitation
 
 GET `/api/openservice/invitation-directory` accepts only `q` (literal username substring, trimmed, at most 80 Unicode code points, no NUL), `role` (empty or a local role) and `page` (positive integer, at most six digits; default 1). Administrator-only, 25 results per page, sequence descending. Returns `result` containing invitations, total, page, pages, search and filterRole. Empty results have one empty page; out-of-range/invalid/duplicate/unknown parameters return 400. `/admin/invitation-directory` provides the same filters and existing CSRF-protected revocation. Original `/api/openservice/invitations` remains latest-100 without query filters.
+
+### Audit invitation issuance, replacement and revocation
+
+Existing invitation issue/revoke endpoints keep their response shapes. Successful issuance now records `invitation.issued`; each actual revocation, explicit or caused by replacement, records `invitation.revoked`. Both use the existing administrator-only security journal and page download. Actor is the acting administrator; target account is the original issuing administrator (the invitee might not yet have an account). Details contain only invite_id, invited_username and invited_role. Repeated revocation records no additional event. State and events commit/rollback together.
+
+If the issuing account was removed outside the normal deactivation workflow, its stable ID remains in the event and its unavailable name is labelled `Removed account`; invitation revocation still succeeds.

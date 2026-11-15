@@ -79,6 +79,29 @@ final class InvitationDirectoryBrowserAcceptance {
                                             .setName("Invitations")
                                             .setExact(true)))
                     .isVisible();
+            page.navigate(h.base() + "/admin/security-events");
+            assertThat(page.locator("tbody tr").first()).containsText("invitation.revoked");
+            assertThat(page.locator("tbody tr").first()).containsText(prefix + "0");
+            ReleaseBrowserAcceptance.accessible(page);
+            page.setViewportSize(1280, 900);
+            ReleaseBrowserAcceptance.accessible(page);
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Dark mode").setExact(true))
+                    .click();
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(Path.of("target/invitation-audit-desktop.png"))
+                            .setFullPage(true));
+            page.setViewportSize(390, 844);
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Dark mode").setExact(true))
+                    .click();
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(Path.of("target/invitation-audit-mobile-dark.png"))
+                            .setFullPage(true));
         }
     }
 }
