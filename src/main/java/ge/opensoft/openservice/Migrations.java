@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 23;
+    static final int VERSION = 24;
 
     private Migrations() {}
 
@@ -297,6 +297,11 @@ final class Migrations {
         if (version < 23) {
             addColumn(db, "os_user", "browser_limit", "INTEGER NOT NULL DEFAULT 0 CHECK(browser_limit BETWEEN 0 AND 100)");
             db.update("INSERT INTO os_migration(version,name) VALUES(23,?)", "per-account browser session limits");
+        }
+        if (version < 24) {
+            db.update("CREATE TABLE IF NOT EXISTS os_api_key(key_id VARCHAR(32) PRIMARY KEY,token_hash VARCHAR(64) NOT NULL UNIQUE,user_id VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,label VARCHAR(160) NOT NULL,table_name VARCHAR(160) NOT NULL,created_at BIGINT NOT NULL,expires_at BIGINT NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_api_key_user ON os_api_key(user_id)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(24,?)", "scoped integration API keys");
         }
     }
 

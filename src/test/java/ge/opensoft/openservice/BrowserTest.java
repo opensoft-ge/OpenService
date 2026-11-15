@@ -50,6 +50,9 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanManageScopedApiKeys() throws Exception { ApiKeyBrowserAcceptance.run(this); }
+
+    @Test
     void administratorCanReviewAndExportAccountSignInActivity() throws Exception {
         AccountAuthenticationBrowserAcceptance.run(this);
     }

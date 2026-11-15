@@ -51,11 +51,14 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_browser_session")) db.update("DELETE FROM " + table);
+                            "os_browser_session", "os_api_key")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
     }
+
+    @Test
+    void scopedApiKeysEnforceAccountAndTableBoundaries() throws Exception { ApiKeyAcceptance.run(this); }
 
     @Test
     void administratorsCanInvestigateOneAccountsAuthenticationEvents() throws Exception {

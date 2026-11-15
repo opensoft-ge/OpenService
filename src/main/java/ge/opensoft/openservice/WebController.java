@@ -142,7 +142,9 @@ public class WebController {
             }
             String authorization = request.getHeader("Authorization");
             if (!publicPath && authorization != null && !authorization.isEmpty())
-                user = authenticate(db, authorization);
+                user = authorization.startsWith("Bearer ")
+                        ? ApiKeys.authenticate(db, authorization, path, method)
+                        : authenticate(db, authorization);
             if (!publicPath && user == null) {
                 if (path.startsWith("/api/")) throw new Failure(401, "Authentication required");
                 return redirect("/login");
@@ -660,6 +662,25 @@ public class WebController {
                     "password-required",
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
+        }
+        Matcher apiKeyRevoke = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/([0-9a-f]{32})/revoke").matcher(path);
+        if (apiKeyRevoke.matches()) {
+            method(method, "POST"); c.admin(); c.noQuery();
+            var result = ApiKeys.revoke(c.db, c.user.get("user_id").toString(), apiKeyRevoke.group(1), apiKeyRevoke.group(2));
+            return path.startsWith("/api/") ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + apiKeyRevoke.group(1) + "/api-keys");
+        }
+        Matcher apiKeys = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys").matcher(path);
+        if (apiKeys.matches()) {
+            method(method, "GET", "POST"); c.admin(); c.noQuery();
+            String target = apiKeys.group(1), actor = c.user.get("user_id").toString();
+            boolean api = path.startsWith("/api/");
+            Map<String, Object> issued = map();
+            if (method.equals("POST")) issued = ApiKeys.issue(c.db, actor, target,
+                    api ? body(c) : map("label", c.parameter("label", ""), "table", c.parameter("table", ""), "days", ApiKeys.days(c.parameter("days", ""))));
+            if (api) return json(map("result", method.equals("POST") ? issued : ApiKeys.list(c.db, actor, target)), method.equals("POST") ? 201 : 200);
+            return view(c, "api-keys", map("table", "accounts", "account", Service.account(c.db, target),
+                    "keys", ApiKeys.list(c.db, actor, target), "issued", issued));
         }
         if (path.equals("/api/openservice/me/csrf")) {
             method(method, "GET");
