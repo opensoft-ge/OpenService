@@ -434,3 +434,7 @@ OS-DISC-API-KEY-RETENTION is partial P1/M2: manual reasoned per-account expired-
 ## OS-N10-09 — Shorten an existing key lifetime without extending access (implemented)
 
 Expiry shortening partially advances ADOPT-08/09 and OS-DISC-API-AUTH-POLICY without extending a credential. OS-DISC-DERIVED-FIELD-ACCESS merges into OS-PARITY-01/07/08, missing P1/M2: a safe derived-field engine is prerequisite, with denial across forms/APIs/reports when any contributing field is unreadable. Exact Access Analyzer detail remains unverified after an inaccessible primary URL. Next: credential diagnostics and permission evaluation. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-10 — Explain effective credential eligibility to administrators (implemented)
+
+Credential-status explanation partially advances OS-DISC-03 and ADOPT-08/09. Full user comparison/simulation, AI-tool evaluation and native access-analysis exports remain missing; Store applicability and exact Brazil detail require verification. OS-DISC-QUERY-ACL merges into OS-PARITY-01/07/08, missing P1/M2: shared query policy is prerequisite; reject forbidden predicates across data, counts, ordering and reports. Current hidden-field rejection is preserved. Next: administrator subject-level permission diagnosis and invitation administration. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.

@@ -13,12 +13,16 @@ final class ApiKeys {
             throws Exception {
         Service.requireAccountAdministrator(db, actor);
         Service.account(db, target);
+        var account = db.one("SELECT active,api_only,role,password_reset_required,auth_revision FROM os_user WHERE user_id=?", target);
+        long observedAt = System.currentTimeMillis();
         var rows =
                 db.all(
-                        "SELECT key_id,label,table_name,created_at,expires_at,enabled,can_write,use_count,last_used_at FROM os_api_key WHERE"
+                        "SELECT key_id,label,table_name,created_at,expires_at,enabled,can_write,use_count,last_used_at,auth_revision FROM os_api_key WHERE"
                             + " user_id=? ORDER BY created_at,key_id",
                         target);
         for (var row : rows) {
+            row.put("credential_status", ApiKeyStatus.describe(row, account, observedAt));
+            row.remove("auth_revision");
             long lastUsed = ((Number) row.get("last_used_at")).longValue();
             row.put("last_used_at_utc", lastUsed == 0 ? "Never" : java.time.Instant.ofEpochMilli(lastUsed).toString());
             row.put("access", ((Number) row.remove("can_write")).intValue() == 1 ? "Read, create and update" : "Read only");

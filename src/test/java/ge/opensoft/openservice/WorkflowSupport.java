@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void credentialStatusMatchesAuthenticationEligibility() throws Exception { ApiKeyStatusAcceptance.run(this); }
+
+    @Test
     void keyExpiryCanOnlyMoveEarlier() throws Exception { ApiKeyExpiryAcceptance.run(this); }
 
     @Test

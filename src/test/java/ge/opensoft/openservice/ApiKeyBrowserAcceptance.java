@@ -77,6 +77,7 @@ final class ApiKeyBrowserAcceptance {
                     .press("Enter");
             assertThat(page.getByText("Suspended", new Page.GetByTextOptions().setExact(true)))
                     .isVisible();
+            assertThat(page.getByText("Effective: Suspended", new Page.GetByTextOptions().setExact(true))).isVisible();
             ReleaseBrowserAcceptance.accessible(page);
             page.getByRole(
                             AriaRole.BUTTON,
@@ -93,6 +94,7 @@ final class ApiKeyBrowserAcceptance {
             }
             page.navigate(h.base() + "/admin/accounts/" + target + "/api-keys");
             assertThat(page.locator("tbody tr")).hasCount(2);
+            assertThat(page.getByText("Effective: Expired", new Page.GetByTextOptions().setExact(true))).isVisible();
             page.getByLabel("Reason for removing expired keys").fill("Remove obsolete credential");
             page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Remove expired API keys")).press("Enter");
             assertThat(page.locator("tbody tr")).hasCount(1);
@@ -111,6 +113,7 @@ final class ApiKeyBrowserAcceptance {
                 assertTrue(expiry <= System.currentTimeMillis() + 3600000L);
             }
             ReleaseBrowserAcceptance.accessible(page);
+            assertThat(page.getByText("Effective: Eligible", new Page.GetByTextOptions().setExact(true))).isVisible();
             page.screenshot(
                     new Page.ScreenshotOptions()
                             .setPath(Path.of("target/api-keys-desktop.png"))

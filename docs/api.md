@@ -370,3 +370,7 @@ Administrator-only `POST /api/openservice/users/{user_id}/api-keys/cleanup` acce
 Administrator-only `POST /api/openservice/users/{user_id}/api-keys/expiry` accepts exactly `{"key_id":"32-lowercase-hex","hours":24}`. Hours must be a JSON integer from 1 to 2160. Returns `200 {"result":{"key_id":"...","expires_at":123}}` with Unix milliseconds. The new expiry is the action time plus the requested hours and must precede the stored deadline, otherwise 409. Unknown/foreign key IDs return 404; malformed input returns 400. Suspended credentials retain their state; expired keys cannot be revived. Actual changes audit key ID and before/after deadlines without secrets. The CSRF-protected UI equivalent `/admin/accounts/{user_id}/api-keys/expiry` redirects to the list.
 
 The expiry selector displays each label with its non-secret key ID so duplicate labels remain distinguishable.
+
+### Explain effective credential eligibility to administrators
+
+Administrator key-list responses now include `credential_status`: Expired, Suspended, Account inactive, Browser account, Administrator account, Password change required, Account changed, or Eligible, in that priority order. It is computed from current persisted account/key state at list time; `enabled` remains the independent switch. Account authentication revisions are used internally and omitted from responses. Eligible is not a permission grant or a guarantee for a subsequent request. The UI explains this scope and shows effective status alongside the switch.
