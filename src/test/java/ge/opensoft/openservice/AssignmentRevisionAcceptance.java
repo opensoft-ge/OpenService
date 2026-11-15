@@ -92,14 +92,14 @@ final class AssignmentRevisionAcceptance {
             String ui = "/admin/accounts/" + source + "/assignments/transfer";
             assertEquals(
                     400,
-                    h.form(ui, map("new_owner", "target", "record_ids", first), auth("admin"))
+                    h.protectedForm(ui, map("new_owner", "target", "record_ids", first), auth("admin"))
                             .statusCode());
             assertEquals(
                     400,
                     h.request(
                                     "POST",
                                     ui,
-                                    ("new_owner=target&record_ids="
+                                    ("csrf=" + h.basicCsrf(auth("admin")) + "&new_owner=target&record_ids="
                                                     + first
                                                     + "&revision_"
                                                     + first

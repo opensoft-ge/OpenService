@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void ambientBasicCredentialsCannotAuthorizeCrossOriginBrowserWrites() throws Exception {
+        BrowserCsrfBrowserAcceptance.run(this);
+    }
+
+    @Test
     void administratorCanEndASelectedSessionFromTheBrowser() throws Exception {
         AdminSessionRevocationBrowserAcceptance.run(this);
     }

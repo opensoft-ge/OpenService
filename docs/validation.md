@@ -1,6 +1,6 @@
 # Ten further cycles — 15 November 2026
 
-6 of 10 follow-up cycles complete. Latest gate: 562 tests, zero failures/errors/skips; Java 4740/4740 lines, 2535/2535 branches, 280/280 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. See [feature and QA report](paired-cycles-followup-2026-11-15.md). This new batch is local only. Earlier twenty-cycle evidence below is historical and was subsequently pushed at `18bd066`; it does not describe this batch.
+7 of 10 follow-up cycles complete. Latest gate: 566 tests, zero failures/errors/skips; Java 4756/4756 lines, 2549/2549 branches, 281/281 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. See [feature and QA report](paired-cycles-followup-2026-11-15.md). This new batch is local only. Earlier twenty-cycle evidence below is historical and was subsequently pushed at `18bd066`; it does not describe this batch.
 
 # Twenty-cycle verification — 15 November 2026
 

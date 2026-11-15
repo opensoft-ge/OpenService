@@ -129,7 +129,7 @@ final class PasswordRequirementAcceptance {
         assertEquals(400, h.get("/password-required?x=1", null).statusCode());
         assertEquals(
                 405,
-                h.json("PUT", "/password-required", map(), auth("RequiredReader")).statusCode());
+                h.protectedJson("PUT", "/password-required", map(), auth("RequiredReader")).statusCode());
         for (int i = 0; i < 6; i++) {
             var bad =
                     h.form(

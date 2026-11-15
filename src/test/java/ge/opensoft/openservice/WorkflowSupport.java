@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void browserWritesNeedSessionBoundCsrfEvenWithBasicCredentials() throws Exception {
+        BrowserCsrfAcceptance.run(this);
+    }
+
+    @Test
     void administratorsCanEndOnlyTheSelectedSessionWithAnAuditedReason() throws Exception {
         AdminSessionRevocationAcceptance.run(this);
     }
@@ -1747,7 +1752,7 @@ abstract class WorkflowSupport {
                     parsed(get("/api/now/stats/incident?sysparm_count=true", auth(name))));
             assertEquals(
                     404, json("PATCH", api, map("description", "denied"), auth(name)).statusCode());
-            assertEquals(404, form(page + "/note", map("body", "denied"), auth(name)).statusCode());
+            assertEquals(404, protectedForm(page + "/note", map("body", "denied"), auth(name)).statusCode());
             assertEquals(
                     404,
                     upload(page + "/attachment", "denied.bin", new byte[] {1}, auth(name))
@@ -2002,7 +2007,7 @@ abstract class WorkflowSupport {
                 json("PATCH", api, map("short_description", "stolen"), auth("Outsider"))
                         .statusCode());
         assertEquals(
-                404, form(page + "/note", map("body", "stolen"), auth("Outsider")).statusCode());
+                404, protectedForm(page + "/note", map("body", "stolen"), auth("Outsider")).statusCode());
         assertEquals(
                 404,
                 upload(page + "/attachment", "evil.bin", new byte[] {1}, auth("Outsider"))
@@ -2908,7 +2913,7 @@ abstract class WorkflowSupport {
                         .statusCode());
         assertEquals(
                 409,
-                form("/admin/accounts/" + admin, map("active", "false"), auth("admin"))
+                protectedForm("/admin/accounts/" + admin, map("active", "false"), auth("admin"))
                         .statusCode());
         assertEquals(200, json("PATCH", otherApi, map("active", true), auth("admin")).statusCode());
         String token = login("admin");
@@ -2971,7 +2976,7 @@ abstract class WorkflowSupport {
                 json("POST", "/api/openservice/me/sessions/revoke?user=other", map(), auth("admin"))
                         .statusCode());
         assertEquals(400, get("/account?user=other", auth("admin")).statusCode());
-        assertEquals(405, json("POST", "/account", map(), auth("admin")).statusCode());
+        assertEquals(405, protectedJson("POST", "/account", map(), auth("admin")).statusCode());
     }
 
     @Test
@@ -3110,6 +3115,8 @@ abstract class WorkflowSupport {
         var request = HttpRequest.newBuilder(URI.create(base() + path));
         if (type != null) request.header("Content-Type", type);
         if (authorization != null) request.header("Authorization", authorization);
+        // Native API fixtures explicitly identify safelisted upload requests.
+        if (path.startsWith("/api/")) request.header("X-OpenService-API", "true");
         return client.send(
                 request.method(
                                 method,
@@ -3127,6 +3134,30 @@ abstract class WorkflowSupport {
             throws Exception {
         return request(
                 method, path, JSON.writeValueAsBytes(value), "application/json", authorization);
+    }
+
+    HttpResponse<byte[]> protectedJson(String method, String path, Object value, String authorization)
+            throws Exception {
+        var request = HttpRequest.newBuilder(URI.create(base() + path))
+                .header("Authorization", authorization)
+                .header("Content-Type", "application/json")
+                .header("X-CSRF-Token", basicCsrf(authorization))
+                .method(method, HttpRequest.BodyPublishers.ofByteArray(JSON.writeValueAsBytes(value)))
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+    }
+
+    String basicCsrf(String authorization) throws Exception {
+        var response = get("/api/openservice/me/csrf", authorization);
+        assertEquals(200, response.statusCode());
+        return object(parsed(response).get("result")).get("csrf").toString();
+    }
+
+    HttpResponse<byte[]> protectedForm(String path, Map<String, Object> values, String authorization)
+            throws Exception {
+        var fields = new LinkedHashMap<>(values);
+        fields.put("csrf", basicCsrf(authorization));
+        return form(path, fields, authorization);
     }
 
     HttpResponse<byte[]> form(String path, Map<String, Object> values, String authorization)
@@ -3163,6 +3194,14 @@ abstract class WorkflowSupport {
                         .getBytes(StandardCharsets.UTF_8));
         body.write(payload);
         body.write("\r\n--OpenServiceTestBoundary--\r\n".getBytes(StandardCharsets.UTF_8));
+        if (!path.startsWith("/api/") && authorization != null) {
+            String nonce = basicCsrf(authorization);
+            var upload = HttpRequest.newBuilder(URI.create(base() + path))
+                    .header("Authorization", authorization).header("X-CSRF-Token", nonce)
+                    .header("Content-Type", "multipart/form-data; boundary=OpenServiceTestBoundary")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray())).build();
+            return client.send(upload, HttpResponse.BodyHandlers.ofByteArray());
+        }
         return request(
                 "POST",
                 path,
@@ -3374,7 +3413,7 @@ abstract class WorkflowSupport {
         var incident = add("incident");
         var problem = add("problem");
         String upload = "/record/incident/" + incident.get("sys_id") + "/attachment";
-        assertEquals(400, form(upload, map(), auth("admin")).statusCode());
+        assertEquals(400, protectedForm(upload, map(), auth("admin")).statusCode());
         assertEquals(400, upload(upload, "", new byte[] {1}, auth("admin")).statusCode());
         assertEquals(
                 400,
@@ -3534,7 +3573,7 @@ abstract class WorkflowSupport {
         assertTrue(first.contains("Page 1 of 2"));
         assertTrue(second.contains("Previous") && !second.contains("Next →"));
         var added =
-                form(
+                protectedForm(
                         "/admin/accounts?page=2",
                         map("name", "zznew", "password", PASSWORD, "role", "reader"),
                         auth("admin"));

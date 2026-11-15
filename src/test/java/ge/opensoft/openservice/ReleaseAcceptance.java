@@ -215,7 +215,7 @@ final class ReleaseAcceptance {
             }
             assertEquals(
                     302,
-                    h.form("/admin/delivery/" + job + "/retry", map(), auth("admin")).statusCode());
+                    h.protectedForm("/admin/delivery/" + job + "/retry", map(), auth("admin")).statusCode());
             // Browser form queues email without disclosing the bearer link.
             String adminCsrf = h.login("admin");
             var queued =

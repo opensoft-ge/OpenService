@@ -65,13 +65,28 @@ abstract class ContractSupport {
         String base = "http://localhost:" + environment.getProperty("local.server.port");
         Map<String, String> substitutions = new LinkedHashMap<>();
         substitutions.put("http://localhost/", base + "/");
-        try (HttpClient client = HttpClient.newHttpClient()) {
+        try (HttpClient client = HttpClient.newBuilder()
+                .cookieHandler(new java.net.CookieManager(null, java.net.CookiePolicy.ACCEPT_ALL))
+                .build()) {
             int index = 0;
             for (var step : maps(test.get("requests"))) {
                 String path = replace((String) step.get("path"), substitutions);
                 var request = HttpRequest.newBuilder(URI.create((base + path).replace("^", "%5E")));
                 cast(step.get("headers"))
                         .forEach((key, value) -> request.header(key, (String) value));
+                // Historical native fixtures opt into the current deliberate-request contract.
+                // Raw CSRF regressions use a separate client without these conveniences.
+                if (path.startsWith("/api/")) request.header("X-OpenService-API", "true");
+                else if (!Set.of("GET", "HEAD", "OPTIONS").contains(step.get("method"))
+                        && cast(step.get("headers")).containsKey("Authorization")) {
+                    var tokenRequest = HttpRequest.newBuilder(URI.create(base + "/api/openservice/me/csrf"))
+                            .header("Authorization", (String) cast(step.get("headers")).get("Authorization"))
+                            .GET().build();
+                    var tokenResponse = client.send(tokenRequest, HttpResponse.BodyHandlers.ofString());
+                    assertEquals(200, tokenResponse.statusCode());
+                    var tokenBody = Values.object(Values.JSON.readValue(tokenResponse.body(), Object.class));
+                    request.header("X-CSRF-Token", Values.object(tokenBody.get("result")).get("csrf").toString());
+                }
                 byte[] bytes = Base64.getDecoder().decode((String) step.get("body"));
                 String body =
                         replace(new String(bytes, StandardCharsets.ISO_8859_1), substitutions);

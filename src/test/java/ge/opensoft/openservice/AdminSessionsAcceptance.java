@@ -46,7 +46,7 @@ final class AdminSessionsAcceptance {
         assertEquals(200, h.get(page, null).statusCode());
         for (String path : List.of(api, page)) {
             assertEquals(400, h.get(path + "?user=other", null).statusCode());
-            assertEquals(405, h.json("POST", path, map(), auth("admin")).statusCode());
+            assertEquals(405, h.protectedJson("POST", path, map(), auth("admin")).statusCode());
         }
         assertEquals(
                 404,

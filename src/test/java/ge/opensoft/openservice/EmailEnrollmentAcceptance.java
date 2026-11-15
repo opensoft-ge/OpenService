@@ -51,7 +51,7 @@ final class EmailEnrollmentAcceptance {
         assertEquals(401, h.get(API, null).statusCode());
         assertEquals(405, h.json("PUT", API, map(), auth("EmailLocal")).statusCode());
         assertEquals(
-                405, h.json("DELETE", "/account/email", map(), auth("EmailLocal")).statusCode());
+                405, h.protectedJson("DELETE", "/account/email", map(), auth("EmailLocal")).statusCode());
         assertEquals(400, h.get(API + "?other=x", auth("EmailLocal")).statusCode());
         assertEquals(
                 503,

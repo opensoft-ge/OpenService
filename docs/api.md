@@ -1,6 +1,6 @@
 # API scope — Java foundation 0.2
 
-Use JSON and authenticated Basic requests, or a logged-in session with `X-CSRF-Token` for writes. Table names are listed at `GET /api/openservice/schema`. Administrator can create/delete/update; agent can create/update; reader can read subject to record visibility and field permissions. Requesters are restricted to their own requests. Accounts share one instance; this is not tenant isolation.
+Use JSON and authenticated Basic requests, or a logged-in session with `X-CSRF-Token` for writes. Browser-originated Basic requests also require CSRF; see the browser-write contract below. Table names are listed at `GET /api/openservice/schema`. Administrator can create/delete/update; agent can create/update; reader can read subject to record visibility and field permissions. Requesters are restricted to their own requests. Accounts share one instance; this is not tenant isolation.
 
 | Route | Behavior |
 |---|---|
@@ -22,7 +22,7 @@ Use JSON and authenticated Basic requests, or a logged-in session with `X-CSRF-T
 
 The original OpenService browser workspace is `GET /admin/accounts`: administrator-only, 25 users per page ordered by stored username, with the current account identified. Only IDs, names, roles and activation state are selected for the list; password hashes are never rendered. Optional `page` defaults to `1`; only a single positive integer of up to six digits is accepted, and pages beyond the list return 400. Unknown parameters also return 400. Database collation determines name ordering.
 
-`POST /admin/accounts` accepts form fields `name`, `password`, and `role` plus the session CSRF token. The role defaults to `reader`. Success redirects (302) to the current account-list page and displays a confirmation; invalid input returns the form with an inline error (400), preserving the username/role but never the password. Both creation routes use the same validation, password hashing and persistence. Unauthenticated browser requests redirect to login; authenticated non-admins receive 403, and session writes without valid CSRF receive 403. Basic-authenticated requests retain the existing CSRF exemption.
+`POST /admin/accounts` accepts form fields `name`, `password`, and `role` plus the session CSRF token. The role defaults to `reader`. Success redirects (302) to the current account-list page and displays a confirmation; invalid input returns the form with an inline error (400), preserving the username/role but never the password. Both creation routes use the same validation, password hashing and persistence. Unauthenticated browser requests redirect to login; authenticated non-admins receive 403, and session writes without valid CSRF receive 403. All HTML forms require a session-bound CSRF token, including when authenticated with Basic credentials.
 
 This is local account onboarding, not a ServiceNow `sys_user` API. Staff roles can read workspace-visible records subject to configured field policies. Requesters can read only records created through their own request intake, additionally constrained by record visibility. Account deactivation, recovery and private/group/field access are described below; SSO and inherited roles remain open.
 
@@ -294,3 +294,14 @@ A false value blocks HTTP Basic on all authenticated API/browser/export routes, 
 
 
 Administrator `POST /api/openservice/users/{user_id}/sessions/{session_id}/revoke` accepts exactly `{reason:string}` (1–500 Unicode code points, nonblank, no NUL; trimmed on storage), no query. It returns `{result:{revoked:true,current:boolean}}`. Missing/repeated or wrong-account sessions return 404. Removal and `account.session_ended_by_admin` audit commit together. The inventory page has a CSRF-protected form; ending the current cookie redirects to login, otherwise back to that account's inventory. Other sessions, credentials, account status and security links are unaffected. New sign-ins remain possible. This blocks future authentication and queued cookie writes at the existing transaction boundary; it does not undo completed work.
+
+
+## Browser writes and Basic credentials
+
+Every authenticated HTML mutation requires the same session-bound CSRF token, even with an Authorization header. Cookie-authenticated API mutations always require it. An API mutation carrying any `Origin`, `Referer` or `Sec-Fetch-Site` header requires it too, including empty or `null` values. No origin value creates a bypass.
+
+Authenticated `GET /api/openservice/me/csrf` returns `{"result":{"csrf":"..."}}` with `Cache-Control: no-store`. Retain its session cookie and supply the token as `X-CSRF-Token` when writing. It accepts no query arguments; anonymous access returns 401 and unsupported methods return 405. It remains accessible to API-only accounts and accounts required to replace their password. Tokens from other cookies or before successful login rotation are rejected. The route grants no extra account or record permissions.
+
+Native Basic API clients without browser metadata can continue to send `application/json` and `application/octet-stream` without a token. **Clients using a missing Content-Type, `text/plain`, `application/x-www-form-urlencoded` or `multipart/form-data` must now add `X-OpenService-API: true`, or provide a valid CSRF token and its cookie.** This includes native raw text and multipart attachment uploads. Content-Type parameters and case are normalized. The explicit API header cannot bypass browser metadata or cookie-authenticated CSRF checks. Failed checks return 403 before mutation.
+
+This application enables no cross-origin credential sharing. A deployment must preserve browser metadata and must not add permissive credentialed CORS rules at its proxy. Browser custom headers and non-safelisted content types rely on preflight enforcement when no browser metadata is present. This is local hardening, not a ServiceNow token or CORS API implementation.

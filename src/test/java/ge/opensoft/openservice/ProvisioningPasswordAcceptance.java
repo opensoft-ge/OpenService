@@ -218,7 +218,7 @@ final class ProvisioningPasswordAcceptance {
                     h.request(
                                     "POST",
                                     "/admin/accounts?role=agent",
-                                    ("name=RepeatedProvision&password=" + PASSWORD + "&" + repeated)
+                                    ("csrf=" + h.basicCsrf(auth("admin")) + "&name=RepeatedProvision&password=" + PASSWORD + "&" + repeated)
                                             .getBytes(java.nio.charset.StandardCharsets.UTF_8),
                                     "application/x-www-form-urlencoded",
                                     auth("admin"))

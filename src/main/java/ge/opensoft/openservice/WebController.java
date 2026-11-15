@@ -151,7 +151,7 @@ public class WebController {
                 throw new Failure(403, "This account permits API access only");
             if (!publicPath
                     && PasswordReset.required(user)
-                    && !Set.of("/password-required", "/api/openservice/me/password", "/logout")
+                    && !Set.of("/password-required", "/api/openservice/me/password", "/api/openservice/me/csrf", "/logout")
                             .contains(path)) {
                 if (path.startsWith("/api/"))
                     throw new Failure(
@@ -165,7 +165,7 @@ public class WebController {
             var context = new Request(db, request, response, session, user);
             if (path.startsWith("/api/")) context.uniqueQuery();
             if (!publicPath && !Set.of("GET", "HEAD", "OPTIONS").contains(method)) {
-                if (authorization == null || authorization.isEmpty())
+                if (BrowserWrites.requiresCsrf(request, path, authorization))
                     checkCsrf(
                             context,
                             Objects.toString(
@@ -661,6 +661,11 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
+        if (path.equals("/api/openservice/me/csrf")) {
+            method(method, "GET");
+            c.noQuery();
+            return json(map("result", map("csrf", c.session.getAttribute("csrf"))), 200);
+        }
         Matcher adminSessionRevoke =
                 Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/([0-9a-f]{32})/revoke")
                         .matcher(path);
@@ -670,7 +675,6 @@ public class WebController {
             c.noQuery();
             c.uniqueQuery();
             boolean api = path.startsWith("/api/");
-            if (!api) checkCsrf(c, c.parameter("csrf", ""));
             String target = adminSessionRevoke.group(1);
             boolean current = AdminSessions.revoke(c.db, c.user.get("user_id").toString(),
                     target, adminSessionRevoke.group(2), c.session.getId(),

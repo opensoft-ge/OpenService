@@ -140,15 +140,15 @@ final class AssignmentTransferAcceptance {
             String ui = "/admin/accounts/" + source + "/assignments/transfer";
             assertEquals(
                     400,
-                    h.form(ui, map("new_owner", "bad name", "record_ids", record), auth("admin"))
+                    h.protectedForm(ui, map("new_owner", "bad name", "record_ids", record), auth("admin"))
                             .statusCode());
-            assertEquals(400, h.form(ui, map("new_owner", "target"), auth("admin")).statusCode());
+            assertEquals(400, h.protectedForm(ui, map("new_owner", "target"), auth("admin")).statusCode());
             assertEquals(
                     400,
                     h.request(
                                     "POST",
                                     ui,
-                                    ("new_owner=target&new_owner=outsider&record_ids=" + record)
+                                    ("csrf=" + h.basicCsrf(auth("admin")) + "&new_owner=target&new_owner=outsider&record_ids=" + record)
                                             .getBytes(StandardCharsets.UTF_8),
                                     "application/x-www-form-urlencoded",
                                     auth("admin"))
@@ -183,7 +183,7 @@ final class AssignmentTransferAcceptance {
                             .statusCode());
             assertEquals(
                     400,
-                    h.form(
+                    h.protectedForm(
                                     ui,
                                     map(
                                             "new_owner",
@@ -196,7 +196,7 @@ final class AssignmentTransferAcceptance {
                             .statusCode());
             assertEquals(
                     400,
-                    h.form(
+                    h.protectedForm(
                                     ui + "?x=1",
                                     map("new_owner", "target", "record_ids", record),
                                     auth("admin"))

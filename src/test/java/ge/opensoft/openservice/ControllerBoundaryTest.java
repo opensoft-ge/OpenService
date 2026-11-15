@@ -30,6 +30,7 @@ class ControllerBoundaryTest {
         var request = new MockHttpServletRequest(method, path);
         request.addHeader("Authorization", WorkflowSupport.auth("admin"));
         request.getSession().setAttribute("csrf", "known-csrf");
+        request.addHeader("X-CSRF-Token", "known-csrf");
         return request;
     }
 
@@ -163,6 +164,8 @@ class ControllerBoundaryTest {
         request.setMethod("POST");
         request.setRequestURI("/record/incident/" + id + "/attachment");
         request.addHeader("Authorization", WorkflowSupport.auth("admin"));
+        request.getSession().setAttribute("csrf", "known-csrf");
+        request.addHeader("X-CSRF-Token", "known-csrf");
         request.addFile(
                 new MockMultipartFile("file", "name.txt", "text/plain", new byte[] {1}) {
                     @Override
@@ -175,6 +178,7 @@ class ControllerBoundaryTest {
         api.setMethod("POST");
         api.setRequestURI("/api/now/attachment/upload");
         api.addHeader("Authorization", WorkflowSupport.auth("admin"));
+        api.addHeader("X-OpenService-API", "true");
         api.addParameter("table_name", "incident");
         api.addParameter("table_sys_id", id);
         api.addFile(
