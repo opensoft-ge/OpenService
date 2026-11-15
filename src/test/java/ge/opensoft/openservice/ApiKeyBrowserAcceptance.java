@@ -55,10 +55,18 @@ final class ApiKeyBrowserAcceptance {
             ReleaseBrowserAcceptance.accessible(page);
             page.getByRole(
                             AriaRole.BUTTON,
-                            new Page.GetByRoleOptions().setName("Revoke key Nightly report"))
-                    .click();
-            assertThat(page.getByText("No API keys.")).isVisible();
-            assertThat(page.getByLabel("New API key")).hasCount(0);
+                            new Page.GetByRoleOptions().setName("Suspend key Nightly report"))
+                    .press("Enter");
+            assertThat(page.getByText("Suspended", new Page.GetByTextOptions().setExact(true)))
+                    .isVisible();
+            ReleaseBrowserAcceptance.accessible(page);
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Resume key Nightly report"))
+                    .press("Enter");
+            assertThat(page.getByText("Enabled", new Page.GetByTextOptions().setExact(true)))
+                    .isVisible();
+            ReleaseBrowserAcceptance.accessible(page);
             page.screenshot(
                     new Page.ScreenshotOptions()
                             .setPath(Path.of("target/api-keys-desktop.png"))
@@ -73,6 +81,12 @@ final class ApiKeyBrowserAcceptance {
                     new Page.ScreenshotOptions()
                             .setPath(Path.of("target/api-keys-mobile-dark.png"))
                             .setFullPage(true));
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Revoke key Nightly report"))
+                    .click();
+            assertThat(page.getByText("No API keys.")).isVisible();
+            assertThat(page.getByLabel("New API key")).hasCount(0);
         }
     }
 }

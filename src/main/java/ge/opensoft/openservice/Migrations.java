@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 24;
+    static final int VERSION = 25;
 
     private Migrations() {}
 
@@ -302,6 +302,10 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_api_key(key_id VARCHAR(32) PRIMARY KEY,token_hash VARCHAR(64) NOT NULL UNIQUE,user_id VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,label VARCHAR(160) NOT NULL,table_name VARCHAR(160) NOT NULL,created_at BIGINT NOT NULL,expires_at BIGINT NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_api_key_user ON os_api_key(user_id)");
             db.update("INSERT INTO os_migration(version,name) VALUES(24,?)", "scoped integration API keys");
+        }
+        if (version < 25) {
+            addColumn(db, "os_api_key", "enabled", "INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(25,?)", "API key suspension");
         }
     }
 

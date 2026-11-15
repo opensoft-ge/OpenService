@@ -421,3 +421,7 @@ ADOPT-08/09, OS-PARITY-03/08; blueprint A4(e). [Current contract, acceptance and
 ## OS-N10-02 — integration key rotation (implemented)
 
 ADOPT-08/09, OS-PARITY-03/08; blueprint A4(e). [Local rotation contract and evidence](paired-cycles-next10-2026-11-15.md#cycle-2--os-n10-02-rotate-an-integration-key). No native ServiceNow rotation/API parity claim. Discovery adds OS-DISC-API-KEY-SUSPEND and merges child bindings into OS-DISC-CONNECTION-ALIASES; both remain missing P1/M2 with dependencies/acceptance in the roadmap/report.
+
+## OS-N10-03 — individual API key suspension (implemented)
+
+OS-DISC-API-KEY-SUSPEND adds administrator-controlled suspension/resumption with unchanged secret, scope and expiry; ADOPT-08/09 and OS-PARITY-03/08 remain partial. [Contract, research, acceptance and QA evidence](paired-cycles-next10-2026-11-15.md#cycle-3--os-n10-03-suspend-and-resume-one-integration-key). Brazil API-key documentation confirms Active state; release-note AI deny-by-default access is merged into OS-PARITY-06/08, missing P1/M2, dependent on current identity/tool authorization with revocation acceptance. Cleanup-document details remain unverified. Next research: credential cleanup and knowledge publication. M1–M3 remain unmet.

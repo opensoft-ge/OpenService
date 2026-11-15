@@ -16,7 +16,7 @@ final class ApiKeyRotation {
                 db.one(
                         "SELECT k.expires_at FROM os_api_key k JOIN os_user u ON"
                             + " u.user_id=k.user_id WHERE k.key_id=? AND k.user_id=? AND"
-                            + " k.expires_at>? AND k.auth_revision=u.auth_revision AND u.active=1"
+                            + " k.enabled=1 AND k.expires_at>? AND k.auth_revision=u.auth_revision AND u.active=1"
                             + " AND u.api_only=1 AND u.role<>'admin' AND"
                             + " u.password_reset_required=0",
                         key,

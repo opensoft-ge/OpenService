@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void apiKeySuspensionPreservesAuthority() throws Exception { ApiKeyStateAcceptance.run(this); }
+
+    @Test
     void apiKeyRotationPreservesScopeAndExpiry() throws Exception { ApiKeyRotationAcceptance.run(this); }
 
     @Test

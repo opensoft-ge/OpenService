@@ -33,7 +33,7 @@ class ApiKeysTest {
             db.update("DELETE FROM os_migration WHERE version>=24");
             db.connection.commit();
             Migrations.apply(db);
-            assertEquals(24, db.count("SELECT COUNT(*) FROM os_migration"));
+            assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
             db.connection.rollback();
             assertEquals(23, db.count("SELECT COUNT(*) FROM os_migration"));
             Migrations.apply(db);

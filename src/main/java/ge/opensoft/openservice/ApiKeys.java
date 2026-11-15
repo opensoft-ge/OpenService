@@ -15,14 +15,16 @@ final class ApiKeys {
         Service.account(db, target);
         var rows =
                 db.all(
-                        "SELECT key_id,label,table_name,created_at,expires_at FROM os_api_key WHERE"
+                        "SELECT key_id,label,table_name,created_at,expires_at,enabled FROM os_api_key WHERE"
                             + " user_id=? ORDER BY created_at,key_id",
                         target);
-        for (var row : rows)
+        for (var row : rows) {
+            row.put("enabled", ((Number) row.get("enabled")).intValue() == 1);
             row.put(
                     "expires_at_utc",
                     java.time.Instant.ofEpochMilli(((Number) row.get("expires_at")).longValue())
                             .toString());
+        }
         return rows;
     }
 
@@ -92,7 +94,7 @@ final class ApiKeys {
             throw new Failure(401, "Invalid API key");
         var key =
                 db.one(
-                        "SELECT * FROM os_api_key WHERE token_hash=? AND expires_at>?",
+                        "SELECT * FROM os_api_key WHERE token_hash=? AND enabled=1 AND expires_at>?",
                         Passwords.tokenHash(header.substring(7)),
                         System.currentTimeMillis());
         if (key == null) throw new Failure(401, "Invalid API key");
