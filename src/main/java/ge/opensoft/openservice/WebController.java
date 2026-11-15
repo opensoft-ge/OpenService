@@ -731,6 +731,27 @@ public class WebController {
                     ? json(map("result", map("removed", true)), 200)
                     : redirect("/admin/password-exclusions");
         }
+        if (Set.of("/account/approvals", "/api/openservice/me/approvals").contains(path)) {
+            method(method, "GET");
+            c.uniqueQuery();
+            if (c.db.postgres) c.db.all("SELECT pg_advisory_xact_lock(18439,4)");
+            Authentication.requireCurrent(c.db, c.user);
+            var result = ApprovalInbox.page(c.db, c.arguments());
+            return path.startsWith("/api/")
+                    ? json(result, 200)
+                    : view(
+                            c,
+                            "approval-inbox",
+                            map(
+                                    "table",
+                                    "my-approvals",
+                                    "reviews",
+                                    result.get("result"),
+                                    "status",
+                                    result.get("status"),
+                                    "nextBefore",
+                                    result.get("next_before")));
+        }
         if (Set.of("/account/authentication-events", "/api/openservice/me/authentication-events")
                 .contains(path)) {
             method(method, "GET");

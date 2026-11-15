@@ -57,6 +57,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void personalReviewQueuesRespectCurrentRecordAndFieldBoundaries() throws Exception {
+        ApprovalInboxAcceptance.run(this);
+    }
+
+    @Test
     void staffApprovalsPreserveRevisionsAndEnforceAssignedReviewers() throws Exception {
         ApprovalAcceptance.run(this);
     }

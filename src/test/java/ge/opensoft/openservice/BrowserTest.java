@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void personalApprovalQueueSupportsNavigationFilteringAndPaging() throws Exception {
+        ApprovalInboxBrowserAcceptance.run(this);
+    }
+
+    @Test
     void staffReviewJourneyIsAccessibleAndRevisionBound() throws Exception {
         ApprovalBrowserAcceptance.run(this);
     }
