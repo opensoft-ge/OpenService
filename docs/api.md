@@ -260,3 +260,5 @@ See [assigned-review endpoints](approvals.md#http-contract). These record an aut
 POST `.../approvals/{approval_id}/withdraw` closes a pending review without deciding or executing it; see [withdrawal authorization and input contract](approvals.md#withdrawal).
 
 Record approval GET responses include a current-executor `requirements` snapshot, `record_revision` and `schema_version`. Each destination reports `target_state`, `label`, `required`, `qualifying` and `approval_satisfied`; see [requirement semantics](approvals.md#current-requirement-snapshot). The snapshot does not authorize execution.
+
+The existing record approval request POST accepts a fresh request after a previous attempt was withdrawn, preserving all history. Pending/approved/rejected duplicates still conflict. See [resubmission](approvals.md#resubmission-after-withdrawal).

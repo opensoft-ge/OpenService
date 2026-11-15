@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 19;
+    static final int VERSION = 20;
 
     private Migrations() {}
 
@@ -242,6 +242,36 @@ final class Migrations {
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(19,?)",
                     "revision-bound staff review");
+        }
+        if (version < 20) {
+            db.update(
+                    "CREATE TABLE os_approval_next(sequence "
+                            + (db.postgres
+                                    ? "BIGSERIAL PRIMARY KEY"
+                                    : "INTEGER PRIMARY KEY AUTOINCREMENT")
+                            + ",approval_id VARCHAR(32) NOT NULL UNIQUE,record_id VARCHAR(32) NOT"
+                            + " NULL,record_revision INTEGER NOT NULL,schema_version INTEGER NOT"
+                            + " NULL,target_state VARCHAR(80) NOT NULL,requested_by VARCHAR(32) NOT"
+                            + " NULL,requester_name VARCHAR(80) NOT NULL,approver_id VARCHAR(32)"
+                            + " NOT NULL,approver_name VARCHAR(80) NOT NULL,status VARCHAR(20) NOT"
+                            + " NULL,reason TEXT NOT NULL,comment TEXT NOT NULL,created_at"
+                            + " VARCHAR(40) NOT NULL,decided_at VARCHAR(40) NOT"
+                            + " NULL,decision_revision BIGINT NOT NULL)");
+            db.update("INSERT INTO os_approval_next SELECT * FROM os_approval ORDER BY sequence");
+            db.update("DROP TABLE os_approval");
+            db.update("ALTER TABLE os_approval_next RENAME TO os_approval");
+            if (db.postgres)
+                db.all(
+                        "SELECT setval(pg_get_serial_sequence('os_approval','sequence'),"
+                            + " COALESCE(MAX(sequence),1), COUNT(*)>0) FROM os_approval");
+            db.update("CREATE INDEX ix_os_approval_record ON os_approval(record_id,sequence)");
+            db.update(
+                    "CREATE UNIQUE INDEX ix_os_approval_proposal ON"
+                        + " os_approval(record_id,record_revision,schema_version,target_state,approver_id)"
+                        + " WHERE status<>'withdrawn'");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(20,?)",
+                    "preserve withdrawn review attempts");
         }
     }
 

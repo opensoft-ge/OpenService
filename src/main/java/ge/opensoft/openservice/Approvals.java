@@ -161,7 +161,7 @@ final class Approvals {
         if (db.one(
                         "SELECT approval_id FROM os_approval WHERE record_id=? AND"
                                 + " record_revision=? AND schema_version=? AND target_state=? AND"
-                                + " approver_id=?",
+                                + " approver_id=? AND status<>'withdrawn'",
                         id,
                         revision,
                         version(definition),

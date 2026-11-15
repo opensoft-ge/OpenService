@@ -57,6 +57,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void withdrawnReviewCanBeRequestedAgainWithoutLosingHistory() throws Exception {
+        ApprovalResubmissionAcceptance.run(this);
+    }
+
+    @Test
     void approvalRequirementsExplainCurrentExecutorCounts() throws Exception {
         ApprovalRequirementsAcceptance.run(this);
     }

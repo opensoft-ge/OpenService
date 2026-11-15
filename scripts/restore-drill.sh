@@ -126,6 +126,11 @@ if [ "$drill_source_version" -ge 19 ]; then
     api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/reviewer.json" "$drill_address/api/openservice/users" >/dev/null
     drill_review_record=$(api -X POST -H 'Content-Type: application/json' --data '{"short_description":"Restore approval"}' "$drill_address/api/now/table/incident" | jq -er '.result.sys_id')
     drill_approval=$(api -X POST -H 'Content-Type: application/json' --data '{"expected_revision":0,"approver":"RestoreReviewer","target_state":"2","reason":"Review after recovery"}' "$drill_address/api/openservice/records/incident/$drill_review_record/approvals" | jq -er '.result.approval_id')
+    if [ "$drill_source_version" -ge 20 ]; then
+        api -X POST -H 'Content-Type: application/json' --data '{"comment":"Keep history after restore"}' \
+            "$drill_address/api/openservice/records/incident/$drill_review_record/approvals/$drill_approval/withdraw" | jq -e '.result.status == "withdrawn"' >/dev/null
+        drill_approval=$(api -X POST -H 'Content-Type: application/json' --data '{"expected_revision":0,"approver":"RestoreReviewer","target_state":"2","reason":"Fresh review after withdrawal"}' "$drill_address/api/openservice/records/incident/$drill_review_record/approvals" | jq -er '.result.approval_id')
+    fi
 fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null

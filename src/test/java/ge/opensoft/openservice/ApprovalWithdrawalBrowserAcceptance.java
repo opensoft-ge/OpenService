@@ -46,6 +46,7 @@ final class ApprovalWithdrawalBrowserAcceptance {
                                     new Page.GetByRoleOptions().setName("Withdraw review"))
                             .count());
             page.navigate(url);
+            assertEquals(3, page.locator(".account-settings > .panel").count());
             ReleaseBrowserAcceptance.accessible(page);
             page.setViewportSize(390, 844);
             ReleaseBrowserAcceptance.accessible(page);
@@ -78,6 +79,29 @@ final class ApprovalWithdrawalBrowserAcceptance {
                     .click();
             assertThat(assigned.getByText("<script>No longer needed</script>")).isVisible();
             ReleaseBrowserAcceptance.accessible(assigned);
+            page.getByLabel("Reviewer username").fill(name);
+            page.getByLabel("Proposed state").selectOption("2");
+            page.getByLabel("Reason for review").fill("Fresh request after withdrawal");
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Request review"))
+                    .click();
+            assertThat(page.getByText(name + " · withdrawn")).isVisible();
+            assertThat(page.getByText(name + " · requested")).isVisible();
+            assigned.navigate(url);
+            assigned.getByLabel("Decision", new Page.GetByLabelOptions().setExact(true))
+                    .selectOption("approved");
+            assigned.getByLabel("Review comment").fill("Fresh decision");
+            assigned.getByRole(
+                            AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Record decision"))
+                    .click();
+            assertThat(assigned.getByText(name + " · approved")).isVisible();
+            assertThat(assigned.getByText(name + " · withdrawn")).isVisible();
+            ReleaseBrowserAcceptance.accessible(assigned);
+            page.reload();
+            ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(Path.of("target/approval-resubmission-mobile-dark.png"))
+                            .setFullPage(true));
         }
     }
 }
