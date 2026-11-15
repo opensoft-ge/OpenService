@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 21;
+    static final int VERSION = 22;
 
     private Migrations() {}
 
@@ -283,6 +283,16 @@ final class Migrations {
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(21,?)",
                     "browser session inventory");
+        }
+        if (version < 22) {
+            addColumn(
+                    db,
+                    "os_user",
+                    "allow_basic",
+                    "INTEGER NOT NULL DEFAULT 1 CHECK(allow_basic IN (0,1))");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(22,?)",
+                    "per-account Basic authentication policy");
         }
     }
 

@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void basicAuthenticationCanBeDisabledWithoutLosingBrowserAccess() throws Exception {
+        BasicAccessAcceptance.run(this);
+    }
+
+    @Test
     void signInEnforcesTheConfiguredSessionLimitAtomically() throws Exception {
         SessionLimitAcceptance.run(this);
     }

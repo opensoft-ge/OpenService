@@ -41,6 +41,8 @@ final class AccessMode {
             throw new Failure(400, "Provide one boolean api_only field");
         var before = state(db, target);
         if (before.get("api_only").equals(enabled)) return before;
+        if (enabled && BasicAccess.state(db, target).get("allow_basic").equals(false))
+            throw new Failure(409, "Allow Basic authentication before selecting API-only access");
         if (enabled && lastBrowserAdministrator(db, target))
             throw new Failure(409, "Keep at least one active browser administrator");
         db.update("UPDATE os_user SET api_only=? WHERE user_id=?", enabled ? 1 : 0, target);

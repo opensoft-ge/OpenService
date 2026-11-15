@@ -661,6 +661,29 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
+        Matcher basicAccess =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/basic-auth")
+                        .matcher(path);
+        if (basicAccess.matches()) {
+            boolean api = path.startsWith("/api/");
+            method(method, api ? new String[] {"GET", "POST"} : new String[] {"POST"});
+            c.admin();
+            c.noQuery();
+            c.uniqueQuery();
+            String id = basicAccess.group(1);
+            if (method.equals("GET")) return json(map("result", BasicAccess.state(c.db, id)), 200);
+            Object input =
+                    api
+                            ? body(c)
+                            : map(
+                                    "allow_basic",
+                                    Service.flag(
+                                            Map.of("allow_basic", c.parameter("allow_basic", "")),
+                                            "allow_basic"));
+            var result = BasicAccess.change(c.db, c.user.get("user_id").toString(), id, input);
+            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + id);
+        }
         Matcher accessMode =
                 Pattern.compile(
                                 "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/access-mode")
@@ -1953,6 +1976,8 @@ public class WebController {
                                 PasswordReset.state(c.db, id).get("required"),
                                 "apiOnly",
                                 AccessMode.state(c.db, id).get("api_only"),
+                                "allowBasic",
+                                BasicAccess.state(c.db, id).get("allow_basic"),
                                 "error",
                                 error,
                                 "roles",

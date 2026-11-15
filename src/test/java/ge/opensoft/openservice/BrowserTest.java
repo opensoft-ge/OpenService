@@ -80,6 +80,11 @@ class BrowserTest {
     }
 
     @Test
+    void basicAuthenticationPolicyHasAnAccessibleAdministrationJourney() throws Exception {
+        BasicAccessBrowserAcceptance.run(this);
+    }
+
+    @Test
     void apiOnlyAccountsLoseBrowserAccessAndCanBeRestored() throws Exception {
         AccessModeBrowserAcceptance.run(this);
     }

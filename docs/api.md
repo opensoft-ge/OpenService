@@ -279,3 +279,10 @@ Container and Compose health checks use `/readyz`; `/healthz` retains its earlie
 
 
 Browser sign-in enforces `MAX_BROWSER_SESSIONS` (default 10, range 1–100). The newly issued session always survives; the oldest excess entries for the same account revision are removed, with creation-time ties ordered by the public session ID. Removals and the `account.sessions_limited` count/maximum event commit with registration. Affected cookies fail subsequent authentication and the post-lock write check. Basic credentials are not browser sessions. This is a deployment-wide setting read at startup, not a user/role policy API; no session-extension or multi-node availability claim is implied.
+
+
+### Per-account Basic authentication
+
+Administrator `GET /api/openservice/users/{user_id}/basic-auth` returns `{result:{allow_basic:true|false}}`. `POST` accepts exactly one boolean `allow_basic` and no query parameters. Missing accounts return 404; non-administrators are denied. The default is true for existing/new accounts. A changed value atomically records `account.basic_access_changed` and revokes browser sessions/security links; an unchanged value creates no event. The account detail form offers the same CSRF-protected operation.
+
+A false value blocks HTTP Basic on all authenticated API/browser/export routes, including when the request also has a valid cookie. Browser form login and cookie-authenticated APIs remain available. Failures use generic invalid-credential responses and existing throttling. API-only plus Basic-disabled is rejected (409) in either change direction, including concurrent changes. This is not endpoint authorization, OAuth, MFA or a global default-deny policy. Roles, field/record permissions, required password replacement and account status remain independently enforced.
