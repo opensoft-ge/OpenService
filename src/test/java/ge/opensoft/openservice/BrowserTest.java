@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void peerReviewGatesTheActualBrowserTransition() throws Exception {
+        ApprovalGateBrowserAcceptance.run(this);
+    }
+
+    @Test
     void withdrawalJourneyPreservesHistoryAndRemovesPendingWork() throws Exception {
         ApprovalWithdrawalBrowserAcceptance.run(this);
     }

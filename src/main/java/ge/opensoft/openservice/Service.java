@@ -144,6 +144,7 @@ public final class Service {
     }
 
     static long insert(Store.Db db, Map<String, Object> item) throws SQLException {
+        ApprovalGate.creation(schema(db, item.get("table").toString()), object(item.get("data")));
         try (var query =
                 db.statement(
                         "INSERT INTO"
@@ -171,6 +172,7 @@ public final class Service {
     }
 
     static void save(Store.Db db, Map<String, Object> item) throws SQLException {
+        ApprovalGate.update(db, item);
         db.update(
                 "UPDATE os_record SET data="
                         + db.jsonParameter()
@@ -628,6 +630,7 @@ public final class Service {
                         throw new Failure(400, "Summary is required");
                     TypedFields.writing(definition, map(), normalized, db.viewerRole);
                     TypedFields.check(db, definition, normalized);
+                    ApprovalGate.creation(definition, normalized);
                 } catch (Failure invalid) {
                     errors.add(map("row", index, "message", invalid.getMessage()));
                     continue;

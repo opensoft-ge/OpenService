@@ -57,6 +57,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void approvalPrerequisitesProtectAllRecordWritePaths() throws Exception {
+        ApprovalGateAcceptance.run(this);
+    }
+
+    @Test
     void pendingReviewsCanBeWithdrawnWithoutDecidingOrChangingRecords() throws Exception {
         ApprovalWithdrawalAcceptance.run(this);
     }

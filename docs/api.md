@@ -253,7 +253,7 @@ Administrator GET/POST `/api/openservice/users/{id}/access-mode` reads or sets s
 
 ## Revision-bound staff reviews
 
-See [assigned-review endpoints](approvals.md#http-contract). These record an authorized decision for one record/configuration revision; they do not yet enforce approval prerequisites or execute the proposed state change.
+See [assigned-review endpoints](approvals.md#http-contract). These record an authorized decision for one record/configuration revision; configured destination rules can require current peer approvals; decisions do not themselves execute the proposed state change. See [prerequisite enforcement](approvals.md#transition-prerequisites).
 
 `GET /api/openservice/me/approvals` exposes the [personal assigned-review queue](approvals.md#personal-queue), with status filtering and current-account cursors.
 

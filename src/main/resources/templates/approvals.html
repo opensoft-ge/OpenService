@@ -1,6 +1,6 @@
 <!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main>
 <a class="back-link" th:href="${recordPath}">← Back to record</a>
-<section class="page-heading"><div><span class="eyebrow">ASSIGNED REVIEW</span><h1>Record approvals</h1><p>Review a proposed state change for revision <span th:text="${item.revision}"></span>. Decisions record evidence; they do not change the record or enforce a transition prerequisite.</p></div></section>
+<section class="page-heading"><div><span class="eyebrow">ASSIGNED REVIEW</span><h1>Record approvals</h1><p>Review a proposed state change for revision <span th:text="${item.revision}"></span>. Decisions record evidence without changing the record. Configured transitions require current approvals from other staff.</p></div></section>
 <div class="account-settings">
 <section class="panel" th:if="${!#lists.isEmpty(targets)}"><div class="panel-heading"><h2>Request a review</h2></div><p>Choose a different active staff member with access to this record and permission for the proposed state.</p>
 <form class="record-form" method="post" th:action="${location}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="expected_revision" th:value="${item.revision}">
