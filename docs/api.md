@@ -344,3 +344,7 @@ POST `/api/openservice/users/{user_id}/api-keys/{key_id}/rotate` returns 200 wit
 ### Suspend and resume integration keys
 
 Administrator-only `POST /api/openservice/users/{user_id}/api-keys/{key_id}/state` accepts exactly `{"enabled":false}` or `{"enabled":true}` and returns `result.enabled`. Missing or foreign key returns 404; malformed input returns 400. HTML controls use the same account boundary and CSRF protection. Listing includes boolean `enabled`. Schema 25 enables existing keys by default. Suspended keys cannot authenticate or rotate. Resumption preserves the digest, table, expiry and account revision, so it cannot restore expired or otherwise invalidated access. Only actual state transitions create `account.api_key_state_changed` events; secrets are excluded. In-flight reads can finish.
+
+### Revoke every API key for one account
+
+Administrator-only `POST /api/openservice/users/{user_id}/api-keys/revoke` accepts exactly `{"reason":"Integration retired"}` (1–500 Unicode code points, nonblank, no NUL) and returns `result.removed_count`. It removes all retained keys for that account, including expired and suspended entries. Unknown account returns 404, invalid input 400, unauthorized access 401/403. Matching administrator form requires CSRF. Actual removal is audited atomically as `account.all_api_keys_revoked` with actor, target, trimmed reason and count. Repeats return zero without duplicate events. Other accounts and the target's account/password/session state are unchanged. Reads already running may finish.

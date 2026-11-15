@@ -87,6 +87,20 @@ final class ApiKeyBrowserAcceptance {
                     .click();
             assertThat(page.getByText("No API keys.")).isVisible();
             assertThat(page.getByLabel("New API key")).hasCount(0);
+            page.getByLabel("Key label").fill("Replacement");
+            page.getByLabel("Table name").fill("incident");
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Issue read-only key"))
+                    .click();
+            page.getByLabel("Reason for revoking all keys").fill("Integration retired");
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Revoke all API keys"))
+                    .press("Enter");
+            assertThat(page.getByText("No API keys.")).isVisible();
+            assertThat(page.getByLabel("New API key")).hasCount(0);
+            ReleaseBrowserAcceptance.accessible(page);
         }
     }
 }

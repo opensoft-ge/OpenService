@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void accountWideApiKeyRevocationIsAtomic() throws Exception { ApiKeyRevocationAcceptance.run(this); }
+
+    @Test
     void apiKeySuspensionPreservesAuthority() throws Exception { ApiKeyStateAcceptance.run(this); }
 
     @Test
