@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 13;
+    static final int VERSION = 14;
 
     private Migrations() {}
 
@@ -145,18 +145,50 @@ final class Migrations {
                         + " NOT NULL)");
             db.update(
                     "CREATE TABLE IF NOT EXISTS os_transfer_item(job_id VARCHAR(32) NOT"
-                        + " NULL,source_table VARCHAR(80) NOT NULL,source_id VARCHAR(32) NOT"
-                        + " NULL,data TEXT NOT NULL,content "
+                            + " NULL,source_table VARCHAR(80) NOT NULL,source_id VARCHAR(32) NOT"
+                            + " NULL,data TEXT NOT NULL,content "
                             + (db.postgres ? "BYTEA" : "BLOB")
                             + ",PRIMARY KEY(job_id,source_table,source_id))");
             db.update(
                     "CREATE TABLE IF NOT EXISTS os_transfer_link(source_url VARCHAR(300) NOT"
-                        + " NULL,source_table VARCHAR(80) NOT NULL,source_id VARCHAR(32) NOT"
-                        + " NULL,target_id VARCHAR(64) NOT NULL,detail TEXT NOT NULL,PRIMARY"
-                        + " KEY(source_url,source_table,source_id))");
+                            + " NULL,source_table VARCHAR(80) NOT NULL,source_id VARCHAR(32) NOT"
+                            + " NULL,target_id VARCHAR(64) NOT NULL,detail TEXT NOT NULL,PRIMARY"
+                            + " KEY(source_url,source_table,source_id))");
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(13,?)",
                     "resumable ServiceNow migrations");
+        }
+        if (version < 14) {
+            addColumn(db, "os_user", "email", "VARCHAR(254) NOT NULL DEFAULT ''");
+            addColumn(db, "os_user", "email_verified", "INTEGER NOT NULL DEFAULT 0");
+            addColumn(db, "os_invitation", "email", "VARCHAR(254) NOT NULL DEFAULT ''");
+            addColumn(db, "os_recovery", "mode", "VARCHAR(16) NOT NULL DEFAULT 'manual'");
+            db.update(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_os_user_email ON os_user(email) WHERE"
+                        + " email<>''");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_outbox(job_id VARCHAR(32) PRIMARY KEY,kind"
+                        + " VARCHAR(80) NOT NULL,reference_id VARCHAR(64) NOT NULL,envelope TEXT"
+                        + " NOT NULL,state VARCHAR(20) NOT NULL,attempts INTEGER NOT"
+                        + " NULL,available_at BIGINT NOT NULL,expires_at BIGINT NOT NULL,created_at"
+                        + " BIGINT NOT NULL,lease VARCHAR(32) NOT NULL,error VARCHAR(40) NOT"
+                        + " NULL,UNIQUE(kind,reference_id))");
+            db.update(
+                    "CREATE INDEX IF NOT EXISTS ix_os_outbox_ready ON"
+                        + " os_outbox(state,available_at)");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_recovery_budget(request_id VARCHAR(32) PRIMARY"
+                        + " KEY,identity_hash VARCHAR(64) NOT NULL,remote_hash VARCHAR(64) NOT"
+                        + " NULL,requested_at BIGINT NOT NULL)");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_requester_record(record_id VARCHAR(32) PRIMARY"
+                        + " KEY,user_id VARCHAR(32) NOT NULL)");
+            db.update(
+                    "CREATE INDEX IF NOT EXISTS ix_os_requester_user ON"
+                        + " os_requester_record(user_id)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(14,?)",
+                    "durable identity delivery and requester ownership");
         }
     }
 

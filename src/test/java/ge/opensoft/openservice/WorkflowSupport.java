@@ -43,9 +43,21 @@ abstract class WorkflowSupport {
                             "os_transfer_job",
                             "os_transfer_item",
                             "os_transfer_link")) db.update("DELETE FROM " + table);
+            for (String table : List.of("os_outbox", "os_recovery_budget", "os_requester_record"))
+                db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
+    }
+
+    @Test
+    void verifiedEmailOnboardingRecoveryAndDeactivation() throws Exception {
+        ReleaseAcceptance.email(this);
+    }
+
+    @Test
+    void fieldReadPoliciesAndRequesterBoundariesCoverEveryReadSurface() throws Exception {
+        ReleaseAcceptance.access(this);
     }
 
     @Test
@@ -241,12 +253,15 @@ abstract class WorkflowSupport {
                 assertEquals(
                         1, deletion.update("DELETE FROM os_group_member WHERE group_id=?", group));
                 pending =
-                        executor.submit(() ->
-                                json(
-                                        "POST",
-                                        "/api/openservice/users/" + user + "/memberships/remove",
-                                        map(),
-                                        auth("admin")));
+                        executor.submit(
+                                () ->
+                                        json(
+                                                "POST",
+                                                "/api/openservice/users/"
+                                                        + user
+                                                        + "/memberships/remove",
+                                                map(),
+                                                auth("admin")));
                 try {
                     if (deletion.postgres) {
                         boolean blocked = false;
@@ -1075,30 +1090,33 @@ abstract class WorkflowSupport {
         var events = objects(parsed(get(api, auth("admin"))).get("result"));
         assertTrue(
                 events.stream()
-                        .allMatch(e ->
-                                e.keySet()
-                                        .equals(
-                                                Set.of(
-                                                        "event_id",
-                                                        "occurred_at",
-                                                        "user_id",
-                                                        "user_name",
-                                                        "identity_hash",
-                                                        "mechanism",
-                                                        "outcome"))));
+                        .allMatch(
+                                e ->
+                                        e.keySet()
+                                                .equals(
+                                                        Set.of(
+                                                                "event_id",
+                                                                "occurred_at",
+                                                                "user_id",
+                                                                "user_name",
+                                                                "identity_hash",
+                                                                "mechanism",
+                                                                "outcome"))));
         var own = events.stream().filter(e -> e.get("user_name").equals("AuthJournal")).toList();
         assertTrue(own.stream().anyMatch(e -> e.get("outcome").equals("failed")));
         assertTrue(own.stream().anyMatch(e -> e.get("outcome").equals("limited")));
         assertTrue(
                 own.stream()
-                        .anyMatch(e ->
-                                e.get("outcome").equals("succeeded")
-                                        && e.get("mechanism").equals("basic")));
+                        .anyMatch(
+                                e ->
+                                        e.get("outcome").equals("succeeded")
+                                                && e.get("mechanism").equals("basic")));
         assertTrue(
                 own.stream()
-                        .anyMatch(e ->
-                                e.get("outcome").equals("succeeded")
-                                        && e.get("mechanism").equals("browser")));
+                        .anyMatch(
+                                e ->
+                                        e.get("outcome").equals("succeeded")
+                                                && e.get("mechanism").equals("browser")));
         String unknownHash = Passwords.tokenHash(raw);
         var unknown =
                 events.stream()
@@ -1110,8 +1128,10 @@ abstract class WorkflowSupport {
         assertEquals(
                 2,
                 events.stream()
-                        .filter(e ->
-                                e.get("user_name").equals("") && e.get("outcome").equals("failed"))
+                        .filter(
+                                e ->
+                                        e.get("user_name").equals("")
+                                                && e.get("outcome").equals("failed"))
                         .count());
         String serialized = JSON.writeValueAsString(events);
         for (String excluded : List.of(raw, secret, PASSWORD, "Basic ", "csrf", "token"))
@@ -1375,7 +1395,7 @@ abstract class WorkflowSupport {
                             "/api/now/table/incident",
                             "/api/now/attachment")) {
                 var response = get(path, auth(name));
-                assertEquals(200, response.statusCode(), path);
+                assertEquals(path.endsWith("source=true") ? 403 : 200, response.statusCode(), path);
                 assertFalse(html(response).contains("TeamConfidential"), path);
                 assertFalse(html(response).contains(file), path);
             }
@@ -1497,11 +1517,15 @@ abstract class WorkflowSupport {
         }
         try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
             var first =
-                    executor.submit(() ->
-                            json("PUT", api, map("user_id", user), auth("admin")).statusCode());
+                    executor.submit(
+                            () ->
+                                    json("PUT", api, map("user_id", user), auth("admin"))
+                                            .statusCode());
             var second =
-                    executor.submit(() ->
-                            json("PUT", api, map("user_id", user), auth("admin")).statusCode());
+                    executor.submit(
+                            () ->
+                                    json("PUT", api, map("user_id", user), auth("admin"))
+                                            .statusCode());
             assertEquals(200, first.get());
             assertEquals(200, second.get());
         }
@@ -1616,7 +1640,7 @@ abstract class WorkflowSupport {
                             "/api/now/attachment",
                             "/api/now/attachment?sysparm_query=file_name=private-evidence.bin")) {
                 var result = get(path, auth(name));
-                assertEquals(200, result.statusCode(), path);
+                assertEquals(path.endsWith("source=true") ? 403 : 200, result.statusCode(), path);
                 assertFalse(html(result).contains("ConfidentialNeedle"), path);
                 assertFalse(html(result).contains(file), path);
             }
@@ -1682,7 +1706,8 @@ abstract class WorkflowSupport {
                         .statusCode());
         assertEquals(204, json("DELETE", api, map(), auth("admin")).statusCode());
         assertFalse(html(get("/audit", auth("Outsider"))).contains("ConfidentialNeedle"));
-        assertTrue(html(get("/audit", auth("PrivateOwner"))).contains("ConfidentialNeedle"));
+        assertFalse(html(get("/audit", auth("PrivateOwner"))).contains("ConfidentialNeedle"));
+        assertTrue(html(get("/audit", auth("admin"))).contains("ConfidentialNeedle"));
     }
 
     @Test
@@ -2765,12 +2790,14 @@ abstract class WorkflowSupport {
                 String.join(
                         "&",
                         values.entrySet().stream()
-                                .map(e ->
-                                        URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8)
-                                                + "="
-                                                + URLEncoder.encode(
-                                                        e.getValue().toString(),
-                                                        StandardCharsets.UTF_8))
+                                .map(
+                                        e ->
+                                                URLEncoder.encode(
+                                                                e.getKey(), StandardCharsets.UTF_8)
+                                                        + "="
+                                                        + URLEncoder.encode(
+                                                                e.getValue().toString(),
+                                                                StandardCharsets.UTF_8))
                                 .toList());
         return request(
                 "POST",
@@ -4161,8 +4188,9 @@ abstract class WorkflowSupport {
         assertEquals(
                 files.stream()
                         .sorted(
-                                Comparator.comparing((Map<String, Object> row) ->
-                                                row.get("table_sys_id").toString())
+                                Comparator.comparing(
+                                                (Map<String, Object> row) ->
+                                                        row.get("table_sys_id").toString())
                                         .thenComparing(row -> row.get("sys_id").toString()))
                         .map(row -> row.get("sys_id"))
                         .toList(),

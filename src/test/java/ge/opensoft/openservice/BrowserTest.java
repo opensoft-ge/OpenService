@@ -1,8 +1,9 @@
 package ge.opensoft.openservice;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
 import static ge.opensoft.openservice.Values.*;
 
-import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.microsoft.playwright.*;
@@ -46,6 +47,11 @@ class BrowserTest {
                         AriaRole.HEADING,
                         new Page.GetByRoleOptions().setName("Make room for better work."))
                 .waitFor();
+    }
+
+    @Test
+    void emailedOnboardingRequesterWorkRecoveryAndOffboardingAreAccessible() throws Exception {
+        ReleaseBrowserAcceptance.run(this);
     }
 
     @Test
@@ -584,12 +590,13 @@ class BrowserTest {
                                 new Page.GetByRoleOptions().setName("Older events").setExact(true))
                         .click();
                 var download =
-                        page.waitForDownload(() ->
-                                page.getByRole(
-                                                AriaRole.LINK,
-                                                new Page.GetByRoleOptions()
-                                                        .setName("Download this page"))
-                                        .click());
+                        page.waitForDownload(
+                                () ->
+                                        page.getByRole(
+                                                        AriaRole.LINK,
+                                                        new Page.GetByRoleOptions()
+                                                                .setName("Download this page"))
+                                                .click());
                 assertEquals(kind + ".json", download.suggestedFilename());
                 String content = Files.readString(download.path());
                 assertTrue(

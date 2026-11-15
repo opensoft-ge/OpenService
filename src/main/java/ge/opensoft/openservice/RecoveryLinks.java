@@ -13,7 +13,7 @@ final class RecoveryLinks {
         if (db.postgres)
             db.all(
                     "SELECT user_id FROM os_user WHERE user_id IN (?,?) ORDER BY user_id FOR"
-                        + " UPDATE",
+                            + " UPDATE",
                     actor,
                     target);
     }
@@ -42,7 +42,7 @@ final class RecoveryLinks {
                 "INSERT INTO"
                     + " os_recovery(user_id,token_hash,issuer_id,auth_revision,issuer_revision,expires_at)"
                     + " VALUES(?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET"
-                    + " token_hash=excluded.token_hash,issuer_id=excluded.issuer_id,auth_revision=excluded.auth_revision,issuer_revision=excluded.issuer_revision,expires_at=excluded.expires_at",
+                    + " token_hash=excluded.token_hash,issuer_id=excluded.issuer_id,auth_revision=excluded.auth_revision,issuer_revision=excluded.issuer_revision,expires_at=excluded.expires_at,mode='manual'",
                 target,
                 Passwords.tokenHash(token),
                 actor,
@@ -53,6 +53,28 @@ final class RecoveryLinks {
         SecurityEvents.record(
                 db, actor, target, "account.recovery_issued", map("expires_at", expiry));
         return map("reset_path", "/recover/" + token, "expires_at", expiry);
+    }
+
+    static Map<String, Object> email(Store.Db db, Map<String, Object> user) throws Exception {
+        String token = Passwords.token(), target = user.get("user_id").toString();
+        long expires = System.currentTimeMillis() + 15 * 60 * 1000L;
+        db.update(
+                "INSERT INTO"
+                    + " os_recovery(user_id,token_hash,issuer_id,auth_revision,issuer_revision,expires_at,mode)"
+                    + " VALUES(?,?,?,?,?,?,'email') ON CONFLICT(user_id) DO UPDATE SET"
+                    + " token_hash=excluded.token_hash,issuer_id=excluded.issuer_id,auth_revision=excluded.auth_revision,issuer_revision=excluded.issuer_revision,expires_at=excluded.expires_at,mode='email'",
+                target,
+                Passwords.tokenHash(token),
+                target,
+                user.get("auth_revision"),
+                user.get("auth_revision"),
+                expires);
+        SecurityEvents.record(db, target, target, "account.email_recovery_requested", map());
+        return map(
+                "reset_path",
+                "/recover/" + token,
+                "expires_at",
+                Instant.ofEpochMilli(expires).toString());
     }
 
     private static Map<String, Object> pending(Store.Db db, String token, boolean lock)
@@ -67,15 +89,26 @@ final class RecoveryLinks {
         var target =
                 db.one(
                         "SELECT name,password FROM os_user WHERE user_id=? AND active=1 AND"
-                            + " auth_revision=?",
+                                + " auth_revision=?",
                         link.get("user_id"),
                         link.get("auth_revision"));
+        boolean email = link.get("mode").equals("email");
         if (target == null
                 || db.one(
                                 "SELECT user_id FROM os_user WHERE user_id=? AND active=1 AND"
-                                    + " role='admin' AND auth_revision=?",
-                                link.get("issuer_id"),
-                                link.get("issuer_revision"))
+                                        + (email
+                                                ? " email_verified=1 AND user_id=? AND"
+                                                : " role='admin' AND")
+                                        + " auth_revision=?",
+                                email
+                                        ? new Object[] {
+                                            link.get("issuer_id"),
+                                            link.get("user_id"),
+                                            link.get("issuer_revision")
+                                        }
+                                        : new Object[] {
+                                            link.get("issuer_id"), link.get("issuer_revision")
+                                        })
                         == null) throw new Failure(400, "Recovery link is unavailable or expired");
         link.put("name", target.get("name"));
         link.put("password", target.get("password"));

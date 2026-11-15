@@ -12,9 +12,18 @@ final class RecordAccess {
     static String filter(Store.Db db, String recordId, List<Object> parameters) {
         // Unbound connections are internal setup/test transactions; HTTP binds every principal.
         if (db.viewerId == null || "admin".equals(db.viewerRole)) return "1=1";
+        String requester = "";
+        if ("requester".equals(db.viewerRole)) {
+            requester =
+                    "EXISTS (SELECT 1 FROM os_requester_record request WHERE request.record_id="
+                            + recordId
+                            + " AND request.user_id=?) AND ";
+            parameters.add(db.viewerId);
+        }
         parameters.add(db.viewerId);
         parameters.add(db.viewerId);
-        return "NOT EXISTS (SELECT 1 FROM os_record_access access WHERE access.record_id="
+        return requester
+                + "NOT EXISTS (SELECT 1 FROM os_record_access access WHERE access.record_id="
                 + recordId
                 + " AND NOT (access.visibility='workspace' OR (access.visibility='private' AND"
                 + " access.owner_id=?) OR (access.visibility='group' AND EXISTS (SELECT 1 FROM"
@@ -24,7 +33,9 @@ final class RecordAccess {
     }
 
     static String journalFilter(Store.Db db) {
-        return "reader".equals(db.viewerRole) ? "action<>'note'" : "1=1";
+        return Set.of("reader", "requester").contains(Objects.toString(db.viewerRole, ""))
+                ? "action<>'note'"
+                : "1=1";
     }
 
     static Map<String, Object> status(Store.Db db, String id) throws SQLException {

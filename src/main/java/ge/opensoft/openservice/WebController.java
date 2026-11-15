@@ -110,7 +110,7 @@ public class WebController {
                 throw new Failure(413, "Request exceeds 6 MB");
             String path = request.getRequestURI(), method = request.getMethod();
             boolean publicPath =
-                    Set.of("/healthz", "/login", "/static/app.css").contains(path)
+                    Set.of("/healthz", "/login", "/forgot", "/static/app.css").contains(path)
                             || path.matches("/(?:join|recover)/[A-Za-z0-9_-]{32}");
             var user =
                     session.getAttribute("user") == null
@@ -148,7 +148,7 @@ public class WebController {
                             Objects.toString(
                                     request.getHeader("X-CSRF-Token"),
                                     context.parameter("csrf", "")));
-                if (context.role().equals("reader")
+                if (Set.of("reader", "requester").contains(context.role())
                         && !Set.of(
                                         "/logout",
                                         "/account/sessions/revoke",
@@ -156,6 +156,8 @@ public class WebController {
                                         "/api/openservice/me/password",
                                         "/api/openservice/me/sessions/revoke")
                                 .contains(path)
+                        && !(context.role().equals("requester")
+                                && Set.of("/requests", "/api/openservice/requests").contains(path))
                         && !path.matches(
                                 "/(?:api/openservice/comments/[^/]+/[0-9a-f]{32}|record/[^/]+/[0-9a-f]{32}/comment)"))
                     throw new Failure(403, "Read-only account");
@@ -241,6 +243,79 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if (path.equals("/") && c.role().equals("requester")) return redirect("/requests");
+        if (Set.of("/requests", "/api/openservice/requests").contains(path)) {
+            method(method, "GET", "POST");
+            c.noQuery();
+            if (method.equals("POST")) {
+                var item =
+                        Requests.create(
+                                c.db,
+                                c.name(),
+                                path.startsWith("/api/")
+                                        ? body(c)
+                                        : map(
+                                                "short_description",
+                                                c.parameter("short_description", ""),
+                                                "description",
+                                                c.parameter("description", "")));
+                return path.startsWith("/api/")
+                        ? json(map("result", FieldAccess.serialize(c.db, item)), 201)
+                        : redirect("/record/sc_request/" + item.get("sys_id"));
+            }
+            var rows = Service.page(c.db, "sc_request", Map.of("sysparm_limit", "100"), "").rows();
+            return path.startsWith("/api/")
+                    ? json(map("result", rows), 200)
+                    : view(c, "requests", map("table", "sc_request", "rows", rows));
+        }
+        if (path.equals("/forgot")) {
+            method(method, "GET", "POST");
+            if (method.equals("POST")) {
+                checkCsrf(c, c.parameter("csrf", ""));
+                String email = c.parameter("email", "");
+                if (email.length() > 254) throw new Failure(400, "Email address is too long");
+                EmailOnboarding.forgot(store, c.db, email, c.http.getRemoteAddr());
+            }
+            return new ModelAndView(
+                    "forgot",
+                    map(
+                            "csrf",
+                            c.session.getAttribute("csrf"),
+                            "submitted",
+                            method.equals("POST")));
+        }
+        if (path.equals("/api/openservice/email-invitations")) {
+            method(method, "POST");
+            c.admin();
+            c.noQuery();
+            return json(
+                    map(
+                            "result",
+                            EmailOnboarding.invite(
+                                    store, c.db, c.user.get("user_id").toString(), body(c))),
+                    201);
+        }
+        if (Set.of("/admin/delivery", "/api/openservice/delivery").contains(path)) {
+            method(method, "GET");
+            c.admin();
+            c.noQuery();
+            var jobs = Outbox.list(c.db);
+            return path.startsWith("/api/")
+                    ? json(map("result", jobs), 200)
+                    : view(c, "delivery", map("table", "delivery", "jobs", jobs));
+        }
+        Matcher delivery =
+                Pattern.compile("/(?:admin|api/openservice)/delivery/([0-9a-f]{32})/retry")
+                        .matcher(path);
+        if (delivery.matches()) {
+            method(method, "POST");
+            c.admin();
+            c.noQuery();
+            Outbox.retry(c.db, c.user.get("user_id").toString(), delivery.group(1));
+            return path.startsWith("/api/")
+                    ? json(map("result", "queued"), 200)
+                    : redirect("/admin/delivery");
+        }
         if (path.equals("/healthz")) {
             method(method, "GET");
             c.db.count("SELECT 1");
@@ -305,8 +380,8 @@ public class WebController {
                                 "result",
                                 c.db.all(
                                         "SELECT source_id,data FROM os_transfer_item WHERE job_id=?"
-                                            + " AND source_table=? AND source_id>? ORDER BY"
-                                            + " source_id LIMIT 100",
+                                                + " AND source_table=? AND source_id>? ORDER BY"
+                                                + " source_id LIMIT 100",
                                         job,
                                         table,
                                         cursor)),
@@ -557,7 +632,7 @@ public class WebController {
                 c.noQuery();
                 var item = Service.create(c.db, table, body(c), c.name());
                 c.response.setHeader("Location", c.base() + path + "/" + item.get("sys_id"));
-                return json(map("result", Service.serialize(item)), 201);
+                return json(map("result", FieldAccess.serialize(c.db, item)), 201);
             }
             var page = Service.page(c.db, table, c.arguments(), "");
             if (path.startsWith("/api/now/v1/") && page.rows().isEmpty())
@@ -607,7 +682,7 @@ public class WebController {
                         map(
                                 "result",
                                 Service.project(
-                                        Service.serialize(item),
+                                        FieldAccess.serialize(c.db, item),
                                         c.parameter("sysparm_fields", ""))),
                         200);
             }
@@ -622,7 +697,8 @@ public class WebController {
             return json(
                     map(
                             "result",
-                            Service.serialize(
+                            FieldAccess.serialize(
+                                    c.db,
                                     Service.update(
                                             c.db, table, item, body(c), c.name(), c.role(),
                                             revision))),
@@ -659,6 +735,7 @@ public class WebController {
             if (analytics.group(1).startsWith("api/"))
                 return json(map("result", Analytics.report(c.db, table, c.arguments())), 200);
             var definition = Service.schema(c.db, table);
+            definition = FieldAccess.schema(c.db, definition);
             var fields = Analytics.fields(definition);
             var args = new LinkedHashMap<>(c.arguments());
             args.putIfAbsent("field", fields.isEmpty() ? "" : fields.keySet().iterator().next());
@@ -857,9 +934,10 @@ public class WebController {
                     throw new Failure(400, "Choose preview or transfer");
                 dryRun = operation.equals("preview");
                 if (c.http.getParameterMap().entrySet().stream()
-                        .anyMatch(entry ->
-                                !entry.getKey().equals("record_ids")
-                                        && entry.getValue().length != 1))
+                        .anyMatch(
+                                entry ->
+                                        !entry.getKey().equals("record_ids")
+                                                && entry.getValue().length != 1))
                     throw new Failure(400, "Repeated scalar form parameter");
                 String name = c.parameter("new_owner", "");
                 if (!name.matches("[A-Za-z0-9]{1,80}"))
@@ -1080,7 +1158,7 @@ public class WebController {
                             "offset",
                             page.offset(),
                             "canCreateRecord",
-                            !c.role().equals("reader")
+                            !Set.of("reader", "requester").contains(c.role())
                                     && RecordPolicy.allows(definition, "create", c.role()),
                             "overview",
                             path.equals("/"),
@@ -1129,6 +1207,7 @@ public class WebController {
             method(method, "GET");
             String table = export.group(1);
             Service.schema(c.db, table);
+            if (c.parameter("source", "").equals("true")) c.admin();
             var data = new ArrayList<Map<String, Object>>();
             var parameters = new ArrayList<Object>(List.of(table));
             String visible = RecordAccess.filter(c.db, "os_record.sys_id", parameters);
@@ -1142,8 +1221,10 @@ public class WebController {
                 if (c.parameter("source", "").equals("true") && !original.isEmpty())
                     data.add(original);
                 else {
-                    var merged = new LinkedHashMap<>(original);
-                    merged.putAll(Service.serialize(item));
+                    var merged =
+                            new LinkedHashMap<String, Object>(
+                                    c.role().equals("admin") ? original : map());
+                    merged.putAll(FieldAccess.serialize(c.db, item));
                     data.add(merged);
                 }
             }
@@ -1161,11 +1242,16 @@ public class WebController {
                                     + RecordAccess.journalFilter(c.db)
                                     + " ORDER BY seq DESC LIMIT 200",
                             parameters.toArray());
-            events.forEach(event ->
-                    event.put(
-                            "detailText",
-                            JSON.writerWithDefaultPrettyPrinter()
-                                    .writeValueAsString(event.get("detail"))));
+            var safeEvents = new ArrayList<Map<String, Object>>();
+            for (var event : events) {
+                var safe = FieldAccess.event(c.db, event);
+                safe.put(
+                        "detailText",
+                        JSON.writerWithDefaultPrettyPrinter()
+                                .writeValueAsString(safe.get("detail")));
+                safeEvents.add(safe);
+            }
+            events = safeEvents;
             return view(c, "audit", map("table", "audit", "events", events));
         }
         if (path.equals("/dictionary")) {
@@ -1258,7 +1344,8 @@ public class WebController {
             c.session.setAttribute("flash", "Record saved. Everything is up to date.");
             return redirect("/record/" + table + "/" + item.get("sys_id"));
         }
-        var data = item == null ? map() : Service.serialize(item);
+        definition = FieldAccess.schema(c.db, definition);
+        var data = item == null ? map() : FieldAccess.serialize(c.db, item);
         var states = object(definition.get("states"));
         String state =
                 (String)
@@ -1282,7 +1369,7 @@ public class WebController {
                         "definition",
                         definition,
                         "canWriteRecord",
-                        !c.role().equals("reader")
+                        !Set.of("reader", "requester").contains(c.role())
                                 && RecordPolicy.allows(
                                         definition, item == null ? "create" : "update", c.role()),
                         "fieldRules",
@@ -1333,14 +1420,26 @@ public class WebController {
         if (method.equals("POST")) {
             try {
                 issued =
-                        Invitations.issue(
-                                c.db,
-                                c.user.get("user_id").toString(),
-                                map(
-                                        "name",
-                                        c.parameter("name", ""),
-                                        "role",
-                                        c.parameter("role", "reader")));
+                        !c.parameter("email", "").isEmpty()
+                                ? EmailOnboarding.invite(
+                                        store,
+                                        c.db,
+                                        c.user.get("user_id").toString(),
+                                        map(
+                                                "name",
+                                                c.parameter("name", ""),
+                                                "role",
+                                                c.parameter("role", "reader"),
+                                                "email",
+                                                c.parameter("email", "")))
+                                : Invitations.issue(
+                                        c.db,
+                                        c.user.get("user_id").toString(),
+                                        map(
+                                                "name",
+                                                c.parameter("name", ""),
+                                                "role",
+                                                c.parameter("role", "reader")));
                 status = 201;
             } catch (Failure failure) {
                 error = failure.getMessage();
@@ -1743,10 +1842,14 @@ public class WebController {
                                 + " GROUP BY \"table\"",
                         parameters.toArray()))
             counts.put((String) count.get("table"), count.get("total"));
+        var tables = c.db.all("SELECT * FROM os_schema ORDER BY name");
+        for (var schema : tables)
+            schema.put("definition", FieldAccess.schema(c.db, object(schema.get("definition"))));
+        if (c.role().equals("requester")) tables.removeIf(t -> !t.get("name").equals("sc_request"));
         var model =
                 map(
                         "tables",
-                        c.db.all("SELECT * FROM os_schema ORDER BY name"),
+                        tables,
                         "counts",
                         counts,
                         "user",
@@ -1795,10 +1898,12 @@ public class WebController {
         return String.join(
                 "&",
                 arguments.entrySet().stream()
-                        .map(e ->
-                                URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8)
-                                        + "="
-                                        + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                        .map(
+                                e ->
+                                        URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8)
+                                                + "="
+                                                + URLEncoder.encode(
+                                                        e.getValue(), StandardCharsets.UTF_8))
                         .toList());
     }
 

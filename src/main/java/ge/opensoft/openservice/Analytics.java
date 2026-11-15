@@ -26,7 +26,7 @@ final class Analytics {
                 "Unsupported analytics parameter");
         String field = args.getOrDefault("field", ""), group = args.getOrDefault("group_by", "");
         require(
-                fields(Service.schema(db, table)).containsKey(field),
+                fields(FieldAccess.schema(db, Service.schema(db, table))).containsKey(field),
                 "Choose a configured integer or decimal field");
         var selection = Service.selection(db, table, args.getOrDefault("q", ""), "");
         require(

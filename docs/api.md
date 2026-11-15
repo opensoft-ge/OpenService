@@ -18,13 +18,13 @@ Use JSON and authenticated Basic requests, or a logged-in session with `X-CSRF-T
 
 ## Local accounts
 
-`POST /api/openservice/users` requires exactly three JSON keys: `name`, `password`, and `role`. Names contain 1–80 ASCII letters or digits and are case-sensitive; passwords contain 12–1024 characters; roles are `admin`, `agent`, or `reader`. A successful creation returns 201 with `{"result":{"name":"...","role":"..."}}`. Invalid fields or a duplicate name return 400 using the existing error envelope. Duplicate creation never changes an existing account. The 1024-character maximum is now enforced on both the API and browser form; the earlier API had no explicit maximum.
+`POST /api/openservice/users` requires exactly three JSON keys: `name`, `password`, and `role`. Names contain 1–80 ASCII letters or digits and are case-sensitive; passwords contain 12–1024 characters; roles are `admin`, `agent`, `reader`, or `requester`. A successful creation returns 201 with `{"result":{"name":"...","role":"..."}}`. Invalid fields or a duplicate name return 400 using the existing error envelope. Duplicate creation never changes an existing account. The 1024-character maximum is now enforced on both the API and browser form; the earlier API had no explicit maximum.
 
 The original OpenService browser workspace is `GET /admin/accounts`: administrator-only, 25 users per page ordered by stored username, with the current account identified. Only IDs, names, roles and activation state are selected for the list; password hashes are never rendered. Optional `page` defaults to `1`; only a single positive integer of up to six digits is accepted, and pages beyond the list return 400. Unknown parameters also return 400. Database collation determines name ordering.
 
 `POST /admin/accounts` accepts form fields `name`, `password`, and `role` plus the session CSRF token. The role defaults to `reader`. Success redirects (302) to the current account-list page and displays a confirmation; invalid input returns the form with an inline error (400), preserving the username/role but never the password. Both creation routes use the same validation, password hashing and persistence. Unauthenticated browser requests redirect to login; authenticated non-admins receive 403, and session writes without valid CSRF receive 403. Basic-authenticated requests retain the existing CSRF exemption.
 
-This is local account onboarding, not a ServiceNow `sys_user` API. All roles can read all workspace records. Account editing, deactivation, password reset, SSO, role inheritance and per-record/field ACLs are not implemented.
+This is local account onboarding, not a ServiceNow `sys_user` API. Staff roles can read workspace-visible records subject to configured field policies. Requesters can read only records created through their own request intake, additionally constrained by record visibility. Account deactivation, recovery and private/group/field access are described below; SSO and inherited roles remain open.
 
 ## Table requests
 
@@ -218,3 +218,9 @@ The account assignment page offers checkboxes, preview, explicit transfer and a 
 ## Connected migration administration
 
 The administrator-only `/api/openservice/migrations` API creates plans and exposes checkpointed fetch, preview/apply, synchronization, private source archives and cutover verification. Source OAuth tokens are supplied with `X-Source-Token` on fetch requests and are not persisted. Cookie-authenticated writes require the usual CSRF header. See [the migration contract](migration.md) for request formats, limits, status transitions, permission/configuration exclusions and source qualification requirements.
+
+## Verified account email and requester intake
+
+See [delivery contracts](delivery.md) for email invitations, recovery and queue administration. `GET/POST /api/openservice/requests` and `/requests` provide the local intake flow. POST accepts only `short_description` and optional `description`, creates an `sc_request`, and binds it to the authenticated submitting account. Reader submission is denied; requesters cannot use generic record mutation APIs. GET returns at most 100 accessible requests. Requester ownership does not bypass private/group visibility. Requesters can add shared comments and download existing attachments on their accessible records; internal notes, upload, administration and other records remain inaccessible. There is no public/anonymous request intake or imported requester ownership mapping.
+
+Field rules may include `read_roles`; see [configuration](configuration.md#field-read-roles). Raw source exports (`source=true`) require administrator access because unmapped original payloads are not governed by field definitions.

@@ -51,7 +51,7 @@ final class Invitations {
             if (expires <= System.currentTimeMillis()) state = "expired";
             else if (db.one(
                             "SELECT user_id FROM os_user WHERE user_id=? AND active=1 AND"
-                                + " role='admin' AND auth_revision=?",
+                                    + " role='admin' AND auth_revision=?",
                             row.get("issuer_id"),
                             row.get("issuer_revision"))
                     == null) state = "invalidated";
@@ -112,6 +112,9 @@ final class Invitations {
     static void accept(Store.Db db, String token, String password) throws Exception {
         if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,2)");
         var invite = pending(db, token, true);
+        String email = invite.get("email").toString();
+        if (!email.isEmpty() && db.one("SELECT user_id FROM os_user WHERE email=?", email) != null)
+            throw new Failure(409, "Email address already belongs to an account");
         String actor = invite.get("issuer_id").toString();
         Service.createManagedAccount(
                 db,
@@ -121,6 +124,8 @@ final class Invitations {
                 db.one("SELECT user_id FROM os_user WHERE name=?", invite.get("name"))
                         .get("user_id")
                         .toString();
+        if (!email.isEmpty())
+            db.update("UPDATE os_user SET email=?,email_verified=1 WHERE user_id=?", email, target);
         db.update(
                 "UPDATE os_invitation SET state='accepted' WHERE invite_id=?",
                 invite.get("invite_id"));

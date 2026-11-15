@@ -1,6 +1,7 @@
 package ge.opensoft.openservice;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.DriverManager;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -29,29 +30,34 @@ final class DockerDatabase {
                     "postgres:17-alpine");
             Runtime.getRuntime()
                     .addShutdownHook(
-                            new Thread(() -> {
-                                try {
-                                    command("docker", "stop", name);
-                                } catch (Exception error) {
-                                    System.err.println("Test database cleanup failed for " + name);
-                                }
-                            }));
+                            new Thread(
+                                    () -> {
+                                        try {
+                                            command("docker", "stop", name);
+                                        } catch (Exception error) {
+                                            System.err.println(
+                                                    "Test database cleanup failed for " + name);
+                                        }
+                                    }));
             String address = command("docker", "port", name, "5432/tcp").strip();
             int port = Integer.parseInt(address.substring(address.lastIndexOf(':') + 1));
             boolean ready = false;
-            for (int i = 0; i < 60; i++) {
-                try {
-                    command(
-                            "docker",
-                            "exec",
-                            name,
-                            "pg_isready",
-                            "-U",
-                            "openservice",
-                            "-d",
-                            "openservice");
-                    ready = true;
-                    break;
+            // The entrypoint's temporary initialization server accepts Unix sockets before
+            // the final TCP server starts. Probe the same published JDBC path tests use.
+            String jdbc =
+                    "jdbc:postgresql://127.0.0.1:"
+                            + port
+                            + "/openservice?connectTimeout=2&socketTimeout=2";
+            for (int i = 0; i < 240; i++) {
+                try (var connection =
+                                DriverManager.getConnection(
+                                        jdbc, "openservice", "disposable-integration-password");
+                        var statement = connection.createStatement();
+                        var result = statement.executeQuery("SELECT 1")) {
+                    if (result.next() && result.getInt(1) == 1) {
+                        ready = true;
+                        break;
+                    }
                 } catch (Exception waiting) {
                     Thread.sleep(250);
                 }

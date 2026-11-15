@@ -20,7 +20,7 @@ final class AccountDirectory {
                 status = args.getOrDefault("status", "");
         if (search.codePointCount(0, search.length()) > 80
                 || search.indexOf(0) >= 0
-                || !Set.of("", "reader", "agent", "admin").contains(role)
+                || !Set.of("", "reader", "agent", "admin", "requester").contains(role)
                 || !Set.of("", "active", "inactive").contains(status))
             throw new Failure(400, "Invalid account directory filter");
         var parameters = new ArrayList<Object>(List.of(search.toLowerCase(Locale.ROOT)));

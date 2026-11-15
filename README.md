@@ -4,7 +4,7 @@ A service operations foundation for OpenSoft: clear workspaces, shared records, 
 
 OpenService is an independent project, not affiliated with, sponsored by or endorsed by ServiceNow. ServiceNow is a trademark of its respective owner. See [migration support and limits](docs/migration.md), [provenance evidence](docs/provenance.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Development priorities and adoption gates are defined in the [roadmap and build order](docs/roadmap.md). Local identity, manual invitation/recovery and account lifecycle slices are implemented; scoped access, verified delivery and operational controls remain adoption prerequisites. The current build supports a disposable local walkthrough with synthetic data; shared evaluation and operational pilot gates remain unmet.
+Development priorities and adoption gates are defined in the [roadmap and build order](docs/roadmap.md). Local identity, emailed invitations/recovery, durable SMTP delivery, requester isolation and configurable field-read controls are implemented and tested as bounded capabilities. Provider qualification, enterprise identity and operational controls remain adoption prerequisites. The current build supports a disposable local walkthrough with synthetic data; shared evaluation and operational pilot gates remain unmet.
 
 ## Screenshots
 
@@ -63,15 +63,16 @@ For a first review with colleagues, follow the [evaluation walkthrough](docs/eva
 - Incident, problem, change, request, configuration-item, knowledge and group workspaces.
 - Create/edit forms, summary search, pagination, record details and responsive navigation.
 - State transitions and administrator approval/rejection for changes, enforced in the API as well as the UI.
-- Administrator-only account creation and paginated account lists in the browser; administrator, agent and reader roles, stable identities, password hashes, revocable sessions, CSRF protection and authenticated Basic API access. Administrators can change roles and deactivate/reactivate accounts with last-active-administrator protection.
-- Recipient-set passwords through manual, one-time invitations; authenticated password changes; administrator-assisted short-lived recovery; bounded browser-session lifetime and administrator-only lifecycle security events. Links require private manual delivery; email verification and granular record access remain open.
+- Administrator-only account creation and paginated account lists in the browser; administrator, agent, reader and requester roles, stable identities, password hashes, revocable sessions, CSRF protection and authenticated Basic API access. Administrators can change roles and deactivate/reactivate accounts with last-active-administrator protection.
+- Recipient-set passwords through one-time emailed invitations with address verification; verified-email and administrator-assisted recovery; bounded browser-session lifetime and administrator-only lifecycle security events. See [delivery setup and limits](docs/delivery.md).
+- Requester intake and own-request visibility, shared comments separated from internal notes, and configured field-read policies enforced on forms, APIs, queries, exports and reports.
 - Activity notes, persistent attachments with binary/multipart upload, metadata/list/download and administrator deletion APIs, audit events and JSON export.
 - A shared schema registry used by validation, API services and generated forms.
 - A bounded Table API subset: CRUD on unversioned/v1/v2 routes, selected encoded-query operators, sorting, field projection, pagination, optional Link suppression and reads without total-count queries.
 - JSON/CSV migration with dry runs, all-or-nothing validation, existing-record skipping, retained IDs and source-payload export.
 - Cloud-specific Terraform foundations for AWS, GCP and Azure, backed by managed PostgreSQL.
 
-This is an independently implemented **foundation**, not a full ServiceNow replacement. Most record fields are strings. Groups and references are currently stored values, not an assignment/identity engine. Problem/change/request state values are OpenService defaults. Knowledge is plain text; there is no public portal. Read the [compatibility ledger](docs/servicenow-compatibility.md) before integrating existing clients.
+This is an independently implemented **foundation**, not a full ServiceNow replacement. Built-in records retain mostly string fields; configurable tables support typed fields, references and assignment validation. Group memberships and record visibility are enforced, but inherited roles and multi-organization isolation remain open. Problem/change/request state values are OpenService defaults. Knowledge is plain text; there is no public portal. Read the [compatibility ledger](docs/servicenow-compatibility.md) before integrating existing clients.
 
 ## API example
 
@@ -110,7 +111,7 @@ Terraform is unchanged by this migration; its separate provider validation and m
 
 Cloud configurations provide HTTPS; secure cookies are enabled outside the loopback Docker demo. Each deployment starts with a single application instance with embedded Tomcat. PostgreSQL locks protect record updates; optional `If-Match` revisions prevent lost updates. Startup applies ordered transactional upgrades with a migration journal and serialized schema changes. Follow the [upgrade procedure](docs/platform-foundations.md#ordered-database-upgrades-adopt-02-os-026), using a database backup and planned downtime; rolling upgrades and restore targets remain unverified.
 
-SSO, granular ACL/domain isolation, rate limiting, malware scanning, background workers, email delivery, business-rule scripts and high availability are not implemented. Treat this version as a local evaluation foundation, not a hardened production service. Licensed under the [Apache License 2.0](LICENSE). Earlier MIT notices are preserved; see [third-party and prior-licence notices](THIRD_PARTY_NOTICES.md).
+SSO/MFA, inherited roles, multi-organization isolation, attachment malware scanning, general business notification/migration workers, business-rule scripts and high availability remain incomplete. Local password/recovery throttling, field-read policies and a durable account-email worker are implemented. Treat this version as a local evaluation foundation, not a hardened production service. Licensed under the [Apache License 2.0](LICENSE). Earlier MIT notices are preserved; see [third-party and prior-licence notices](THIRD_PARTY_NOTICES.md).
 
 ## Count aggregates
 

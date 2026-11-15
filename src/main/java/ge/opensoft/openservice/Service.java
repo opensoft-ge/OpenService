@@ -11,6 +11,11 @@ public final class Service {
 
     public static final Map<String, Object> ROLES =
             map(
+                    "requester",
+                    List.of(
+                            "Requester",
+                            "Submit requests and follow only your own requests and shared"
+                                    + " replies."),
                     "reader",
                     List.of(
                             "Reader",
@@ -95,6 +100,7 @@ public final class Service {
         var definition = schema(db, table);
         RecordPolicy.require(definition, "create", db.viewerRole);
         var payload = object(body);
+        FieldAccess.writing(db, definition, payload);
         validate(definition, payload);
         if (((String) payload.getOrDefault("short_description", "")).isBlank())
             throw new Failure(400, "Summary is required");
@@ -202,6 +208,7 @@ public final class Service {
         var definition = schema(db, table);
         RecordPolicy.require(definition, "update", role);
         var payload = object(body);
+        FieldAccess.writing(db, definition, payload);
         validate(definition, payload);
         var data = object(item.get("data"));
         if (revision != null && !item.get("revision").toString().equals(revision))
@@ -246,13 +253,15 @@ public final class Service {
         TypedFields.deleting(db, item);
         audit(db, item, actor, "deleted", map("before", serialize(item)));
         db.update("DELETE FROM os_attachment WHERE record_id=?", item.get("sys_id"));
+        db.update("DELETE FROM os_requester_record WHERE record_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_group_member WHERE group_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
 
     static Map<String, String> columns(Store.Db db, Map<String, Object> definition) {
         var columns = new LinkedHashMap<String, String>();
-        var fields = new ArrayList<>(object(definition.get("fields")).keySet());
+        var fields =
+                new ArrayList<>(object(FieldAccess.schema(db, definition).get("fields")).keySet());
         fields.add("number");
         for (String field : fields)
             columns.put(
@@ -336,6 +345,8 @@ public final class Service {
             }
         }
         if (!search.isEmpty()) {
+            if (!columns.containsKey("short_description"))
+                throw new Failure(403, "Summary search is not permitted");
             where.append(" AND ")
                     .append(columns.get("short_description"))
                     .append(" LIKE ? ESCAPE '\\'");
@@ -390,10 +401,12 @@ public final class Service {
                                 + " LIMIT ? OFFSET ?",
                         parameters.toArray());
         boolean hasNext = noCount ? selected.size() > limit : (long) offset + limit < total;
+        var definition = schema(db, table);
         var rows =
                 selected.stream()
                         .limit(limit)
                         .map(Service::serialize)
+                        .map(row -> FieldAccess.visible(db, definition, row))
                         .map(row -> project(row, args.getOrDefault("sysparm_fields", "")))
                         .toList();
         return new Page(rows, total, limit, offset, suppressPagination, hasNext);
@@ -542,7 +555,7 @@ public final class Service {
                 || password.codePointCount(0, password.length()) > 1024)
             throw new Failure(400, "Password must contain 12–1024 characters");
         if (!(value.get("role") instanceof String role) || !ROLES.containsKey(role))
-            throw new Failure(400, "Choose an admin, agent or reader role");
+            throw new Failure(400, "Choose an admin, agent, reader or requester role");
         try {
             db.update(
                     "INSERT INTO os_user(name,password,role,user_id) VALUES(?,?,?,?)",

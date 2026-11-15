@@ -17,8 +17,10 @@ public class Store {
     final boolean postgres;
     public final String secret;
     final String migrationOrigins;
+    final Environment environment;
 
     public Store(Environment environment) throws Exception {
+        this.environment = environment;
         migrationOrigins = environment.getProperty("MIGRATION_ALLOWED_ORIGINS", "");
         secret = environment.getProperty("SECRET_KEY");
         String password = environment.getProperty("ADMIN_PASSWORD");

@@ -147,7 +147,11 @@ final class Configuration {
             require(
                     TypedFields.TYPES.contains(rule.getOrDefault("type", "")),
                     "Unsupported field type");
-            var allowed = new HashSet<>(Set.of("type", "required", "max_length", "write_roles"));
+            var allowed =
+                    new HashSet<>(
+                            Set.of("type", "required", "max_length", "write_roles", "read_roles"));
+            if (rule.containsKey("read_roles"))
+                choices(rule.get("read_roles"), Service.ROLES.keySet());
             if (rule.containsKey("write_roles"))
                 choices(rule.get("write_roles"), Set.of("admin", "agent"));
             switch (rule.get("type").toString()) {

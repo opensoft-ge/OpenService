@@ -11,7 +11,7 @@ final class Permissions {
 
     static Map<String, Object> inspect(Store.Db db, String table, String id) throws SQLException {
         Service.record(db, table, id);
-        var definition = Service.schema(db, table);
+        var definition = FieldAccess.schema(db, Service.schema(db, table));
         var update = decision(definition, "update", db.viewerRole);
         var fields = new LinkedHashMap<String, Object>();
         for (String field : object(definition.get("fields")).keySet()) {
@@ -38,7 +38,8 @@ final class Permissions {
 
     private static Map<String, Object> decision(
             Map<String, Object> definition, String operation, String role) {
-        if (role.equals("reader") || operation.equals("delete") && !role.equals("admin"))
+        if (Set.of("reader", "requester").contains(role)
+                || operation.equals("delete") && !role.equals("admin"))
             return result("account_role");
         return result(
                 RecordPolicy.allows(definition, operation, role) ? "allowed" : "record_roles");

@@ -372,7 +372,7 @@
     ]
   },
   {
-    "artifact": "bcprov-jdk18on-1.83.jar",
+    "artifact": "bcprov-jdk18on-1.85.jar",
     "licenses": [
       {
         "name": "Bouncy Castle License (MIT-style)",
@@ -422,6 +422,76 @@
       {
         "name": "Apache License, Version 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0"
+      }
+    ]
+  },
+  {
+    "artifact": "spring-boot-mail-4.1.2.jar",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "artifact": "spring-context-support-7.0.10.jar",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "artifact": "angus-mail-2.0.5.jar",
+    "licenses": [
+      {
+        "name": "EPL 2.0",
+        "url": "http://www.eclipse.org/legal/epl-2.0"
+      },
+      {
+        "name": "GPL2 w/ CPE",
+        "url": "https://www.gnu.org/software/classpath/license.html"
+      },
+      {
+        "name": "EDL 1.0",
+        "url": "http://www.eclipse.org/org/documents/edl-v10.php"
+      }
+    ]
+  },
+  {
+    "artifact": "jakarta.mail-api-2.1.5.jar",
+    "licenses": [
+      {
+        "name": "EPL 2.0",
+        "url": "http://www.eclipse.org/legal/epl-2.0"
+      },
+      {
+        "name": "GPL2 w/ CPE",
+        "url": "https://www.gnu.org/software/classpath/license.html"
+      },
+      {
+        "name": "EDL 1.0",
+        "url": "http://www.eclipse.org/org/documents/edl-v10.php"
+      }
+    ]
+  },
+  {
+    "artifact": "angus-activation-2.0.3.jar",
+    "licenses": [
+      {
+        "name": "EDL 1.0",
+        "url": "http://www.eclipse.org/org/documents/edl-v10.php"
+      }
+    ]
+  },
+  {
+    "artifact": "jakarta.activation-api-2.1.4.jar",
+    "licenses": [
+      {
+        "name": "EDL 1.0",
+        "url": "http://www.eclipse.org/org/documents/edl-v10.php"
       }
     ]
   }

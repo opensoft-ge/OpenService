@@ -17,3 +17,5 @@ The pre-publication review inspected current source/assets, compressed fixture c
 No formal separation between specification authors and implementers, exhaustive comparison with proprietary source, or legal review has been established. Renaming code, rewriting it in another language, an AI rewrite, a permissive project license, or removing history would not establish originality or remove third-party obligations. Preserve attribution and evidence rather than concealing origins.
 
 The exact fixture-generator provenance gap remains documented above. Future fixtures should retain their originating test/revision and whether evidence is synthetic or from an authorized reference instance. Public documentation and product names should only identify intended interoperability; they must not imply vendor sponsorship or endorsement.
+
+The 2026-11-15 release qualification updates only the GET `/static/app.css` fixture bytes to the reviewed local stylesheet after accessibility contrast fixes. The gzip fixture is serialized deterministically; the remaining scenarios retain their prior local provenance and are not vendor captures.

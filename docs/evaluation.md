@@ -4,13 +4,19 @@ Use a local disposable instance and synthetic records for this walkthrough. It e
 
 ## Evaluation boundary
 
-This walkthrough is milestone M0 in the [adoption roadmap](roadmap.md#milestones-and-exit-gates). It is suitable for feature feedback on synthetic data. It does not establish a self-service onboarding flow, safely scoped multi-person operation or readiness for real customer/employee data. Before offering a managed shared evaluation, complete M1 identity/invite/revocation/access/delivery gates; before an operational pilot, record the evaluator-specific requirements and satisfy M2. The existing manual account steps below remain the current behavior, not the target onboarding design.
+This walkthrough is milestone M0 in the [adoption roadmap](roadmap.md#milestones-and-exit-gates). It is suitable for feature feedback on synthetic data. The tested emailed onboarding and requester boundaries are available when configured, but this walkthrough does not qualify a public deployment or real customer/employee data. Before offering a managed shared evaluation, complete M1 identity/invite/revocation/access/delivery gates; before an operational pilot, record the evaluator-specific requirements and satisfy M2. Manual account creation below remains a local fallback; the preferred recipient-set journey is described next.
 
 ## Start the workspace
 
 Follow [Run locally](../README.md#run-locally), then open http://localhost:8090 and sign in as `admin` with the generated password from your private `.env`. The default listener is local to your computer. Each evaluator can run their own copy; a shared hosted instance needs separately configured access and HTTPS.
 
-## Give each person their own login
+## Preferred invitation walkthrough
+
+Configure an isolated SMTP sink or an authorized test provider following [delivery setup](delivery.md). As administrator, open Invitations, choose a new username, email and Requester role, then create the invitation. Check Delivery queue, open the message in the sink, accept it and choose a password. Sign in in a separate browser profile, submit a synthetic request and add a shared comment. A second requester must not see the first request, its attachments, internal notes, exports or report counts. Use Forgot password to recover the verified account; the old password/session must stop working. Deactivate it from Accounts and verify its next browser/API request is rejected.
+
+For field isolation, install a configured table with an administrator-only `read_roles` field. Compare agent/reader forms, APIs, exports, queries and reports with administrator views. See the exact [field policy](configuration.md#field-read-roles).
+
+## Manual account fallback
 
 1. As administrator, choose **Accounts** in the navigation.
 2. Create an account such as `EvalAgent`, choose **Agent**, and supply a unique password of 12–1024 characters. Usernames accept 1–80 letters or digits and are case-sensitive.
@@ -29,7 +35,7 @@ Administrator can also create another administrator. Duplicate names return an i
 | Reader or agent | Open `/admin/accounts` directly | Access is denied; the Accounts navigation link is absent |
 | Administrator | Return to Accounts | All local accounts and their roles are visible |
 
-All three roles can read workspace-visible records, notes and attachments. Administrators may restrict a record to an active account from its Record visibility form; other users then lose access to its records, files and audit snapshots. Agent can create/update records, add notes and upload files; administrator additionally manages account creation, imports data, approves changes and deletes records. These are action permissions, not team, customer or field isolation.
+Staff roles can read workspace-visible records and attachments subject to field policies; readers and requesters do not receive internal notes. Requesters see only their own submitted requests, also constrained by record visibility. Administrators may restrict a record to an active account from its Record visibility form; other users then lose access to its records, files and audit snapshots. Agent can create/update records, add notes and upload files; administrator additionally manages account creation, imports data, approves changes and deletes records. Record and field policies add boundaries to these action permissions; this remains a dedicated single-organization deployment.
 
 For a broader review, use [Migration studio](migration.md) to preview a small synthetic export before applying it, inspect the audit trail and compare the [API scope](api.md) with required integrations. Keep notes on the workflow, expected behavior, observed result and any missing capability.
 
@@ -39,7 +45,7 @@ For a broader review, use [Migration studio](migration.md) to preview a small sy
 - What identity provider, team/customer separation and audit controls are required?
 - What availability, recovery, upgrade and performance targets would a pilot need?
 
-SSO, granular ACLs/domain isolation, verified delivery, authentication hardening and high availability remain incomplete; versioned upgrades now exist but operational restore drills remain unverified. Existing Docker/browser tests demonstrate the documented evaluation workflows; they do not establish production readiness or complete ServiceNow compatibility.
+SSO/MFA, inherited/dynamic ACLs, multi-organization isolation, real-provider delivery qualification and high availability remain incomplete. Versioned upgrades and the disposable PostgreSQL restore drill are evidenced in [release qualification](release-qualification.md). Existing Docker/browser tests demonstrate the documented evaluation workflows; they do not establish production readiness or complete ServiceNow compatibility.
 
 Use **Security events** as an administrator to review successful account changes. Failed attempts are not part of this journal; it shows recorded lifecycle events in pages of 100 and does not replace external security monitoring.
 

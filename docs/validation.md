@@ -83,3 +83,9 @@ Cycle 8: 428 passing tests; exact Java line/branch/method counts 2,622/2,622; 1,
 2026-11-14 paired cycle 9: `./mvnw clean verify` passes 428 tests, zero failures/errors/skips; exact JaCoCo LINE 2646/2646, BRANCH 1438/1438, METHOD 169/169. Explicit all-production-file coverage gate and `git diff --check` pass. Preview/apply browser journey and repeatable rollback on SQLite/PostgreSQL are covered. See [paired cycle evidence](paired-cycles-2026-11-14.md).
 
 2026-11-14 paired cycle 10: `./mvnw clean verify` passes 431 tests, zero failures/errors/skips; exact JaCoCo LINE 2662/2662, BRANCH 1452/1452, METHOD 169/169. Explicit all-production-file coverage gate and `git diff --check` pass. SQLite/PostgreSQL acceptance verifies stale-batch rollback and fresh apply; Chromium verifies conflicting edits from another tab. All ten paired cycles are complete; see [per-cycle evidence and limits](paired-cycles-2026-11-14.md).
+
+## Release foundation — 15 November 2026
+
+Clean gate: 455 tests, zero failures/errors/skips on SQLite/PostgreSQL and Chromium. Whole Java scope: 3640/3640 executable lines, 1931/1931 branches, 225/225 methods, 22542/22542 instructions and 41/41 instrumented classes. The exact skill gate passed every production Java file; browser migration coverage remains 75/75 lines, 49/49 branches and 12/12 functions. Templates and styles are verified through HTTP, browser, mobile and axe-core checks rather than included in Java coverage.
+
+[Release qualification](release-qualification.md) records fixed-base QA, SMTP/crash/concurrency tests, requester/field negative cases, fresh Compose installation, schema 13 → 14 upgrade, pending-delivery/requester restore, runtime SBOM, source secret scan and the remaining OS advisories. Local checks do not establish GitHub CI success for an unpublished commit or production readiness.
