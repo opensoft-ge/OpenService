@@ -101,6 +101,20 @@ final class ApiKeyBrowserAcceptance {
             assertThat(page.getByText("No API keys.")).isVisible();
             assertThat(page.getByLabel("New API key")).hasCount(0);
             ReleaseBrowserAcceptance.accessible(page);
+            page.getByLabel("Key label").fill("Key only");
+            page.getByLabel("Table name").fill("incident");
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions()
+                                    .setName("Replace keys and block password access"))
+                    .press("Enter");
+            assertTrue(page.getByLabel("New API key").inputValue().startsWith("osk_"));
+            assertThat(page.locator("tbody tr")).hasCount(1);
+            ReleaseBrowserAcceptance.accessible(page);
+            page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Account details"))
+                    .click();
+            assertThat(page.getByLabel("Basic authentication access")).hasValue("false");
+            ReleaseBrowserAcceptance.accessible(page);
         }
     }
 }

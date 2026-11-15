@@ -429,3 +429,7 @@ OS-DISC-API-KEY-SUSPEND adds administrator-controlled suspension/resumption with
 ## OS-N10-04 — Revoke every API key for one account (implemented)
 
 ADOPT-05/08/09 and OS-PARITY-03/08 gain bounded account-wide credential withdrawal. Publication/version-state access and validity dates merge into existing OS-PARITY-04/08 knowledge lifecycle, missing P1/M2; depends on publication isolation and requires search/direct-ID/attachment leak prevention. Next research: token-only integration accounts and knowledge read/contribute criteria. [Contract, discovery and evidence](paired-cycles-next10-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-05 — Convert an integration account to API keys only (implemented)
+
+OS-DISC-API-AUTH-POLICY remains partial; explicit key-only conversion provides a supported alternative to Basic for eligible integration accounts. Knowledge read/contribute deny precedence merges into OS-PARITY-04/08. OS-DISC-SCOPED-KNOWLEDGE is unverified P1/M2: scoped bases require explicit authorization even for administrators according to the knowledge access page; depends on scoped policy and direct primary-page verification, acceptance must deny unauthorized administrative access. Next: scoped writes and scoped knowledge administration. [Contract, discovery and evidence](paired-cycles-next10-2026-11-15.md). M1–M3 remain unmet.

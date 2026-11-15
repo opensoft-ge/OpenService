@@ -663,6 +663,17 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
+        Matcher apiKeyOnly = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/key-only").matcher(path);
+        if (apiKeyOnly.matches()) {
+            method(method, "POST"); c.admin(); c.noQuery();
+            String target = apiKeyOnly.group(1), actor = c.user.get("user_id").toString();
+            boolean api = path.startsWith("/api/");
+            var issued = ApiKeyOnly.replace(c.db, actor, target,
+                    api ? body(c) : map("label", c.parameter("label", ""), "table", c.parameter("table", ""), "days", ApiKeys.days(c.parameter("days", ""))));
+            if (api) return json(map("result", issued), 201);
+            return view(c, "api-keys", map("table", "accounts", "account", Service.account(c.db, target),
+                    "keys", ApiKeys.list(c.db, actor, target), "issued", issued));
+        }
         Matcher apiKeysRevoke = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/revoke").matcher(path);
         if (apiKeysRevoke.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
