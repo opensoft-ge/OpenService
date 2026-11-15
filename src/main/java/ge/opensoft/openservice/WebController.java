@@ -876,6 +876,24 @@ public class WebController {
                                     "nextBefore",
                                     result.get("next_before")));
         }
+        Matcher accountAuthentication = Pattern.compile(
+                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/authentication-events").matcher(path);
+        if (accountAuthentication.matches()) {
+            method(method, "GET");
+            c.admin();
+            var journal = AccountAuthentication.page(c.db, c.user.get("user_id").toString(),
+                    accountAuthentication.group(1), queryArguments(c));
+            boolean download = (Boolean) journal.get("download");
+            if (download) disposition(c, "account-authentication-events.json");
+            if (path.startsWith("/api/") || download) return json(map(
+                    "account", journal.get("account"), "result", journal.get("result"),
+                    "next_before", journal.get("next_before")), 200);
+            String before = journal.get("before").toString();
+            return view(c, "account-authentication", map("table", "accounts",
+                    "account", journal.get("account"), "events", journal.get("result"),
+                    "nextBefore", journal.get("next_before"), "methods", AuthenticationEvents.METHODS,
+                    "downloadQuery", before.isEmpty() ? "download=true" : "download=true&before=" + before));
+        }
         if (Set.of("/account/authentication-events", "/api/openservice/me/authentication-events")
                 .contains(path)) {
             method(method, "GET");

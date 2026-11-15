@@ -385,3 +385,10 @@ OS-DISC-CONNECTION-ALIASES — missing P1/M2 under OS-PARITY-03/09: [Brazil conn
 OS-DISC-SESSION-LIMIT is partial with a persisted per-account 1–100 override, zero/default inheritance, atomic audit and next-sign-in enforcement. [Contract/evidence](paired-cycles-followup-2026-11-15.md#cycle-9--account-specific-browser-session-limits-os-f10-09). Role policies, unlimited exemptions and distributed continuity remain missing. ADOPT-08/09, OS-PARITY-08/10 and M1–M3 remain incomplete.
 
 OS-DISC-SEARCH-AUTHORIZATION — missing P1/M2 under OS-PARITY-01/07/08: [Brazil release notes](https://www.servicenow.com/docs/r/release-notes/rn-summary-new-features.html), updated 2026-11-04, retrieved 2026-11-15, document column-level search authorization. Requires an index/search engine and current field policy; hidden fields must not influence matches, counts, snippets or export after role/policy changes. Existing SQL field boundaries do not constitute indexed search. Next: account authentication investigation and security monitoring/export.
+
+
+### Follow-up cycle 10 — OS-F10-10
+
+Administrator account-specific authentication investigation, keyset pagination and page-scoped download are implemented; [contract/evidence](paired-cycles-followup-2026-11-15.md#cycle-10--administrator-account-sign-in-investigation-os-f10-10). ADOPT-09 and OS-PARITY-08/10 remain partial. Global rolling retention, limited event taxonomy and absent external forwarding remain explicit limits; M1–M3 remain unmet.
+
+Discovery merges [official Log Export Service/SIEM guidance](https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB2540104), updated 2026-07-01, retrieved 2026-11-15, into the existing ADOPT-09/OS-PARITY-10 forwarding backlog, missing P1/M2. Requires durable checkpoints, destination authorization/redaction, replay handling and retention/backpressure policy; acceptance must detect gaps, resume export and keep credentials out of records. Local page download does not implement forwarding. Next: scoped integration credentials, MFA/SSO and audit retention/export qualification.

@@ -6,7 +6,26 @@ Each cycle fixes its review base at that cycle's starting commit, reviews the wh
 
 Stack rechecked 15 November 2026: [Spring Boot 4.1.2 supports Java 27](https://docs.spring.io/spring-boot/system-requirements.html); [Temurin 27.0.1.0.2+1 is GA](https://adoptium.net/en-GB/news/2026/10/eclipse-temurin-17021-21013-2505-2701-available). Existing Maven, image and CI pins remain aligned. Compatibility stays at the existing provisional Australia target; Brazil evidence below is separately labelled. Self-authored tests are not licensed-instance conformance.
 
+Local image, fresh-install/restore/upgrade and scan results are recorded in [follow-up qualification](release-qualification-followup10.md). The native simple-upload client requirement introduced in cycle 7 is a deliberate compatibility change; consult [the API contract](api.md#browser-writes-and-basic-credentials).
+
 New implementation, tests and templates are written for this batch using existing project dependencies. Official documentation informs the behavioural scope; no vendor source, graphics or documentation passages are imported. Existing Apache 2.0 and third-party notices remain intact. This is a technical provenance statement, not legal clearance.
+
+## Feature summary
+
+| Cycle | Completed capability |
+|---|---|
+| 1 | Own browser-session inventory with safe identifiers and expiry information |
+| 2 | Sign out one selected browser session |
+| 3 | Deployment-configurable concurrent-browser limit |
+| 4 | Administrator per-account Basic authentication allow/block policy |
+| 5 | Administrator browser-session inventory for a selected account |
+| 6 | Administrator termination of one session with a required audit reason |
+| 7 | Shared browser/Basic CSRF hardening and authenticated token bootstrap |
+| 8 | Administrator termination of all account sessions with audited counts |
+| 9 | Persistent account-specific browser-session limits with default inheritance |
+| 10 | Administrator account sign-in history, pagination and page-scoped export |
+
+Each row is a bounded local capability. Enterprise identity, scoped integration credentials, distributed sessions and the other open roadmap items are not completed by this batch.
 
 ## Cycle 1 — private browser-session inventory (OS-F10-01)
 
@@ -159,3 +178,22 @@ New implementation, tests and templates are written for this batch using existin
 **QA ledger:** review 1 checked upgrade defaults, strict integer bounds, duplicate-policy idempotence, unchanged access revision, sign-in lock ordering/fresh policy reads, safe admin/owner projections and template integration. Fixed an extra closing parenthesis reported by compilation and changed the owner label to avoid incorrect singular/plural wording. Focused tests and mobile visual review then passed. Review 2 rechecked the whole accumulated diff against `f929015`, including migration rollback, current-policy resolution and repairs; no new or reopened defects were found and no further repairs were made. Final clean-gate results follow.
 
 **Completed cycle 9.** Final clean gate: 576 tests, zero failures/errors/skips; Java 4821/4821 lines, 2591/2591 branches, 286/286 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. Final complete review found no new or reopened defects and made no further runtime repairs.
+
+
+## Cycle 10 — administrator account sign-in investigation (OS-F10-10)
+
+**Base:** `e561382`. **Scope:** ADOPT-09, OS-PARITY-08/10. Global administrator and self-service journals existed; there was no account-detail investigation route. Alternatives: scoped API credentials, enterprise identity and durable security-log forwarding.
+
+**Feature:** administrator-only per-account UI/API history with sanitized event projection, 100-row keyset pages and page-scoped JSON download. Current administrator authority is rechecked; cursors must belong to the selected account and still be retained. Inactive accounts preserve history. The view links from account details and explains retention, scope and authentication-generated events. [Exact contract](api.md#administrator-account-sign-in-history).
+
+**Acceptance:** both databases, 102-event pagination without overlap, other-account exclusion, foreign/malformed/deleted/repeated cursors, safe field sets, matching API/UI downloads, strict flags/methods, unauthorized and unknown-account errors, inactive-account retention, empty history and store reinitialization. Direct helper tests reject a newly deactivated administrator. Chromium verifies account navigation, keyboard pagination, downloaded content, unknown-method fallback, empty state and desktop/mobile accessibility in both themes. Five focused tests and mobile visual review passed.
+
+**Evidence/discovery:** [Brazil authentication events](https://www.servicenow.com/docs/r/platform-security/authentication/r_EventQueueLoginActivities.html), updated 2026-09-10, retrieved 2026-11-15, documents authentication activity as security-investigation evidence; its SSO event taxonomy is not this local password-verification contract. Discovery merges the official [Log Export Service/SIEM guidance](https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB2540104), updated 2026-07-01, retrieved 2026-11-15, into existing ADOPT-09/OS-PARITY-10 forwarding work, missing P1/M2. Requires durable export checkpoints, authorized destinations, redaction, replay handling and retention/backpressure policy. Acceptance must detect event gaps, resume without silently dropping or duplicating logical events, and keep consumer credentials outside payloads. A downloaded page is not that export pipeline. Current release notes remain reviewed through the cycle-9 search-authorization checkpoint. Next research: scoped integration credentials, MFA/SSO and audit retention/export qualification.
+
+**Limits:** no full-history single export, arbitrary time/mechanism filters, source-IP/device inventory, immutable archive, alerts or external forwarding. Retention remains global, so older events may be unavailable. Parent adoption/parity and M1–M3 gates remain open.
+
+**QA ledger:** review 1 checked fresh administrator authority, selected-account scoping, cursor ownership, sanitized fields, strict routing, header/file naming, same-page export, inactive accounts and honest retention/session-use wording. No runtime defect was found; focused checks passed. Review 2 reviewed the entire diff against `e561382`, helper callers, both API/UI branches and the mobile screenshot; no new or reopened defects were found and no repairs were made. Final clean-gate and local image qualification results follow.
+
+Local qualification also passed: fresh install, schema 23→23 restore and 20→23 upgrade, matching image classes/resources and runtime dependency inventory, and source/dependency scans. The 30 medium and 4 low OS findings remain open; see [qualification details](release-qualification-followup10.md). Final review included all supporting documentation and preserved these limits.
+
+**Completed cycle 10.** Final clean gate: 581 tests, zero failures/errors/skips; Java 4843/4843 lines, 2601/2601 branches, 287/287 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. Final complete review found no new or reopened defects and made no further runtime repairs.

@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanReviewAndExportAccountSignInActivity() throws Exception {
+        AccountAuthenticationBrowserAcceptance.run(this);
+    }
+
+    @Test
     void administratorCanConfigureAccountSessionLimits() throws Exception {
         AccountSessionLimitBrowserAcceptance.run(this);
     }
