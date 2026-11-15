@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorsCanInspectAccountSessionsWithoutExposingCredentials() throws Exception {
+        AdminSessionsAcceptance.run(this);
+    }
+
+    @Test
     void basicAuthenticationCanBeDisabledWithoutLosingBrowserAccess() throws Exception {
         BasicAccessAcceptance.run(this);
     }

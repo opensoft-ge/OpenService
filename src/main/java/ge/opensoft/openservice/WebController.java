@@ -661,6 +661,32 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
+        Matcher adminSessions =
+                Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions")
+                        .matcher(path);
+        if (adminSessions.matches()) {
+            method(method, "GET");
+            c.admin();
+            c.noQuery();
+            c.uniqueQuery();
+            var inventory =
+                    AdminSessions.list(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            adminSessions.group(1),
+                            c.session.getId(),
+                            System.currentTimeMillis());
+            return path.startsWith("/api/")
+                    ? json(inventory, 200)
+                    : view(
+                            c,
+                            "admin-sessions",
+                            map(
+                                    "table", "accounts",
+                                    "account", inventory.get("account"),
+                                    "sessions", inventory.get("result"),
+                                    "truncated", inventory.get("truncated")));
+        }
         Matcher basicAccess =
                 Pattern.compile(
                                 "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/basic-auth")

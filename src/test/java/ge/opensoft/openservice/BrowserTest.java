@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void administratorSessionInventoryIsAccessible() throws Exception {
+        AdminSessionsBrowserAcceptance.run(this);
+    }
+
+    @Test
     void selectedBrowserCanBeSignedOutWithoutEndingOtherSessions() throws Exception {
         SessionRevocationBrowserAcceptance.run(this);
     }
