@@ -1,6 +1,6 @@
 # Twenty further OpenService feature and QA cycles
 
-The user extended this active batch from 10 to 20 paired cycles on 16 November. Existing OS-N10 identifiers remain stable; this report covers all 20.
+Completed all 20 paired feature/QA cycles on 16 November 2026. The user extended this active batch from 10 to 20 paired cycles on 16 November. Existing OS-N10 identifiers remain stable; this report covers all 20.
 
 Starting commit: `bf1f422d9624bc1e575f0b2feba187c0438db654`, clean `main`, 15 November 2026. Local commits use opendevbot without co-author trailers. This batch does not authorize a push or deployment.
 
@@ -12,23 +12,24 @@ Stack verification: [Spring Boot system requirements](https://docs.spring.io/spr
 |---|---|---|
 | 1 | Scoped, expiring read-only integration keys | 586 tests; exact Java/JS gates passed; `d137c5f` |
 | 2 | Rotate a key without extending scope or expiry | 588 tests; exact Java/JS gates passed; `ac39c41` |
-| 3 | Suspend and resume an individual API key | 590 tests; exact Java/JS gates passed |
-| 4 | Revoke every API key for one account | 592 tests; exact Java/JS gates passed |
-| 5 | Convert an integration account to API keys only | 594 tests; exact Java/JS gates passed |
-| 6 | Scoped API keys for record creation and updates | 596 tests; exact Java/JS gates passed |
-| 7 | Per-key successful-request activity | 598 tests; exact Java/JS gates passed |
-| 8 | Remove expired credentials without disrupting active integrations | 600 tests; exact Java/JS gates passed |
-| 9 | Shorten an existing key lifetime without extending access | 602 tests; exact Java/JS gates passed |
-| 10 | Explain effective credential eligibility to administrators | 604 tests; exact Java/JS gates passed |
-| 11 | Administrator diagnosis of another account's record permissions | 607 tests; exact Java/JS gates passed |
-| 12 | Reduce existing integration keys to read-only | 609 tests; exact Java/JS gates passed |
-| 13 | Search and page through every retained invitation | 612 tests; exact Java/JS gates passed |
-| 14 | Audit invitation issuance, replacement and revocation | 614 tests; exact Java/JS gates passed |
-| 15 | Find accounts by browser and Basic authentication policy | 617 tests; exact Java/JS gates passed |
-| 16 | Browse and download security changes for one account | 620 tests; exact Java/JS gates passed |
-| 17 | Rename integration keys without changing their authority | 624 tests; exact Java/JS gates passed |
-| 18 | Filter invitations by current acceptance availability | 626 tests; exact Java/JS gates passed |
-| 19 | Include group membership changes in account security history | 628 tests; exact Java/JS gates passed |
+| 3 | Suspend and resume an individual API key | 590 tests; exact Java/JS gates passed; `e72f436` |
+| 4 | Revoke every API key for one account | 592 tests; exact Java/JS gates passed; `af9c57f` |
+| 5 | Convert an integration account to API keys only | 594 tests; exact Java/JS gates passed; `18cac51` |
+| 6 | Scoped API keys for record creation and updates | 596 tests; exact Java/JS gates passed; `007c046` |
+| 7 | Per-key successful-request activity | 598 tests; exact Java/JS gates passed; `fa19d44` |
+| 8 | Remove expired credentials without disrupting active integrations | 600 tests; exact Java/JS gates passed; `9f08a9a` |
+| 9 | Shorten an existing key lifetime without extending access | 602 tests; exact Java/JS gates passed; `88db3cd` |
+| 10 | Explain effective credential eligibility to administrators | 604 tests; exact Java/JS gates passed; `b0d17be` |
+| 11 | Administrator diagnosis of another account's record permissions | 607 tests; exact Java/JS gates passed; `e2a38bf` |
+| 12 | Reduce existing integration keys to read-only | 609 tests; exact Java/JS gates passed; `02245a4` |
+| 13 | Search and page through every retained invitation | 612 tests; exact Java/JS gates passed; `dbcda0b` |
+| 14 | Audit invitation issuance, replacement and revocation | 614 tests; exact Java/JS gates passed; `4154abb` |
+| 15 | Find accounts by browser and Basic authentication policy | 617 tests; exact Java/JS gates passed; `eeafd1d` |
+| 16 | Browse and download security changes for one account | 620 tests; exact Java/JS gates passed; `0dce8be` |
+| 17 | Rename integration keys without changing their authority | 624 tests; exact Java/JS gates passed; `24de713` |
+| 18 | Filter invitations by current acceptance availability | 626 tests; exact Java/JS gates passed; `4c5e220` |
+| 19 | Include group membership changes in account security history | 628 tests; exact Java/JS gates passed; `521a811` |
+| 20 | Compare two accounts’ current record permissions | 631 tests; exact Java/JS gates passed |
 
 ## Cycle 1 — OS-N10-01: scoped read-only integration keys
 
@@ -283,3 +284,25 @@ Research and discovery: Retrieved 2026-11-16: Brazil [Identity and Access Audit]
 Final QA: Reviewed the full change against 4c5e220, including shared transaction/administrator locks, actual-change-only evidence, duplicate requests, rollback, account isolation and unchanged group audit. Three focused SQLite/PostgreSQL/Chromium checks passed; desktop light and mobile dark screenshots were inspected and axe checks passed in both modes. The final complete review found no new or reopened defects, made no repairs and left no unresolved findings. Final clean `sh scripts/verify.sh`: 628 tests, zero failures/errors/skips; Java 5318/5318 lines, 2931/2931 branches, 310/310 methods. All 67 production Java files and both JavaScript files passed the exact skill gate; no scope exclusions or threshold changes. Source/tests remained unchanged during the full gate. JavaScript counters remain migrations 75/75 lines, 49/49 branches, 12/12 functions and theme 36/36 lines, 15/15 branches, 6/6 functions.
 
 Touched executable files (lines, branches, methods): `GroupMembers.java` 47/47, 20/20, 4/4. HTML is exercised by the browser journey. Raw evidence: `/tmp/openservice-next10-evidence/19`.
+
+## Cycle 20 — OS-N10-20: Compare two accounts’ current record permissions
+
+Base: `521a811daf03702af4211e3eac3b79ced66f84e2`. One-subject diagnosis exists, but an administrator cannot compare two accounts in one request or screen. Add a read-only comparison for one table/record and a second exact username, using the same subject-bound evaluator for each. Show read/update/delete reasons and only each subject’s readable field names, never record values. No impersonation, role assignment, hypothetical simulation, historical snapshot or authentication guarantee. Alternatives retained: role/group simulation, dedicated audit viewers and declarative query policy.
+
+Acceptance: Compare with actual per-subject diagnostics and successful/denied reads/writes; hidden field metadata, private/group/requester/inactive boundaries, unknown/malformed/repeated parameters, same-account comparison, unchanged state and viewer context, restart, keyboard and desktop/mobile both-theme browser journey.
+
+Research and discovery: Retrieved 2026-11-16: [Access Analyzer Store release notes](https://www.servicenow.com/docs/r/store-release-notes/store-platsec-rn-access-analyzer.html), updated July 9, list two-user comparisons and separately hypothetical role/group simulation; version 6.1 adds agent/workflow support. Store family compatibility/licensing are unverified; normalized compare-user-access details were inaccessible. This is OpenService current-policy diagnosis only. Rotation through the current Brazil release summary and Analyzer history merges agent/tool resource permissions and hypothetical simulation into OS-DISC-03 / OS-PARITY-06/08, missing P2/M2: depends on richer role/group policy and governed AI resource definitions; scenarios must leave persisted authority unchanged and enforce the same policy engine as actual actions. Current record comparison is partial progress, not full Analyzer parity. Next: follow release gates and remaining foundation backlog; no autonomous extra implementation beyond these 20 cycles. Same-day official Java/Spring verification remains applicable; pins are unchanged. M1–M3 remain unmet.
+
+Final QA: Reviewed the complete change against 521a811 and the accumulated batch against bf1f422, including query validation, administrator boundaries, restored subject context, shared policy decisions, hidden metadata and non-mutating comparisons. Three focused database/browser checks passed; real requests verified private/group/requester/inactive boundaries. Desktop light and mobile dark screenshots were visually inspected and both-theme axe/keyboard checks passed. The final complete review found no new or reopened defects, made no repairs and left no unresolved findings within the reviewed scope. Final clean `sh scripts/verify.sh`: 631 tests, zero failures/errors/skips; Java 5338/5338 lines, 2945/2945 branches, 311/311 methods. All 68 production Java files and both JavaScript files passed the exact skill gate; no scope exclusions or threshold changes. Source/tests remained unchanged during the full gate. JavaScript counters remain migrations 75/75 lines, 49/49 branches, 12/12 functions and theme 36/36 lines, 15/15 branches, 6/6 functions.
+
+Touched executable files (lines, branches, methods): `PermissionComparison.java` 14/14, 6/6, 1/1; `WebController.java` 1867/1867, 1005/1005, 41/41. HTML is exercised by the browser journey. Raw evidence: `/tmp/openservice-next10-evidence/20`.
+
+## Batch outcome and remaining release work
+
+The 20 bounded additions are listed above. They deliver a table-scoped integration credential lifecycle; administrator credential/account policy visibility; invitation search, availability filtering and lifecycle evidence; per-account security history including explicit membership changes; and single-account/two-account record permission diagnosis. Each cycle has its own local commit, fixed QA base and fresh full gate. The final report is included in cycle 20's commit.
+
+Confirmed implementation defects repaired in this batch include the credential-activity race after rotation (cycle 7), invitation revocation failing when its issuer was missing (cycle 14), and inconsistent NUL-label handling between PostgreSQL and SQLite (cycle 17). The report also records test-fixture/expectation corrections and UI review fixes separately. Rejected or stale evidence was never counted as a passing gate.
+
+Official discovery expanded or refined the backlog for authentication policies, workload identity federation, reusable credential/device bindings, shared saved filters, configurable audit capture/retention and viewer privileges, query/data policies, access simulation and governed AI-resource diagnosis. Each discovery retains sources, status, dependencies and acceptance expectations in its cycle entry and the roadmap/compatibility ledger. Original local contracts do not establish licensed ServiceNow instance conformance.
+
+M0 remains the supported scope: synthetic-data local evaluation. M1–M3 are still unmet. Real HTTPS/SMTP deployment qualification, enterprise identity requirements (including MFA/SSO), operational ownership, workload/load and recovery targets, live migration reconciliation and remaining security/accessibility assessments require further work. Historical image/dependency scans and deployment/restore drills describe their named earlier artifacts; this batch did not requalify a release image or run GitHub-hosted CI. No push or deployment was performed.

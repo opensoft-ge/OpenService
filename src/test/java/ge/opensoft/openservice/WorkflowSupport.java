@@ -71,6 +71,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void accountPermissionComparisonUsesRealSubjectPoliciesWithoutMutation() throws Exception { PermissionComparisonAcceptance.run(this); }
+
+    @Test
     void groupMembershipChangesHaveTransactionalAccountEvidence() throws Exception { GroupSecurityAcceptance.run(this); }
 
     @Test

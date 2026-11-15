@@ -669,6 +669,13 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
+        Matcher permissionComparison = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permission-comparison").matcher(path);
+        if (permissionComparison.matches()) {
+            method(method,"GET"); c.admin(); boolean api=path.startsWith("/api/");String target=permissionComparison.group(1);var args=queryArguments(c);Map<String,Object> comparison=map();
+            if(api || !args.isEmpty()) comparison=PermissionComparison.inspect(c.db,c.user.get("user_id").toString(),target,args);
+            if(api)return json(map("result",comparison),200);
+            return view(c,"permission-comparison",map("table","accounts","account",Service.account(c.db,target),"comparison",comparison,"selectedTable",args.getOrDefault("table",""),"selectedRecord",args.getOrDefault("record_id",""),"comparisonName",args.getOrDefault("with","")));
+        }
         Matcher accountPermissions = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permissions").matcher(path);
         if (accountPermissions.matches()) {
             method(method, "GET"); c.admin(); c.uniqueQuery();

@@ -412,3 +412,7 @@ GET `/api/openservice/invitation-directory` and `/admin/invitation-directory` ad
 ### Include group membership changes in account security history
 
 Existing PUT `/api/openservice/groups/{group}/members` and DELETE `.../members/{user}` plus browser actions now record account.group_membership_added/removed in the affected account security journal when membership actually changes. Detail contains only group_id. Existing group audit and response shapes remain unchanged. Repeated actions emit no additional event; failures/rollbacks emit none. Bulk removal retains its separate account.memberships_removed summary. Group deletion does not yet generate per-account removal events.
+
+### Compare two accounts’ current record permissions
+
+GET `/api/openservice/users/{id}/permission-comparison` or matching `/admin/accounts/{id}/permission-comparison` takes exactly table, record_id and with (exact second username, 1–80 ASCII letters/digits). Administrator-only; invalid/repeated parameters 400, absent account/record 404, POST 405; HEAD follows GET authorization. API result contains subjects: two entries with sanitized account and diagnosis. Each diagnosis uses the same existing evaluator; hidden fields and record values are absent. The same account can be compared with itself. UI may initially open without query to show the form. Policy results do not establish login eligibility or guarantee workflow/validation acceptance.

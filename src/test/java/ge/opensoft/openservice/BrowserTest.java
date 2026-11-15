@@ -50,6 +50,9 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanCompareTwoAccountsRecordPermissions() throws Exception { PermissionComparisonBrowserAcceptance.run(this); }
+
+    @Test
     void administratorCanInvestigateAccountSecurityChanges() throws Exception { AccountSecurityEventsBrowserAcceptance.run(this); }
 
     @Test
