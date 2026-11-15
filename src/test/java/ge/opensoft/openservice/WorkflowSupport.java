@@ -58,6 +58,22 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void apiKeyIssuanceRejectsNulLabelsAcrossDatabases() throws Exception {
+        account("NulLabelMachine", "reader");
+        String target;
+        try (var db = store.open()) {
+            target = RecordAccess.owner(db, "NulLabelMachine");
+            db.update("UPDATE os_user SET api_only=1 WHERE user_id=?", target);
+            db.connection.commit();
+        }
+        assertEquals(400, json("POST", "/api/openservice/users/" + target + "/api-keys",
+                map("label", "bad\0label", "table", "incident", "days", 1), auth("admin")).statusCode());
+    }
+
+    @Test
+    void apiKeyLabelsPreserveAuthorityAndRejectInvalidText() throws Exception { ApiKeyLabelAcceptance.run(this); }
+
+    @Test
     void accountSecurityJournalIsScopedPageableAndDownloadable() throws Exception { AccountSecurityEventsAcceptance.run(this); }
 
     @Test

@@ -13,19 +13,30 @@ final class ApiKeys {
             throws Exception {
         Service.requireAccountAdministrator(db, actor);
         Service.account(db, target);
-        var account = db.one("SELECT active,api_only,role,password_reset_required,auth_revision FROM os_user WHERE user_id=?", target);
+        var account =
+                db.one(
+                        "SELECT active,api_only,role,password_reset_required,auth_revision FROM"
+                            + " os_user WHERE user_id=?",
+                        target);
         long observedAt = System.currentTimeMillis();
         var rows =
                 db.all(
-                        "SELECT key_id,label,table_name,created_at,expires_at,enabled,can_write,use_count,last_used_at,auth_revision FROM os_api_key WHERE"
-                            + " user_id=? ORDER BY created_at,key_id",
+                        "SELECT"
+                            + " key_id,label,table_name,created_at,expires_at,enabled,can_write,use_count,last_used_at,auth_revision"
+                            + " FROM os_api_key WHERE user_id=? ORDER BY created_at,key_id",
                         target);
         for (var row : rows) {
             row.put("credential_status", ApiKeyStatus.describe(row, account, observedAt));
             row.remove("auth_revision");
             long lastUsed = ((Number) row.get("last_used_at")).longValue();
-            row.put("last_used_at_utc", lastUsed == 0 ? "Never" : java.time.Instant.ofEpochMilli(lastUsed).toString());
-            row.put("access", ((Number) row.remove("can_write")).intValue() == 1 ? "Read, create and update" : "Read only");
+            row.put(
+                    "last_used_at_utc",
+                    lastUsed == 0 ? "Never" : java.time.Instant.ofEpochMilli(lastUsed).toString());
+            row.put(
+                    "access",
+                    ((Number) row.remove("can_write")).intValue() == 1
+                            ? "Read, create and update"
+                            : "Read only");
             row.put("enabled", ((Number) row.get("enabled")).intValue() == 1);
             row.put(
                     "expires_at_utc",
@@ -47,18 +58,16 @@ final class ApiKeys {
             throw new Failure(
                     409,
                     "Choose an active, non-administrator API-only account with no password"
-                        + " replacement requirement");
+                            + " replacement requirement");
         var value = object(body);
         if (!value.keySet().equals(Set.of("label", "table", "days"))
-                || !(value.get("label") instanceof String label)
-                || label.isBlank()
-                || label.codePointCount(0, label.length()) > 80
                 || !(value.get("table") instanceof String table)
                 || !(value.get("days") instanceof Integer days)
                 || days < 1
                 || days > 90)
             throw new Failure(
                     400, "Provide label (1–80 characters), table and integer days (1–90)");
+        String label = ApiKeyLabels.label(value.get("label"));
         Service.schema(db, table);
         if (db.count("SELECT COUNT(*) FROM os_api_key WHERE user_id=?", target) >= 20)
             throw new Failure(409, "Revoke an existing key before issuing more than 20 keys");
@@ -101,7 +110,8 @@ final class ApiKeys {
             throw new Failure(401, "Invalid API key");
         var key =
                 db.one(
-                        "SELECT * FROM os_api_key WHERE token_hash=? AND enabled=1 AND expires_at>?",
+                        "SELECT * FROM os_api_key WHERE token_hash=? AND enabled=1 AND"
+                            + " expires_at>?",
                         Passwords.tokenHash(header.substring(7)),
                         System.currentTimeMillis());
         if (key == null) throw new Failure(401, "Invalid API key");
@@ -118,7 +128,9 @@ final class ApiKeys {
             throw new Failure(403, "API key does not permit this operation");
         if (!Set.of("GET", "HEAD").contains(method)
                 && (((Number) key.get("can_write")).intValue() != 1
-                    || (record ? !Set.of("PATCH", "PUT").contains(method) : !method.equals("POST"))))
+                        || (record
+                                ? !Set.of("PATCH", "PUT").contains(method)
+                                : !method.equals("POST"))))
             throw new Failure(403, "API key does not permit this operation");
         user.put("api_key_id", key.get("key_id"));
         return user;

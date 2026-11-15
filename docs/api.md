@@ -400,3 +400,7 @@ GET `/api/openservice/users` and `/admin/accounts` additionally accept `channel`
 ### Browse and download security changes for one account
 
 GET `/api/openservice/users/{id}/security-events` or `/admin/accounts/{id}/security-events` accepts only before (32 lowercase hex event ID belonging to this target) and download=true/false. Administrator-only; unknown account 404, invalid/foreign/unavailable cursor or unknown/repeated parameters 400. Returns account, result (up to 100 target-account events newest-first) and next_before. Download exports the same page as JSON with fixed attachment filename; it does not export the entire history. Events identify actor and target with sanitized detail; no new authentication secrets are exposed. New arrivals do not shift an already-issued cursor.
+
+### Rename integration keys without changing their authority
+
+POST `/api/openservice/users/{id}/api-keys/label` (or matching admin form) accepts exactly key_id and label. Administrator-only; label must be a nonblank NUL-free string of at most 80 Unicode codepoints. Returns result with key_id, label and changed. Foreign/missing key or account 404; invalid body 400; GET 405. A label change preserves all credential and account authority and records account.api_key_labeled with key ID only. Repeating the same label changes nothing. The same label validation applies to issuance.

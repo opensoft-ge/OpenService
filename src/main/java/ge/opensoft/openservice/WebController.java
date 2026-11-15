@@ -681,6 +681,12 @@ public class WebController {
             return view(c, "account-permissions", map("table", "accounts", "account", Service.account(c.db, target),
                     "inspection", inspection, "selectedTable", args.getOrDefault("table", ""), "selectedRecord", args.getOrDefault("record_id", "")));
         }
+        Matcher apiKeyLabel = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/label").matcher(path);
+        if (apiKeyLabel.matches()) {
+            method(method,"POST"); c.admin(); c.noQuery(); boolean api=path.startsWith("/api/");
+            var result=ApiKeyLabels.rename(c.db,c.user.get("user_id").toString(),apiKeyLabel.group(1),api?body(c):map("key_id",c.parameter("key_id",""),"label",c.parameter("label","")));
+            return api?json(map("result",result),200):redirect("/admin/accounts/"+apiKeyLabel.group(1)+"/api-keys");
+        }
         Matcher apiKeyReadOnly = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/read-only").matcher(path);
         if (apiKeyReadOnly.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();

@@ -462,3 +462,7 @@ ADOPT-08/09, PARITY-08: account directory exposes and filters browser/API-only a
 ## OS-N10-16 — Browse and download security changes for one account (implemented)
 
 ADOPT-09, PARITY-08/10: administrator account-targeted security journal and bounded JSON downloads are implemented. Separate audit viewer privileges, group/role/ACL trails and table-specific retention remain missing P1/M2, dependent on composable permissions, object event capture and retention policy. Require denied viewer mutations, correct subject isolation and cleanup evidence. No native audit or SIEM parity claim. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-17 — Rename integration keys without changing their authority (implemented)
+
+PARITY-08: labels can be updated independently of credential authority. OS-DISC-CREDENTIAL-AFFINITY remains missing P2/M2 under PARITY-03/05, requiring outbound secret storage, device inventory and destination policy; isolate bindings, revalidate rotation and limit attempts. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.

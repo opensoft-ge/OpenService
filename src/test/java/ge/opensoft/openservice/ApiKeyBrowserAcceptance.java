@@ -167,6 +167,14 @@ final class ApiKeyBrowserAcceptance {
             assertThat(page.getByRole(AriaRole.CELL, new Page.GetByRoleOptions().setName("Read only").setExact(true))).isVisible();
             assertThat(page.getByLabel("New API key")).hasCount(0);
             ReleaseBrowserAcceptance.accessible(page);
+            page.getByLabel("Key to rename").selectOption(writer);
+            page.getByLabel("Updated label").fill("Reviewed integration");
+            page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Rename key").setExact(true)).press("Enter");
+            assertThat(page.getByRole(AriaRole.CELL,new Page.GetByRoleOptions().setName("Reviewed integration").setExact(true))).isVisible();
+            assertThat(page.getByLabel("New API key")).hasCount(0);ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/api-keys-renamed-mobile-dark.png")).setFullPage(true));
+            page.setViewportSize(1280,900);page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/api-keys-renamed-desktop.png")).setFullPage(true));
             page.getByLabel("Key label").fill("Key only");
             page.getByLabel("Table name").fill("incident");
             page.getByRole(
