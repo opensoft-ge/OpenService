@@ -364,3 +364,9 @@ The administrator key list now includes `use_count`, `last_used_at` (Unix millis
 ### Remove expired credentials without disrupting active integrations
 
 Administrator-only `POST /api/openservice/users/{user_id}/api-keys/cleanup` accepts exactly `{"reason":"Routine cleanup"}` using the shared nonblank 1–500-code-point reason contract and returns `200 {"result":{"removed_count":N}}`. It deletes only that account's keys expired at or before the action cutoff, including their activity metadata. Suspended but unexpired keys are preserved. Positive deletions create `account.expired_api_keys_removed` audit events with actual count, trimmed reason and cutoff; no-op cleanup returns zero without another event. UI equivalent `/admin/accounts/{user_id}/api-keys/cleanup` requires CSRF and redirects to the list. The page explains permanent metadata removal. Existing audit remains. No automatic cleanup or seven-day retention policy is enabled.
+
+### Shorten an existing key lifetime without extending access
+
+Administrator-only `POST /api/openservice/users/{user_id}/api-keys/expiry` accepts exactly `{"key_id":"32-lowercase-hex","hours":24}`. Hours must be a JSON integer from 1 to 2160. Returns `200 {"result":{"key_id":"...","expires_at":123}}` with Unix milliseconds. The new expiry is the action time plus the requested hours and must precede the stored deadline, otherwise 409. Unknown/foreign key IDs return 404; malformed input returns 400. Suspended credentials retain their state; expired keys cannot be revived. Actual changes audit key ID and before/after deadlines without secrets. The CSRF-protected UI equivalent `/admin/accounts/{user_id}/api-keys/expiry` redirects to the list.
+
+The expiry selector displays each label with its non-secret key ID so duplicate labels remain distinguishable.

@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void keyExpiryCanOnlyMoveEarlier() throws Exception { ApiKeyExpiryAcceptance.run(this); }
+
+    @Test
     void expiredKeyCleanupPreservesWorkingCredentials() throws Exception { ApiKeyCleanupAcceptance.run(this); }
 
     @Test

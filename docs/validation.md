@@ -1,6 +1,6 @@
 # New ten-cycle batch — 15 November 2026
 
-8 of 20 cycles complete. Latest gate: 600 tests, zero failures/errors/skips; Java 5077/5077 lines, 2755/2755 branches, 300/300 methods. Exact per-file Java and JavaScript gates pass. [New feature and QA report](paired-cycles-next20-2026-11-15.md). This batch is local only; earlier batch evidence below is historical.
+9 of 20 cycles complete. Latest gate: 602 tests, zero failures/errors/skips; Java 5108/5108 lines, 2779/2779 branches, 302/302 methods. Exact per-file Java and JavaScript gates pass. [New feature and QA report](paired-cycles-next20-2026-11-15.md). This batch is local only; earlier batch evidence below is historical.
 
 # Ten further cycles — 15 November 2026
 

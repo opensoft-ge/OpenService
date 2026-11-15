@@ -97,7 +97,19 @@ final class ApiKeyBrowserAcceptance {
             page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Remove expired API keys")).press("Enter");
             assertThat(page.locator("tbody tr")).hasCount(1);
             assertThat(page.getByText("Expired demo", new Page.GetByTextOptions().setExact(true))).hasCount(0);
-            assertThat(page.getByText("Nightly report", new Page.GetByTextOptions().setExact(true))).isVisible();
+            assertThat(page.getByRole(AriaRole.CELL, new Page.GetByRoleOptions().setName("Nightly report").setExact(true))).isVisible();
+            ReleaseBrowserAcceptance.accessible(page);
+            String selectedKey = page.getByLabel("Key to shorten").locator("option").first().getAttribute("value");
+            assertThat(page.getByLabel("Key to shorten").locator("option").first()).hasText("Nightly report — " + selectedKey);
+            page.getByLabel("Key to shorten").selectOption(selectedKey);
+            page.getByLabel("Remaining hours").fill("1");
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Shorten key lifetime").setExact(true)).press("Enter");
+            assertThat(page.locator("tbody tr")).hasCount(1);
+            try (var db = h.store.open()) {
+                long expiry = ((Number)db.one("SELECT expires_at FROM os_api_key WHERE user_id=?", target).get("expires_at")).longValue();
+                assertTrue(expiry > System.currentTimeMillis());
+                assertTrue(expiry <= System.currentTimeMillis() + 3600000L);
+            }
             ReleaseBrowserAcceptance.accessible(page);
             page.screenshot(
                     new Page.ScreenshotOptions()
