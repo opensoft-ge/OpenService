@@ -984,11 +984,7 @@ public class WebController {
             return json(
                     map(
                             "result",
-                            RecoveryLinks.issue(
-                                    c.db,
-                                    c.user.get("user_id").toString(),
-                                    recoveryIssue.group(1),
-                                    body(c))),
+                            RecoveryLinks.issue(c.db, c.user, recoveryIssue.group(1), body(c))),
                     201);
         }
         Matcher recoveryRevoke =
@@ -1586,7 +1582,7 @@ public class WebController {
                     recovery =
                             RecoveryLinks.issue(
                                     c.db,
-                                    c.user.get("user_id").toString(),
+                                    c.user,
                                     id,
                                     map("current_password", c.parameter("current_password", "")));
                     status = 201;
@@ -1602,6 +1598,7 @@ public class WebController {
                 }
                 if (!operation.equals("recovery")) return redirect("/admin/accounts/" + id);
             } catch (Failure failure) {
+                if (failure.status == 429) c.response.setHeader("Retry-After", "300");
                 error = failure.getMessage();
                 status = failure.status;
             }

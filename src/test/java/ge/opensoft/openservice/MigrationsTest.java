@@ -54,7 +54,7 @@ class MigrationsTest {
             token =
                     RecoveryLinks.issue(
                                     db,
-                                    target,
+                                    db.one("SELECT * FROM os_user WHERE user_id=?", target),
                                     target,
                                     Values.map("current_password", "migration-test-password"))
                             .get("reset_path")

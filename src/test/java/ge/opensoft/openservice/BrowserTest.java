@@ -972,6 +972,30 @@ class BrowserTest {
             login(admin, "admin");
             login(old, name);
             admin.navigate(base() + "/admin/accounts/" + target);
+            for (int attempt = 0; attempt < 6; attempt++) {
+                admin.getByLabel("Your administrator password").fill("wrong-private-secret");
+                var response =
+                        admin.waitForResponse(
+                                r -> r.url().endsWith("/admin/accounts/" + target),
+                                () ->
+                                        admin.getByRole(
+                                                        AriaRole.BUTTON,
+                                                        new Page.GetByRoleOptions()
+                                                                .setName("Create recovery link"))
+                                                .click());
+                assertEquals(attempt < 5 ? 400 : 429, response.status());
+            }
+            assertTrue(admin.getByRole(AriaRole.ALERT).innerText().contains("five minutes"));
+            assertEquals("", admin.getByLabel("Your administrator password").inputValue());
+            ReleaseBrowserAcceptance.accessible(admin);
+            admin.setViewportSize(390, 844);
+            ReleaseBrowserAcceptance.accessible(admin);
+            try (var db = store.open()) {
+                db.update(
+                        "UPDATE os_auth_attempt SET expires_at=0 WHERE identity_hash=?",
+                        Passwords.tokenHash("admin"));
+                db.connection.commit();
+            }
             admin.getByLabel("Your administrator password").fill(WorkflowSupport.PASSWORD);
             admin.getByRole(
                             AriaRole.BUTTON,

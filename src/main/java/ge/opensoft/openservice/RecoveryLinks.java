@@ -18,18 +18,25 @@ final class RecoveryLinks {
                     target);
     }
 
-    static Map<String, Object> issue(Store.Db db, String actor, String target, Object body)
-            throws Exception {
+    static Map<String, Object> issue(
+            Store.Db db, Map<String, Object> caller, String target, Object body) throws Exception {
+        String actor = caller.get("user_id").toString();
         var value = object(body);
         if (!value.keySet().equals(Set.of("current_password"))
                 || !(value.get("current_password") instanceof String password)
                 || password.codePointCount(0, password.length()) > 1024)
             throw new Failure(400, "Confirm your current administrator password");
         Service.requireAccountAdministrator(db, actor);
+        var account = db.one("SELECT name FROM os_user WHERE user_id=?", actor);
+        // Persist verification evidence before issuing or replacing a recovery link.
+        var issuer =
+                Authentication.verify(
+                        db, account.get("name").toString(), password, "recovery-issue");
+        if (issuer == null) throw new Failure(400, "Current administrator password is incorrect");
+        if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
+        Service.requireAccountAdministrator(db, actor);
         lockAccounts(db, actor, target);
-        var issuer = db.one("SELECT password,auth_revision FROM os_user WHERE user_id=?", actor);
-        if (!Passwords.matches(issuer.get("password").toString(), password))
-            throw new Failure(400, "Current administrator password is incorrect");
+        Authentication.requireCurrent(db, caller);
         var user = Service.account(db, target);
         if (!user.get("active").equals(true))
             throw new Failure(409, "Recovery requires an active account");

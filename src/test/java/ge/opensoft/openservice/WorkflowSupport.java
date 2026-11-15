@@ -55,6 +55,118 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void assistedRecoveryConfirmationIsThrottledWithoutReplacingExistingLink() throws Exception {
+        account("RecoveryLimitUser", "reader");
+        account("RecoveryLimitAdmin", "admin");
+        String target;
+        try (var db = store.open()) {
+            target = RecordAccess.owner(db, "RecoveryLimitUser");
+        }
+        String api = "/api/openservice/users/" + target + "/recovery",
+                page = "/admin/accounts/" + target;
+        String first =
+                object(
+                                parsed(
+                                                json(
+                                                        "POST",
+                                                        api,
+                                                        map("current_password", PASSWORD),
+                                                        auth("RecoveryLimitAdmin")))
+                                        .get("result"))
+                        .get("reset_path")
+                        .toString();
+        String csrf = login("RecoveryLimitAdmin");
+        for (int i = 0; i < 6; i++) {
+            var result =
+                    form(
+                            page,
+                            map(
+                                    "csrf",
+                                    csrf,
+                                    "operation",
+                                    "recovery",
+                                    "current_password",
+                                    "incorrect-admin-private-secret"),
+                            null);
+            assertEquals(i < 5 ? 400 : 429, result.statusCode());
+            if (i == 5)
+                assertEquals("300", result.headers().firstValue("Retry-After").orElseThrow());
+            assertFalse(html(result).contains("incorrect-admin-private-secret"));
+            assertFalse(html(result).contains(first));
+        }
+        new Store(environment);
+        assertEquals(
+                429,
+                form(
+                                page,
+                                map(
+                                        "csrf",
+                                        csrf,
+                                        "operation",
+                                        "recovery",
+                                        "current_password",
+                                        PASSWORD),
+                                null)
+                        .statusCode());
+        assertEquals(200, get(first, null).statusCode());
+        try (var db = store.open()) {
+            assertEquals(
+                    5L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_event WHERE"
+                                + " user_name='RecoveryLimitAdmin' AND mechanism='recovery-issue'"
+                                + " AND outcome='failed'"));
+            assertEquals(
+                    2L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_event WHERE"
+                                + " user_name='RecoveryLimitAdmin' AND mechanism='recovery-issue'"
+                                + " AND outcome='limited'"));
+            assertEquals(
+                    1L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_security_event WHERE"
+                                + " action='account.recovery_issued'"));
+            db.update(
+                    "UPDATE os_auth_attempt SET expires_at=0 WHERE identity_hash=?",
+                    Passwords.tokenHash("RecoveryLimitAdmin"));
+            db.connection.commit();
+        }
+        assertEquals(
+                201,
+                form(
+                                page,
+                                map(
+                                        "csrf",
+                                        csrf,
+                                        "operation",
+                                        "recovery",
+                                        "current_password",
+                                        PASSWORD),
+                                null)
+                        .statusCode());
+        assertEquals(400, get(first, null).statusCode());
+        try (var db = store.open()) {
+            assertEquals(
+                    0L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_attempt WHERE identity_hash=?",
+                            Passwords.tokenHash("RecoveryLimitAdmin")));
+            assertEquals(
+                    2L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_event WHERE"
+                                + " user_name='RecoveryLimitAdmin' AND mechanism='recovery-issue'"
+                                + " AND outcome='succeeded'"));
+            assertEquals(
+                    2L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_security_event WHERE"
+                                + " action='account.recovery_issued'"));
+        }
+    }
+
+    @Test
     void passwordChangeAttemptsAreDurableAndThrottled() throws Exception {
         String name = "ThrottledPassword";
         account(name, "reader");
@@ -106,19 +218,19 @@ abstract class WorkflowSupport {
                     5L,
                     db.count(
                             "SELECT COUNT(*) FROM os_auth_event WHERE user_name=? AND"
-                                + " mechanism='password-change' AND outcome='failed'",
+                                    + " mechanism='password-change' AND outcome='failed'",
                             name));
             assertEquals(
                     2L,
                     db.count(
                             "SELECT COUNT(*) FROM os_auth_event WHERE user_name=? AND"
-                                + " mechanism='password-change' AND outcome='limited'",
+                                    + " mechanism='password-change' AND outcome='limited'",
                             name));
             assertEquals(
                     0L,
                     db.count(
                             "SELECT COUNT(*) FROM os_security_event WHERE"
-                                + " action='account.password_changed'"));
+                                    + " action='account.password_changed'"));
             db.update(
                     "UPDATE os_auth_attempt SET expires_at=0 WHERE identity_hash=?",
                     Passwords.tokenHash(name));
@@ -148,13 +260,13 @@ abstract class WorkflowSupport {
                     1L,
                     db.count(
                             "SELECT COUNT(*) FROM os_auth_event WHERE user_name=? AND"
-                                + " mechanism='password-change' AND outcome='succeeded'",
+                                    + " mechanism='password-change' AND outcome='succeeded'",
                             name));
             assertEquals(
                     1L,
                     db.count(
                             "SELECT COUNT(*) FROM os_security_event WHERE"
-                                + " action='account.password_changed'"));
+                                    + " action='account.password_changed'"));
         }
     }
 
