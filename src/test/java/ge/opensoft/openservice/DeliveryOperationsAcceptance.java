@@ -24,6 +24,134 @@ final class DeliveryOperationsAcceptance {
         return job;
     }
 
+    static void retention(WorkflowSupport h) throws Exception {
+        String api = "/api/openservice/delivery/retention";
+        h.account("RetentionAgent", "agent");
+        assertEquals(401, h.get(api, null).statusCode());
+        assertEquals(403, h.get(api, auth("RetentionAgent")).statusCode());
+        assertEquals(
+                403,
+                h.json("POST", api, map("days", 30, "confirm", "PURGE"), auth("RetentionAgent"))
+                        .statusCode());
+        assertEquals(405, h.json("DELETE", api, map(), auth("admin")).statusCode());
+        for (String query :
+                List.of(
+                        "days=29",
+                        "days=3651",
+                        "days=1",
+                        "days=030",
+                        "days=x",
+                        "days=30&days=90",
+                        "unknown=x"))
+            assertEquals(400, h.get(api + "?" + query, auth("admin")).statusCode(), query);
+        for (var body :
+                List.of(
+                        map(),
+                        map("days", 30),
+                        map("days", 30, "confirm", "no"),
+                        map("days", null, "confirm", "PURGE"),
+                        map("days", 30.5, "confirm", "PURGE"),
+                        map("days", 30, "confirm", "PURGE", "unknown", true)))
+            assertEquals(400, h.json("POST", api, body, auth("admin")).statusCode());
+        assertEquals(
+                400,
+                h.json("POST", api + "?days=30", map("days", 30, "confirm", "PURGE"), auth("admin"))
+                        .statusCode());
+        long now = System.currentTimeMillis(), cutoff = now - 30L * 86_400_000;
+        String boundary;
+        List<String> keep = new ArrayList<>();
+        try (var db = h.store.open()) {
+            for (int i = 0; i < 501; i++) seed(db, i % 2 == 0 ? "delivered" : "cancelled", 1, 0, 1);
+            for (String state : List.of("queued", "processing", "failed"))
+                keep.add(seed(db, state, 1, 0, 1));
+            keep.add(seed(db, "delivered", 1, 0, Long.MAX_VALUE));
+            boundary = seed(db, "cancelled", 1, 0, cutoff);
+            assertEquals(
+                    501L,
+                    DeliveryRetention.run(
+                                    db,
+                                    RecordAccess.owner(db, "admin"),
+                                    map("days", 30),
+                                    false,
+                                    now)
+                            .get("eligible"));
+            assertEquals(
+                    0L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_security_event WHERE"
+                                + " action='delivery.metadata_purged'"));
+            assertThrows(
+                    Failure.class,
+                    () ->
+                            DeliveryRetention.run(
+                                    db,
+                                    RecordAccess.owner(db, "RetentionAgent"),
+                                    map("days", 30),
+                                    false,
+                                    now));
+            db.update(
+                    "UPDATE os_outbox SET expires_at=? WHERE job_id=?",
+                    cutoff + 86_400_000L,
+                    boundary);
+            keep.add(boundary);
+            db.connection.commit();
+        }
+        var preview = object(parsed(h.get(api, auth("admin"))).get("result"));
+        assertEquals(90, preview.get("days"));
+        assertEquals(501, preview.get("eligible"));
+        assertEquals(false, preview.get("applied"));
+        assertEquals(200, h.get(api + "?days=3650", auth("admin")).statusCode());
+        var applied =
+                object(
+                        parsed(
+                                        h.json(
+                                                "POST",
+                                                api,
+                                                map("days", 30, "confirm", "PURGE"),
+                                                auth("admin")))
+                                .get("result"));
+        assertEquals(500, applied.get("deleted"));
+        assertEquals(1, applied.get("eligible"));
+        applied =
+                object(
+                        parsed(
+                                        h.json(
+                                                "POST",
+                                                api,
+                                                map("days", "30", "confirm", "PURGE"),
+                                                auth("admin")))
+                                .get("result"));
+        assertEquals(1, applied.get("deleted"));
+        assertEquals(0, applied.get("eligible"));
+        applied =
+                object(
+                        parsed(
+                                        h.json(
+                                                "POST",
+                                                api,
+                                                map("days", 30, "confirm", "PURGE"),
+                                                auth("admin")))
+                                .get("result"));
+        assertEquals(0, applied.get("deleted"));
+        try (var db = h.store.open()) {
+            assertEquals(5L, db.count("SELECT COUNT(*) FROM os_outbox"));
+            for (String job : keep)
+                assertNotNull(db.one("SELECT job_id FROM os_outbox WHERE job_id=?", job));
+            var events =
+                    db.all(
+                            "SELECT detail FROM os_security_event WHERE"
+                                + " action='delivery.metadata_purged' ORDER BY sequence");
+            assertEquals(3, events.size());
+            assertEquals(500, object(events.getFirst().get("detail")).get("deleted"));
+            assertFalse(events.toString().contains("private-envelope"));
+        }
+        h.login("admin");
+        assertEquals(
+                403,
+                h.form("/admin/delivery/retention", map("days", 30, "confirm", "PURGE"), null)
+                        .statusCode());
+    }
+
     static void cancellation(WorkflowSupport h) throws Exception {
         String api = "/api/openservice/delivery/";
         String queued, failed, processing, delivered, cancelled;

@@ -23,3 +23,5 @@ The 2026-11-15 release qualification updates only the GET `/static/app.css` fixt
 The subsequent 2026-11-15 OS-051 theme refresh again updates only that CSS fixture response to the current original stylesheet. The other request inputs, responses and headers are byte-equivalent after JSON decoding. Palette, toggle and screenshot assets are locally authored/generated; the cited theme documentation is a capability reference.
 
 OS-A20-02 updates only the local stylesheet response fixture to include a visible keyboard focus ring for scrollable tables; all other fixture data remains unchanged.
+
+2026-11-15 OS-A20-04: refreshed only GET `/static/app.css` raw bytes for the retention confirmation layout. All other decoded fixture fields are unchanged. This local CSS fixture is not vendor conformance evidence.

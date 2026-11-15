@@ -8,6 +8,75 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.AriaRole;
 
 final class DeliveryOperationsBrowserAcceptance {
+    static void retention(BrowserTest h) throws Exception {
+        try (var db = h.store.open()) {
+            db.update("DELETE FROM os_outbox");
+            DeliveryOperationsAcceptance.seed(db, "delivered", 1, 0, 1);
+            db.connection.commit();
+        }
+        try (var playwright = Playwright.create();
+                var browser = playwright.chromium().launch();
+                var context = browser.newContext()) {
+            var page = context.newPage();
+            h.login(page, "admin");
+            page.navigate(h.base() + "/admin/delivery");
+            page.getByRole(
+                            AriaRole.LINK,
+                            new Page.GetByRoleOptions().setName("Review metadata retention"))
+                    .click();
+            assertThat(page.getByLabel("Days after link expiry")).hasValue("90");
+            page.getByLabel("Days after link expiry").fill("30");
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Preview retention"))
+                    .click();
+            ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(java.nio.file.Path.of("target/retention-desktop.png"))
+                            .setFullPage(true));
+            try (var db = h.store.open()) {
+                assertEquals(1L, db.count("SELECT COUNT(*) FROM os_outbox"));
+            }
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Preview retention"))
+                    .focus();
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Preview retention"))
+                    .press("Tab");
+            assertThat(page.getByRole(AriaRole.CHECKBOX)).isFocused();
+            page.getByRole(AriaRole.CHECKBOX).press("Space");
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions()
+                                    .setName("Remove up to 500 completed records"))
+                    .click();
+            assertThat(page.getByRole(AriaRole.STATUS))
+                    .hasText("1 completed delivery records removed.");
+            assertThat(page.getByRole(AriaRole.CHECKBOX)).hasCount(0);
+            page.setViewportSize(390, 844);
+            ReleaseBrowserAcceptance.accessible(page);
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Dark mode"))
+                    .click();
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(java.nio.file.Path.of("target/retention-mobile-dark.png"))
+                            .setFullPage(true));
+            page.getByRole(
+                            AriaRole.LINK,
+                            new Page.GetByRoleOptions().setName("Back to delivery queue"))
+                    .click();
+            assertThat(page.getByText("No deliveries match these filters.")).isVisible();
+        } finally {
+            try (var db = h.store.open()) {
+                db.update("DELETE FROM os_outbox");
+                db.connection.commit();
+            }
+        }
+    }
+
     static void cancellation(BrowserTest h) throws Exception {
         String queued;
         try (var db = h.store.open()) {

@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void deliveryRetentionPreviewAndApplyWorkInBothThemes() throws Exception {
+        DeliveryOperationsBrowserAcceptance.retention(this);
+    }
+
+    @Test
     void deliveryCancellationIsAccessibleAndPersistent() throws Exception {
         DeliveryOperationsBrowserAcceptance.cancellation(this);
     }

@@ -306,6 +306,40 @@ public class WebController {
             directory.put("jobs", directory.get("result"));
             return view(c, "delivery", directory);
         }
+        if (Set.of("/admin/delivery/retention", "/api/openservice/delivery/retention")
+                .contains(path)) {
+            method(method, "GET", "POST");
+            c.admin();
+            c.uniqueQuery();
+            boolean api = path.startsWith("/api/"), apply = method.equals("POST");
+            Map<String, Object> values;
+            if (apply) {
+                c.noQuery();
+                values =
+                        api
+                                ? object(body(c))
+                                : map(
+                                        "days",
+                                        c.parameter("days", ""),
+                                        "confirm",
+                                        c.parameter("confirm", ""));
+            } else {
+                var arguments = queryArguments(c);
+                if (!Set.of("days").containsAll(arguments.keySet()))
+                    throw new Failure(400, "Unsupported retention parameter");
+                values = map("days", arguments.getOrDefault("days", "90"));
+            }
+            var result =
+                    DeliveryRetention.run(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            values,
+                            apply,
+                            System.currentTimeMillis());
+            return api
+                    ? json(map("result", result), 200)
+                    : view(c, "delivery_retention", map("table", "delivery", "retention", result));
+        }
         Matcher delivery =
                 Pattern.compile("/(?:admin|api/openservice)/delivery/([0-9a-f]{32})/(retry|cancel)")
                         .matcher(path);

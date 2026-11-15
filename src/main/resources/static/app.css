@@ -290,3 +290,5 @@ input[type=checkbox],input[type=radio]{accent-color:var(--accent)}
 .theme-toggle[aria-pressed=true]::after{border-color:var(--accent);background:radial-gradient(circle at 16px 6px,var(--on-accent) 4px,transparent 4.5px) var(--accent)}
 
 .table-scroll:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+
+.retention-panel{display:grid;gap:24px;padding:25px}.retention-panel form{display:grid;gap:12px;justify-items:start;width:100%}.retention-panel label:not(.confirmation){width:100%}.retention-panel .role-guide{margin:0}.retention-panel .confirmation{display:flex;gap:10px;align-items:flex-start}.retention-panel .confirmation input[type=checkbox]{width:auto;flex:none;margin-top:3px}

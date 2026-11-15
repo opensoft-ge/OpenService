@@ -51,6 +51,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void deliveryRetentionIsBoundedAndPreservesUnfinishedWork() throws Exception {
+        DeliveryOperationsAcceptance.retention(this);
+    }
+
+    @Test
     void administratorsCancelOnlyUnclaimedDeliveries() throws Exception {
         DeliveryOperationsAcceptance.cancellation(this);
     }
