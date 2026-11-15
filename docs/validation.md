@@ -1,3 +1,7 @@
+# Twenty-cycle verification — 15 November 2026
+
+Cycle 1 complete: 458 tests, zero failures/errors/skips; Java 3656/3656 lines, 1933/1933 branches, 226/226 methods. Both browser scripts remain fully covered (migration 75/75 lines, 49/49 branches, 12/12 functions; theme 36/36 lines, 15/15 branches, 6/6 functions). Exact per-file gates passed for every production Java and JavaScript file. See [numbered feature and QA evidence](paired-cycles-2026-11-15.md). Later cycles are not yet complete.
+
 # Professional light/dark experience — 15 November 2026
 
 Final `sh scripts/verify.sh` passed **456 tests**, zero failures/errors/skips. Whole-project Java exact counters: **3641/3641 lines, 1931/1931 branch outcomes, 225/225 methods**, 22545/22545 instructions, 41/41 instrumented classes. The skill gate passed all 35 production Java source files. Browser coverage: `migrations.js` **75/75 lines, 49/49 branches, 12/12 functions**; `theme.js` **36/36 lines, 15/15 branches, 6/6 functions**. All production browser scripts are enumerated by the gate; source mismatches and missing reports fail it. Named callbacks make every theme function measurable. Exact Istanbul and JaCoCo gates both pass without exclusions or threshold changes.

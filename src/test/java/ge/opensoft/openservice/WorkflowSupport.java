@@ -51,6 +51,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void completeDeliveryDiagnosticsAreProtectedAndNotPageLimited() throws Exception {
+        DeliveryOperationsAcceptance.diagnostics(this);
+    }
+
+    @Test
     void verifiedEmailOnboardingRecoveryAndDeactivation() throws Exception {
         ReleaseAcceptance.email(this);
     }

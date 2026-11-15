@@ -301,9 +301,13 @@ public class WebController {
             c.admin();
             c.noQuery();
             var jobs = Outbox.list(c.db);
+            var diagnostics = Outbox.diagnostics(c.db, System.currentTimeMillis());
             return path.startsWith("/api/")
-                    ? json(map("result", jobs), 200)
-                    : view(c, "delivery", map("table", "delivery", "jobs", jobs));
+                    ? json(map("result", jobs, "diagnostics", diagnostics), 200)
+                    : view(
+                            c,
+                            "delivery",
+                            map("table", "delivery", "jobs", jobs, "diagnostics", diagnostics));
         }
         Matcher delivery =
                 Pattern.compile("/(?:admin|api/openservice)/delivery/([0-9a-f]{32})/retry")

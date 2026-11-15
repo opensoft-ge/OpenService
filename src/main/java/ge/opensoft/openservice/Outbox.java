@@ -63,7 +63,7 @@ final class Outbox {
         if (existing != null) return existing.get("job_id").toString();
         if (db.count(
                         "SELECT COUNT(*) FROM os_outbox WHERE state IN"
-                            + " ('queued','processing','failed')")
+                                + " ('queued','processing','failed')")
                 >= 1000) throw new Failure(429, "Delivery queue is full; contact an administrator");
         String id = id();
         long now = System.currentTimeMillis();
@@ -84,16 +84,16 @@ final class Outbox {
     static Map<String, Object> claim(Store.Db db, long now) throws SQLException {
         db.update(
                 "UPDATE os_outbox SET state='cancelled',envelope='',lease='',error='EXPIRED' WHERE"
-                    + " expires_at<=? AND state IN ('queued','processing','failed')",
+                        + " expires_at<=? AND state IN ('queued','processing','failed')",
                 now);
         db.update(
                 "UPDATE os_outbox SET state='failed',lease='',error='LEASE_EXHAUSTED' WHERE"
-                    + " state='processing' AND attempts>=5 AND available_at<=?",
+                        + " state='processing' AND attempts>=5 AND available_at<=?",
                 now);
         var job =
                 db.one(
                         "SELECT * FROM os_outbox WHERE state IN ('queued','processing') AND"
-                            + " available_at<=? ORDER BY created_at,job_id LIMIT 1"
+                                + " available_at<=? ORDER BY created_at,job_id LIMIT 1"
                                 + (db.postgres ? " FOR UPDATE SKIP LOCKED" : ""),
                         now);
         if (job == null) return null;
@@ -101,7 +101,7 @@ final class Outbox {
         int attempts = ((Number) job.get("attempts")).intValue() + 1;
         db.update(
                 "UPDATE os_outbox SET state='processing',attempts=?,available_at=?,lease=? WHERE"
-                    + " job_id=?",
+                        + " job_id=?",
                 attempts,
                 now + 60_000,
                 lease,
@@ -131,14 +131,45 @@ final class Outbox {
     static List<Map<String, Object>> list(Store.Db db) throws SQLException {
         return db.all(
                 "SELECT job_id,kind,state,attempts,available_at,expires_at,created_at,error FROM"
-                    + " os_outbox ORDER BY created_at DESC,job_id LIMIT 100");
+                        + " os_outbox ORDER BY created_at DESC,job_id LIMIT 100");
+    }
+
+    static Map<String, Object> diagnostics(Store.Db db, long now) throws SQLException {
+        var result =
+                db.one(
+                        "SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN state='queued' THEN 1"
+                            + " ELSE 0 END),0) AS queued, COALESCE(SUM(CASE WHEN state='processing'"
+                            + " THEN 1 ELSE 0 END),0) AS processing, COALESCE(SUM(CASE WHEN"
+                            + " state='failed' THEN 1 ELSE 0 END),0) AS failed, COALESCE(SUM(CASE"
+                            + " WHEN state='delivered' THEN 1 ELSE 0 END),0) AS delivered,"
+                            + " COALESCE(SUM(CASE WHEN state='cancelled' THEN 1 ELSE 0 END),0) AS"
+                            + " cancelled, COALESCE(SUM(CASE WHEN state='queued' AND"
+                            + " available_at<=? AND expires_at>? THEN 1 ELSE 0 END),0) AS ready,"
+                            + " COALESCE(SUM(CASE WHEN state='processing' AND available_at<=? AND"
+                            + " expires_at>? THEN 1 ELSE 0 END),0) AS expired_leases,"
+                            + " COALESCE(SUM(CASE WHEN state IN ('queued','processing','failed')"
+                            + " AND expires_at<=? THEN 1 ELSE 0 END),0) AS expired_links, MIN(CASE"
+                            + " WHEN state IN ('queued','processing') AND expires_at>? THEN"
+                            + " created_at ELSE NULL END) AS oldest FROM os_outbox",
+                        now,
+                        now,
+                        now,
+                        now,
+                        now,
+                        now);
+        var oldest = (Number) result.remove("oldest");
+        result.put(
+                "oldest_pending_age_seconds",
+                oldest == null ? 0L : Math.max(0L, now - oldest.longValue()) / 1000);
+        result.put("observed_at_epoch_ms", now);
+        return result;
     }
 
     static void retry(Store.Db db, String actor, String id) throws SQLException {
         Service.requireAccountAdministrator(db, actor);
         if (db.update(
                         "UPDATE os_outbox SET state='queued',attempts=0,available_at=?,error=''"
-                            + " WHERE job_id=? AND state='failed' AND expires_at>?",
+                                + " WHERE job_id=? AND state='failed' AND expires_at>?",
                         System.currentTimeMillis(),
                         id,
                         System.currentTimeMillis())

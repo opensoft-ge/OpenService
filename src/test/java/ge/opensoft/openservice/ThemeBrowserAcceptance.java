@@ -118,6 +118,10 @@ final class ThemeBrowserAcceptance {
                     collect(cdp, reports);
                     assertEquals(200, page.navigate(h.base() + path).status(), path);
                     ReleaseBrowserAcceptance.accessible(page);
+                    if (path.equals("/admin/delivery")) {
+                        assertThat(page.locator("[aria-label='Complete queue diagnostics']"))
+                                .containsText("Oldest pending message age (seconds)");
+                    }
                     if (path.equals("/")) {
                         page.screenshot(
                                 new Page.ScreenshotOptions()
@@ -163,7 +167,7 @@ final class ThemeBrowserAcceptance {
                     if (preference.equals("blocked")) {
                         context.addInitScript(
                                 "Object.defineProperty(window, 'localStorage', {get() {throw new"
-                                    + " DOMException('Unavailable', 'SecurityError');}})");
+                                        + " DOMException('Unavailable', 'SecurityError');}})");
                     } else {
                         context.addInitScript(
                                 "localStorage.setItem('openservice.theme', 'invalid')");

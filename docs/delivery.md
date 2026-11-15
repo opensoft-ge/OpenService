@@ -39,8 +39,14 @@ Delivery is **at least once**. A crash after SMTP acceptance but before acknowle
 | Interface | Access and behavior |
 |---|---|
 | `POST /api/openservice/email-invitations` | Administrator; exactly `name`, `role`, `email`; 201 with invitation metadata and `delivery_id` |
-| `GET /admin/delivery`, `GET /api/openservice/delivery` | Administrator; latest 100 sanitized jobs |
+| `GET /admin/delivery`, `GET /api/openservice/delivery` | Administrator; latest 100 sanitized jobs plus complete queue diagnostics |
 | `POST /admin/delivery/{id}/retry`, API equivalent | Administrator; only unexpired failed jobs; browser CSRF required |
 | `GET/POST /forgot` | Public recovery form; POST requires CSRF; does not expose account existence |
 
 These are original OpenService contracts, not ServiceNow Email API compatibility.
+
+## Complete queue diagnostics
+
+`GET /api/openservice/delivery` retains its `result` array and adds `diagnostics`: `total`, `queued`, `processing`, `failed`, `delivered`, `cancelled`, `ready`, `expired_leases`, `expired_links`, `oldest_pending_age_seconds` and `observed_at_epoch_ms`. Counts cover all retained rows, independent of the page limit. Empty counts and age are zero. Ready means queued, due and unexpired; expired leases count unexpired processing jobs whose lease deadline has arrived. Expired links count unfinished rows awaiting worker cleanup. Pending age excludes failed, terminal and expired jobs and clamps future timestamps to zero.
+
+The administrator screen gives readable labels for these values in both themes. It exposes no message content, recipient, reference ID, bearer link or SMTP error text. Observations are point-in-time diagnostics, not inbox delivery guarantees or a substitute for a monitoring/alerting service. Expired leases may be retried or exhausted according to the bounded worker policy.
