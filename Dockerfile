@@ -17,5 +17,5 @@ COPY --from=build /build/target/openservice-0.2.0-SNAPSHOT.jar /app/app.jar
 USER 10001:10001
 ENV DATABASE_URL=sqlite:////data/openservice.db
 EXPOSE 8080
-HEALTHCHECK --interval=10s --timeout=5s --retries=10 CMD curl --fail --silent http://localhost:8080/healthz || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --retries=10 CMD curl --fail --silent http://localhost:8080/readyz || exit 1
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

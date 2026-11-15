@@ -57,6 +57,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void readinessReportsSchemaDegradationAndRecoveryWithoutSession() throws Exception {
+        ReadinessAcceptance.run(this);
+    }
+
+    @Test
     void withdrawnReviewCanBeRequestedAgainWithoutLosingHistory() throws Exception {
         ApprovalResubmissionAcceptance.run(this);
     }

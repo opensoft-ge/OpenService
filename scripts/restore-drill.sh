@@ -171,6 +171,7 @@ docker stop "$drill_prefix-source-db" >/dev/null
 start_database restored
 docker exec -i "$drill_prefix-restored-db" pg_restore --exit-on-error --no-owner -U openservice -d openservice < "$drill_directory/backup.dump"
 start_application restored
+curl --max-time 10 -fsS "$drill_address/readyz" | jq -e '.status == "ready"' >/dev/null
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored

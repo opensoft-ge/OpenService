@@ -95,6 +95,13 @@ public class WebController {
                 "Content-Security-Policy",
                 "default-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors"
                         + " 'none'; form-action 'self'; base-uri 'self'");
+        if (request.getRequestURI().equals("/readyz")) {
+            if (!request.getMethod().equals("GET")) return json(map("error", "GET required"), 405);
+            if (request.getQueryString() != null && !request.getQueryString().isEmpty())
+                return json(map("error", "Query parameters are not supported"), 400);
+            boolean ready = Readiness.ready(store);
+            return json(map("status", ready ? "ready" : "not_ready"), ready ? 200 : 503);
+        }
         try (var db = store.open()) {
             return dispatch(db, request, response);
         }

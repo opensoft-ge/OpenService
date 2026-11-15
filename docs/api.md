@@ -262,3 +262,9 @@ POST `.../approvals/{approval_id}/withdraw` closes a pending review without deci
 Record approval GET responses include a current-executor `requirements` snapshot, `record_revision` and `schema_version`. Each destination reports `target_state`, `label`, `required`, `qualifying` and `approval_satisfied`; see [requirement semantics](approvals.md#current-requirement-snapshot). The snapshot does not authorize execution.
 
 The existing record approval request POST accepts a fresh request after a previous attempt was withdrawn, preserving all history. Pending/approved/rejected duplicates still conflict. See [resubmission](approvals.md#resubmission-after-withdrawal).
+
+## Readiness for deployment tooling
+
+Public `GET /readyz` returns only `{"status":"ready"}` (200) or `{"status":"not_ready"}` (503). Ready means a database connection/query succeeds and the migration history contains exactly versions 1 through the version required by this application. Missing, future or noncontiguous history and SQL open/query/close failures report unavailable without database names, credentials or schema versions. The probe creates no session, ignores supplied authentication, permits no nonempty query string (400), and rejects non-GET methods (405). Responses are not cacheable.
+
+Container and Compose health checks use `/readyz`; `/healthz` retains its earlier contract. Use this signal for traffic readiness, not as an automatic restart/liveness trigger during a database outage. It does not validate every schema object, delivery-worker health, SMTP reachability or high availability. Connection/query duration remains subject to the configured database/client timeouts and deployment probe timeout. A startup migration failure still prevents the application from starting.

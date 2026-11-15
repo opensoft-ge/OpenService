@@ -29,6 +29,7 @@ printf 'PORT=0\n' >> "$install_directory/.env"
 compose up --no-build --detach --wait --wait-timeout 120 >/dev/null
 install_address="http://$(compose port app 8080)"
 curl --max-time 10 -fsS "$install_address/healthz" | jq -e '.status == "ok"' >/dev/null
+curl --max-time 10 -fsS "$install_address/readyz" | jq -e '.status == "ready"' >/dev/null
 curl --max-time 10 -fsS "$install_address/login" > "$install_directory/login.html"
 rg -q 'Enter your workspace' "$install_directory/login.html"
 install_password=$(awk -F= '$1=="ADMIN_PASSWORD" {print $2}' "$install_directory/.env")

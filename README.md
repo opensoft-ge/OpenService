@@ -130,3 +130,5 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, val
 ## Product experience
 
 See the [professional appearance and dark-mode requirements](docs/product-experience.md), including current implementation status and browser-release acceptance criteria.
+
+Deployment tooling can use stateless `GET /readyz` for database/migration readiness (200/503). Container and Compose health checks use this route. See [probe contract](docs/api.md#readiness-for-deployment-tooling), [20-cycle evidence](docs/paired-cycles-2026-11-15.md) and [current local qualification](docs/release-qualification-auto20.md).
