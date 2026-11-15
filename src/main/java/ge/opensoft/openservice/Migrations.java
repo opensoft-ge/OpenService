@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 18;
+    static final int VERSION = 19;
 
     private Migrations() {}
 
@@ -220,6 +220,28 @@ final class Migrations {
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(18,?)",
                     "API-only account access");
+        }
+        if (version < 19) {
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_approval(sequence "
+                            + (db.postgres
+                                    ? "BIGSERIAL PRIMARY KEY"
+                                    : "INTEGER PRIMARY KEY AUTOINCREMENT")
+                            + ",approval_id VARCHAR(32) NOT NULL UNIQUE,record_id VARCHAR(32) NOT"
+                            + " NULL,record_revision INTEGER NOT NULL,schema_version INTEGER NOT"
+                            + " NULL,target_state VARCHAR(80) NOT NULL,requested_by VARCHAR(32) NOT"
+                            + " NULL,requester_name VARCHAR(80) NOT NULL,approver_id VARCHAR(32)"
+                            + " NOT NULL,approver_name VARCHAR(80) NOT NULL,status VARCHAR(20) NOT"
+                            + " NULL,reason TEXT NOT NULL,comment TEXT NOT NULL,created_at"
+                            + " VARCHAR(40) NOT NULL,decided_at VARCHAR(40) NOT"
+                            + " NULL,decision_revision BIGINT NOT"
+                            + " NULL,UNIQUE(record_id,record_revision,schema_version,target_state,approver_id))");
+            db.update(
+                    "CREATE INDEX IF NOT EXISTS ix_os_approval_record ON"
+                        + " os_approval(record_id,sequence)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(19,?)",
+                    "revision-bound staff review");
         }
     }
 

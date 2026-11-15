@@ -1442,6 +1442,11 @@ public class WebController {
                                                     "offset",
                                                     String.valueOf((long) page.offset() + 30)))));
         }
+        Matcher approval =
+                Pattern.compile(
+                                "/(api/openservice/records|record)/([^/]+)/([0-9a-f]{32})/approvals(?:/([0-9a-f]{32})/decision)?")
+                        .matcher(path);
+        if (approval.matches()) return approvals(c, approval, method);
         Matcher detail =
                 Pattern.compile("/record/([^/]+)/([^/]+)(?:/(note|attachment|comment))?")
                         .matcher(path);
@@ -1546,6 +1551,80 @@ public class WebController {
         }
         if (path.equals("/admin/accounts")) return accounts(c, method);
         throw new Failure(404, "Resource not found");
+    }
+
+    private ModelAndView approvals(Request c, Matcher route, String method) throws Exception {
+        if (c.db.postgres) c.db.all("SELECT pg_advisory_xact_lock(18439,4)");
+        Authentication.requireCurrent(c.db, c.user);
+        boolean api = route.group(1).startsWith("api/");
+        String table = route.group(2), id = route.group(3), decision = route.group(4);
+        method(method, decision == null ? new String[] {"GET", "POST"} : new String[] {"POST"});
+        c.uniqueQuery();
+        String location = "/record/" + table + "/" + id + "/approvals";
+        if (method.equals("POST")) {
+            c.noQuery();
+            Object payload;
+            if (api) payload = body(c);
+            else if (decision != null)
+                payload =
+                        map(
+                                "decision",
+                                c.parameter("decision", ""),
+                                "comment",
+                                c.parameter("comment", ""));
+            else {
+                String revision = c.parameter("expected_revision", "");
+                if (!revision.matches("0|[1-9][0-9]{0,9}")
+                        || Long.parseLong(revision) > Integer.MAX_VALUE)
+                    throw new Failure(400, "Provide a valid record revision");
+                payload =
+                        map(
+                                "expected_revision",
+                                Integer.parseInt(revision),
+                                "approver",
+                                c.parameter("approver", ""),
+                                "target_state",
+                                c.parameter("target_state", ""),
+                                "reason",
+                                c.parameter("reason", ""));
+            }
+            var result =
+                    decision == null
+                            ? Approvals.request(c.db, table, id, c.user, payload)
+                            : Approvals.decide(c.db, table, id, decision, c.user, payload);
+            return api
+                    ? json(map("result", result), decision == null ? 201 : 200)
+                    : redirect(location);
+        }
+        var result = Approvals.page(c.db, table, id, c.arguments());
+        if (api) return json(result, 200);
+        var item = Service.record(c.db, table, id);
+        var definition = Service.schema(c.db, table);
+        return view(
+                c,
+                "approvals",
+                map(
+                        "table",
+                        table,
+                        "item",
+                        item,
+                        "recordPath",
+                        "/record/" + table + "/" + id,
+                        "location",
+                        location,
+                        "viewerId",
+                        c.user.get("user_id"),
+                        "approvals",
+                        result.get("result"),
+                        "pending",
+                        result.get("pending_count"),
+                        "nextBefore",
+                        result.get("next_before"),
+                        "states",
+                        definition.get("states"),
+                        "targets",
+                        object(definition.get("flow"))
+                                .getOrDefault(object(item.get("data")).get("state"), List.of())));
     }
 
     private ModelAndView record(Request c, String table, String id, String action, String method)

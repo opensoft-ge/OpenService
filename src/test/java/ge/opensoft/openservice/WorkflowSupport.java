@@ -49,10 +49,16 @@ abstract class WorkflowSupport {
                             "os_recovery_budget",
                             "os_requester_record",
                             "os_email_enrollment",
-                            "os_password_exclusion")) db.update("DELETE FROM " + table);
+                            "os_password_exclusion",
+                            "os_approval")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
+    }
+
+    @Test
+    void staffApprovalsPreserveRevisionsAndEnforceAssignedReviewers() throws Exception {
+        ApprovalAcceptance.run(this);
     }
 
     @Test

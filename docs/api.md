@@ -250,3 +250,7 @@ Administrators can GET/POST `/api/openservice/users/{id}/require-password-change
 ## API-only accounts
 
 Administrator GET/POST `/api/openservice/users/{id}/access-mode` reads or sets strict boolean `api_only`. Changes revoke sessions/security links and audit before/after values; ordinary browser access is denied even with valid Basic credentials. API authorization and required password replacement still apply. The last active browser-enabled administrator is protected across mode, role and deactivation changes. See [contract and operational limits](api-only-accounts.md).
+
+## Revision-bound staff reviews
+
+See [assigned-review endpoints](approvals.md#http-contract). These record an authorized decision for one record/configuration revision; they do not yet enforce approval prerequisites or execute the proposed state change.

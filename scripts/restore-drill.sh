@@ -121,6 +121,12 @@ if [ "$drill_source_version" -ge 18 ]; then
     api -X POST -H 'Content-Type: application/json' --data '{"api_only":true}' \
         "$drill_address/api/openservice/users/$drill_api_only/access-mode" | jq -e '.result.api_only == true' >/dev/null
 fi
+if [ "$drill_source_version" -ge 19 ]; then
+    jq -n --arg password "$drill_password" '{name:"RestoreReviewer",password:$password,role:"agent"}' > "$drill_directory/reviewer.json"
+    api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/reviewer.json" "$drill_address/api/openservice/users" >/dev/null
+    drill_review_record=$(api -X POST -H 'Content-Type: application/json' --data '{"short_description":"Restore approval"}' "$drill_address/api/now/table/incident" | jq -er '.result.sys_id')
+    drill_approval=$(api -X POST -H 'Content-Type: application/json' --data '{"expected_revision":0,"approver":"RestoreReviewer","target_state":"2","reason":"Review after recovery"}' "$drill_address/api/openservice/records/incident/$drill_review_record/approvals" | jq -er '.result.approval_id')
+fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null
 snapshot_delivery() {
@@ -150,6 +156,11 @@ snapshot_access_modes() {
         -c 'SELECT row_to_json(q) FROM (SELECT user_id,api_only FROM os_user ORDER BY user_id) q' > "$drill_directory/$1-access-modes.jsonl"
 }
 if [ "$drill_source_version" -ge 18 ]; then snapshot_access_modes source; fi
+snapshot_approvals() {
+    docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+        -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_approval ORDER BY sequence) q' > "$drill_directory/$1-approvals.jsonl"
+}
+if [ "$drill_source_version" -ge 19 ]; then snapshot_approvals source; fi
 docker exec "$drill_prefix-source-db" pg_dump -U openservice -d openservice -Fc > "$drill_directory/backup.dump"
 docker stop "$drill_prefix-source-db" >/dev/null
 start_database restored
@@ -158,6 +169,18 @@ start_application restored
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored
+if [ "$drill_source_version" -ge 19 ]; then
+    snapshot_approvals restored
+    cmp "$drill_directory/source-approvals.jsonl" "$drill_directory/restored-approvals.jsonl"
+    api "$drill_address/api/openservice/records/incident/$drill_review_record/approvals" | jq -e '.pending_count == 1 and .result[0].current == true' >/dev/null
+    curl --max-time 30 -fsS --user "RestoreReviewer:$drill_password" -X POST -H 'Content-Type: application/json' --data '{"decision":"approved","comment":"Reviewed after restore"}' \
+        "$drill_address/api/openservice/records/incident/$drill_review_record/approvals/$drill_approval/decision" | jq -e '.result.status == "approved"' >/dev/null
+    drill_status=$(curl --max-time 30 -sS -o /dev/null -w '%{http_code}' --user "RestoreReviewer:$drill_password" -X POST -H 'Content-Type: application/json' --data '{"decision":"approved","comment":""}' \
+        "$drill_address/api/openservice/records/incident/$drill_review_record/approvals/$drill_approval/decision")
+    [ "$drill_status" = 409 ]
+    api "$drill_address/api/now/table/incident/$drill_review_record" | jq -e '.result.state == "1" and .result.sys_mod_count == "0"' >/dev/null
+    echo 'PASS: revision-bound review survives restore and accepts one decision without executing a transition.'
+fi
 if [ "$drill_source_version" -ge 18 ]; then
     snapshot_access_modes restored
     cmp "$drill_directory/source-access-modes.jsonl" "$drill_directory/restored-access-modes.jsonl"

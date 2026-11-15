@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void staffReviewJourneyIsAccessibleAndRevisionBound() throws Exception {
+        ApprovalBrowserAcceptance.run(this);
+    }
+
+    @Test
     void apiOnlyAccountsLoseBrowserAccessAndCanBeRestored() throws Exception {
         AccessModeBrowserAcceptance.run(this);
     }
