@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void integrationKeyCanLoseWriteAuthorityWithoutChangingItsSecret() throws Exception { ApiKeyReadOnlyAcceptance.run(this); }
+
+    @Test
     void administratorDiagnosesSubjectPermissionsWithoutChangingIdentity() throws Exception { AccountPermissionsAcceptance.run(this); }
 
     @Test

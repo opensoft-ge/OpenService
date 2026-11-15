@@ -160,6 +160,13 @@ final class ApiKeyBrowserAcceptance {
                                     new Page.GetByTextOptions().setExact(true)))
                     .isVisible();
             ReleaseBrowserAcceptance.accessible(page);
+            String writer = page.getByLabel("Key to make read-only").locator("option").first().getAttribute("value");
+            page.getByLabel("Key to make read-only").selectOption(writer);
+            page.getByLabel("Reason for reducing access").fill("Writer only needs to read now");
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Make key read-only")).press("Enter");
+            assertThat(page.getByRole(AriaRole.CELL, new Page.GetByRoleOptions().setName("Read only").setExact(true))).isVisible();
+            assertThat(page.getByLabel("New API key")).hasCount(0);
+            ReleaseBrowserAcceptance.accessible(page);
             page.getByLabel("Key label").fill("Key only");
             page.getByLabel("Table name").fill("incident");
             page.getByRole(

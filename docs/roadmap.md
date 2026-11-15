@@ -442,3 +442,7 @@ Credential-status explanation partially advances OS-DISC-03 and ADOPT-08/09. Ful
 ## OS-N10-11 — Administrator diagnosis of another account's record permissions (implemented)
 
 OS-DISC-03 now has bounded administrator subject-level record-policy diagnosis; comparison/simulation and native exports remain missing. Scoped administration is merged into ADOPT-03/06/09 and OS-PARITY-08, missing P1/M2, requiring composable permissions and denied unrelated administration after delegation/revocation. Exact Brazil Access Analyzer behavior and native invitation-specific behavior remain unverified. Next: credential downscoping and invitation directory administration. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-12 — Reduce existing integration keys to read-only (implemented)
+
+OS-PARITY-03/08 and OS-DISC-API-AUTH-POLICY: bounded reduction of a retained key to read-only; arbitrary OAuth/resource scopes remain missing. New OS-DISC-WORKLOAD-FEDERATION is missing P2/M2, dependent on connector trust/identity configuration; require issuer/audience/expiry rejection, short-lived credentials and auditable mappings. Brazil release notes establish the capability; detailed provider flows remain unverified. Next: invitation directory and account access-mode filters. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
