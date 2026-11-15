@@ -31,7 +31,7 @@ final class EmailOnboarding {
             throw new Failure(409, "Email address already belongs to an account");
         if (db.count(
                         "SELECT COUNT(*) FROM os_outbox WHERE kind='email.invitation' AND"
-                            + " created_at>?",
+                                + " created_at>?",
                         System.currentTimeMillis() - 60_000)
                 >= 20) throw new Failure(429, "Invitation delivery limit reached; try later");
         var invite =
@@ -69,7 +69,7 @@ final class EmailOnboarding {
         String address = Passwords.tokenHash("remote:" + remote);
         if (db.count(
                                 "SELECT COUNT(*) FROM os_recovery_budget WHERE identity_hash=? AND"
-                                    + " requested_at>?",
+                                        + " requested_at>?",
                                 identity,
                                 now - 60_000)
                         > 0
@@ -78,7 +78,7 @@ final class EmailOnboarding {
                 || db.count("SELECT COUNT(*) FROM os_recovery_budget") >= 1000) return;
         db.update(
                 "INSERT INTO os_recovery_budget(request_id,identity_hash,remote_hash,requested_at)"
-                    + " VALUES(?,?,?,?)",
+                        + " VALUES(?,?,?,?)",
                 id(),
                 identity,
                 address,
@@ -87,7 +87,7 @@ final class EmailOnboarding {
         if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,6)");
         if (db.count(
                         "SELECT COUNT(*) FROM os_outbox WHERE state IN"
-                            + " ('queued','processing','failed')")
+                                + " ('queued','processing','failed')")
                 >= 1000) return;
         var user =
                 db.one(
@@ -108,6 +108,10 @@ final class EmailOnboarding {
     static boolean valid(Store.Db db, String kind, Map<String, Object> payload) throws Exception {
         String path = payload.get("path").toString();
         try {
+            if (kind.equals("email.enrollment")) {
+                return payload.get("email")
+                        .equals(EmailEnrollment.describe(db, path.substring(14)).get("email"));
+            }
             if (kind.equals("email.invitation")) {
                 String token = path.substring(6);
                 Invitations.describe(db, token);
@@ -115,7 +119,7 @@ final class EmailOnboarding {
                         .equals(
                                 db.one(
                                                 "SELECT email FROM os_invitation WHERE"
-                                                    + " token_hash=?",
+                                                        + " token_hash=?",
                                                 Passwords.tokenHash(token))
                                         .get("email"));
             }

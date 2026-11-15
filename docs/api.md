@@ -224,3 +224,7 @@ The administrator-only `/api/openservice/migrations` API creates plans and expos
 See [delivery contracts](delivery.md) for email invitations, recovery and queue administration. `GET/POST /api/openservice/requests` and `/requests` provide the local intake flow. POST accepts only `short_description` and optional `description`, creates an `sc_request`, and binds it to the authenticated submitting account. Reader submission is denied; requesters cannot use generic record mutation APIs. GET returns at most 100 accessible requests. Requester ownership does not bypass private/group visibility. Requesters can add shared comments and download existing attachments on their accessible records; internal notes, upload, administration and other records remain inaccessible. There is no public/anonymous request intake or imported requester ownership mapping.
 
 Field rules may include `read_roles`; see [configuration](configuration.md#field-read-roles). Raw source exports (`source=true`) require administrator access because unmapped original payloads are not governed by field definitions.
+
+## Recovery-email enrollment
+
+`GET/POST/DELETE /api/openservice/me/email` and the corresponding browser journey support first verified recovery-email enrollment for existing local accounts. See [inputs, responses, security boundaries and migration](email-enrollment.md). This is a local extension, not a ServiceNow API.

@@ -17,7 +17,7 @@ final class DeliveryDirectory {
                     "Use supported delivery filters and a positive page of at most six digits");
         String state = args.getOrDefault("state", ""), kind = args.getOrDefault("kind", "");
         if (!Set.of("", "queued", "processing", "failed", "delivered", "cancelled").contains(state)
-                || !Set.of("", "invitation", "recovery").contains(kind))
+                || !Set.of("", "invitation", "recovery", "enrollment").contains(kind))
             throw new Failure(400, "Invalid delivery state or message kind");
         var parameters = new ArrayList<Object>();
         String where = "1=1";

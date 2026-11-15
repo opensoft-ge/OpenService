@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 14;
+    static final int VERSION = 15;
 
     private Migrations() {}
 
@@ -165,7 +165,7 @@ final class Migrations {
             addColumn(db, "os_recovery", "mode", "VARCHAR(16) NOT NULL DEFAULT 'manual'");
             db.update(
                     "CREATE UNIQUE INDEX IF NOT EXISTS ix_os_user_email ON os_user(email) WHERE"
-                        + " email<>''");
+                            + " email<>''");
             db.update(
                     "CREATE TABLE IF NOT EXISTS os_outbox(job_id VARCHAR(32) PRIMARY KEY,kind"
                         + " VARCHAR(80) NOT NULL,reference_id VARCHAR(64) NOT NULL,envelope TEXT"
@@ -175,20 +175,30 @@ final class Migrations {
                         + " NULL,UNIQUE(kind,reference_id))");
             db.update(
                     "CREATE INDEX IF NOT EXISTS ix_os_outbox_ready ON"
-                        + " os_outbox(state,available_at)");
+                            + " os_outbox(state,available_at)");
             db.update(
                     "CREATE TABLE IF NOT EXISTS os_recovery_budget(request_id VARCHAR(32) PRIMARY"
-                        + " KEY,identity_hash VARCHAR(64) NOT NULL,remote_hash VARCHAR(64) NOT"
-                        + " NULL,requested_at BIGINT NOT NULL)");
+                            + " KEY,identity_hash VARCHAR(64) NOT NULL,remote_hash VARCHAR(64) NOT"
+                            + " NULL,requested_at BIGINT NOT NULL)");
             db.update(
                     "CREATE TABLE IF NOT EXISTS os_requester_record(record_id VARCHAR(32) PRIMARY"
-                        + " KEY,user_id VARCHAR(32) NOT NULL)");
+                            + " KEY,user_id VARCHAR(32) NOT NULL)");
             db.update(
                     "CREATE INDEX IF NOT EXISTS ix_os_requester_user ON"
-                        + " os_requester_record(user_id)");
+                            + " os_requester_record(user_id)");
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(14,?)",
                     "durable identity delivery and requester ownership");
+        }
+        if (version < 15) {
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_email_enrollment(user_id VARCHAR(32) PRIMARY"
+                        + " KEY,token_hash VARCHAR(64) NOT NULL UNIQUE,email VARCHAR(254) NOT"
+                        + " NULL,auth_revision BIGINT NOT NULL,expires_at BIGINT NOT"
+                        + " NULL,created_at BIGINT NOT NULL,cancelled INTEGER NOT NULL DEFAULT 0)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(15,?)",
+                    "verified recovery-email enrollment");
         }
     }
 

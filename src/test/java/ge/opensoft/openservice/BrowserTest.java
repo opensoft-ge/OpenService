@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void existingAccountsVerifyRecoveryEmailInBothThemes() throws Exception {
+        EmailEnrollmentBrowserAcceptance.run(this);
+    }
+
+    @Test
     void deliveryRetentionPreviewAndApplyWorkInBothThemes() throws Exception {
         DeliveryOperationsBrowserAcceptance.retention(this);
     }

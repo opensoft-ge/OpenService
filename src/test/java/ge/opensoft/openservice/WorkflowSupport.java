@@ -43,11 +43,20 @@ abstract class WorkflowSupport {
                             "os_transfer_job",
                             "os_transfer_item",
                             "os_transfer_link")) db.update("DELETE FROM " + table);
-            for (String table : List.of("os_outbox", "os_recovery_budget", "os_requester_record"))
-                db.update("DELETE FROM " + table);
+            for (String table :
+                    List.of(
+                            "os_outbox",
+                            "os_recovery_budget",
+                            "os_requester_record",
+                            "os_email_enrollment")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
+    }
+
+    @Test
+    void localAccountsEnrollAndCancelVerifiedRecoveryEmail() throws Exception {
+        EmailEnrollmentAcceptance.run(this);
     }
 
     @Test

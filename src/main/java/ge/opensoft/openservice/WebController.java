@@ -112,7 +112,7 @@ public class WebController {
             boolean publicPath =
                     Set.of("/healthz", "/login", "/forgot", "/static/app.css", "/static/theme.js")
                                     .contains(path)
-                            || path.matches("/(?:join|recover)/[A-Za-z0-9_-]{32}");
+                            || path.matches("/(?:join|recover|verify-email)/[A-Za-z0-9_-]{32}");
             var user =
                     session.getAttribute("user") == null
                             ? null
@@ -154,6 +154,8 @@ public class WebController {
                                         "/logout",
                                         "/account/sessions/revoke",
                                         "/account/password",
+                                        "/account/email",
+                                        "/api/openservice/me/email",
                                         "/api/openservice/me/password",
                                         "/api/openservice/me/sessions/revoke")
                                 .contains(path)
@@ -450,6 +452,62 @@ public class WebController {
                         default -> TransferJobs.cutover(c.db, job, input, c.db.viewerId);
                     };
             return json(map("result", result), 200);
+        }
+        if (Set.of("/account/email", "/api/openservice/me/email").contains(path)) {
+            boolean api = path.startsWith("/api/");
+            method(
+                    method,
+                    api ? new String[] {"GET", "POST", "DELETE"} : new String[] {"GET", "POST"});
+            c.noQuery();
+            c.uniqueQuery();
+            String actor = c.user.get("user_id").toString();
+            Map<String, Object> issued = null;
+            if (!method.equals("GET")) {
+                boolean cancel =
+                        method.equals("DELETE")
+                                || !api && c.parameter("operation", "").equals("cancel");
+                if (cancel) {
+                    if (api && !object(body(c)).isEmpty())
+                        throw new Failure(400, "Provide an empty JSON object");
+                    EmailEnrollment.cancel(c.db, actor);
+                } else
+                    issued =
+                            EmailEnrollment.request(
+                                    store,
+                                    c.db,
+                                    c.user,
+                                    api
+                                            ? body(c)
+                                            : map(
+                                                    "email",
+                                                    c.parameter("email", ""),
+                                                    "current_password",
+                                                    c.parameter("current_password", "")));
+            }
+            var status = EmailEnrollment.status(c.db, actor);
+            return api
+                    ? json(map("result", status, "issued", issued), issued == null ? 200 : 202)
+                    : view(
+                            c,
+                            "email_enrollment",
+                            map("table", "account", "enrollment", status, "issued", issued));
+        }
+        Matcher emailVerification =
+                Pattern.compile("/verify-email/([A-Za-z0-9_-]{32})").matcher(path);
+        if (emailVerification.matches()) {
+            method(method, "GET", "POST");
+            c.noQuery();
+            c.uniqueQuery();
+            var enrollment = EmailEnrollment.describe(c.db, emailVerification.group(1));
+            if (method.equals("POST")) {
+                checkCsrf(c, c.parameter("csrf", ""));
+                EmailEnrollment.confirm(c.db, emailVerification.group(1));
+                c.session.invalidate();
+                return redirect("/login");
+            }
+            return new ModelAndView(
+                    "verify_email",
+                    map("enrollment", enrollment, "csrf", c.session.getAttribute("csrf")));
         }
         Matcher recovering = Pattern.compile("/recover/([A-Za-z0-9_-]{32})").matcher(path);
         if (recovering.matches()) {

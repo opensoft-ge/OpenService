@@ -97,6 +97,11 @@ if [ "$drill_source_version" -ge 14 ]; then
     api -X POST -H 'Content-Type: application/json' --data '{"name":"RestoreInvite","role":"reader","email":"restore@example.invalid"}' \
         "$drill_address/api/openservice/email-invitations" | jq -e '.result.delivery_id != null and .result.accept_path == null' >/dev/null
 fi
+if [ "$drill_source_version" -ge 15 ]; then
+    jq -n --arg password "$drill_password" '{email:"enrollment@example.invalid",current_password:$password}' > "$drill_directory/enrollment.json"
+    api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/enrollment.json" \
+        "$drill_address/api/openservice/me/email" | jq -e '.issued.delivery_id != null' >/dev/null
+fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null
 snapshot_delivery() {
@@ -106,6 +111,11 @@ snapshot_delivery() {
         -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_requester_record ORDER BY record_id) q' > "$drill_directory/$1-requesters.jsonl"
 }
 if [ "$drill_source_version" -ge 14 ]; then snapshot_delivery source; fi
+snapshot_enrollment() {
+    docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+        -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_email_enrollment ORDER BY user_id) q' > "$drill_directory/$1-enrollment.jsonl"
+}
+if [ "$drill_source_version" -ge 15 ]; then snapshot_enrollment source; fi
 docker exec "$drill_prefix-source-db" pg_dump -U openservice -d openservice -Fc > "$drill_directory/backup.dump"
 docker stop "$drill_prefix-source-db" >/dev/null
 start_database restored
@@ -114,6 +124,10 @@ start_application restored
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored
+if [ "$drill_source_version" -ge 15 ]; then
+    snapshot_enrollment restored
+    cmp "$drill_directory/source-enrollment.jsonl" "$drill_directory/restored-enrollment.jsonl"
+fi
 if [ "$drill_source_version" -ge 14 ]; then
     snapshot_delivery restored
     cmp "$drill_directory/source-queue.jsonl" "$drill_directory/restored-queue.jsonl"
