@@ -305,3 +305,12 @@ Authenticated `GET /api/openservice/me/csrf` returns `{"result":{"csrf":"..."}}`
 Native Basic API clients without browser metadata can continue to send `application/json` and `application/octet-stream` without a token. **Clients using a missing Content-Type, `text/plain`, `application/x-www-form-urlencoded` or `multipart/form-data` must now add `X-OpenService-API: true`, or provide a valid CSRF token and its cookie.** This includes native raw text and multipart attachment uploads. Content-Type parameters and case are normalized. The explicit API header cannot bypass browser metadata or cookie-authenticated CSRF checks. Failed checks return 403 before mutation.
 
 This application enables no cross-origin credential sharing. A deployment must preserve browser metadata and must not add permissive credentialed CORS rules at its proxy. Browser custom headers and non-safelisted content types rely on preflight enforcement when no browser metadata is present. This is local hardening, not a ServiceNow token or CORS API implementation.
+
+
+## Administrator termination of all account browser sessions
+
+Administrator `POST /api/openservice/users/{user_id}/sessions/revoke` accepts exactly `{reason:string}` using the same nonblank, 1–500 Unicode code point, no-NUL reason rules as selected-session termination. It returns `200 {"result":{"removed_count":2,"current":false}}`. The count covers every stored browser registry entry for this account, including expired or stale revisions and entries outside the displayed page. Unknown accounts return 404; non-administrators 403; invalid body/query 400; unsupported methods 405. All browser writes require CSRF.
+
+Deletion and one `account.all_sessions_ended_by_admin` security event commit atomically. The event records actor, target, count and trimmed reason. Repetition without intervening sessions returns zero and emits no duplicate event. Ending the actual requesting cookie invalidates it. The form on `/admin/accounts/{user_id}/sessions` posts to `/admin/accounts/{user_id}/sessions/revoke`, redirecting to login for the current browser or the account inventory otherwise.
+
+Other accounts, passwords, Basic access, security revisions, recovery links and future sign-in remain unchanged. Existing cookies fail on subsequent requests, including queued mutations after the shared write lock; already-authorized work may finish. This registry-only action differs from the existing self-service security-revision revocation. It provides no SSO logout, account suspension or cancellation of external actions.

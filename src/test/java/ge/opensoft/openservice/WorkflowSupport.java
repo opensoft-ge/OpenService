@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorsCanEndAllSessionsForOneAccount() throws Exception {
+        AdminAllSessionsAcceptance.run(this);
+    }
+
+    @Test
     void browserWritesNeedSessionBoundCsrfEvenWithBasicCredentials() throws Exception {
         BrowserCsrfAcceptance.run(this);
     }

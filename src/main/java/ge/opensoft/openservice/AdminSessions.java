@@ -47,6 +47,30 @@ final class AdminSessions {
         return row.get("session_hash").equals(Passwords.tokenHash(current));
     }
 
+    static Map<String, Object> revokeAll(
+            Store.Db db, String actor, String target, String current, Object body)
+            throws Exception {
+        Service.requireAccountAdministrator(db, actor);
+        String reason = reason(body);
+        Service.account(db, target);
+        boolean endedCurrent =
+                db.count(
+                                "SELECT COUNT(*) FROM os_browser_session WHERE user_id=? AND"
+                                    + " session_hash=?",
+                                target,
+                                Passwords.tokenHash(current))
+                        == 1;
+        int removed = db.update("DELETE FROM os_browser_session WHERE user_id=?", target);
+        if (removed > 0)
+            SecurityEvents.record(
+                    db,
+                    actor,
+                    target,
+                    "account.all_sessions_ended_by_admin",
+                    map("removed_count", removed, "reason", reason));
+        return map("removed_count", removed, "current", endedCurrent);
+    }
+
     static Map<String, Object> list(
             Store.Db db, String actor, String target, String current, long now) throws Exception {
         Service.requireAccountAdministrator(db, actor);

@@ -666,6 +666,22 @@ public class WebController {
             c.noQuery();
             return json(map("result", map("csrf", c.session.getAttribute("csrf"))), 200);
         }
+        Matcher adminAllSessions = Pattern.compile(
+                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/revoke").matcher(path);
+        if (adminAllSessions.matches()) {
+            method(method, "POST");
+            c.admin();
+            c.noQuery();
+            c.uniqueQuery();
+            boolean api = path.startsWith("/api/");
+            String target = adminAllSessions.group(1);
+            var result = AdminSessions.revokeAll(c.db, c.user.get("user_id").toString(), target,
+                    c.session.getId(), api ? body(c) : map("reason", c.parameter("reason", "")));
+            boolean current = result.get("current").equals(true);
+            if (current) c.session.invalidate();
+            return api ? json(map("result", result), 200)
+                    : redirect(current ? "/login" : "/admin/accounts/" + target + "/sessions");
+        }
         Matcher adminSessionRevoke =
                 Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/([0-9a-f]{32})/revoke")
                         .matcher(path);
