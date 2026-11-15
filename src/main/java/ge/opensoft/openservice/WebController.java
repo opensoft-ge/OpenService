@@ -618,7 +618,7 @@ public class WebController {
                         "auth_revision", ((Number) user.get("auth_revision")).longValue());
                 long issued = System.currentTimeMillis();
                 BrowserSessions.register(c.db, user, c.session.getId(), issued);
-                SessionLimit.enforce(c.db, user, c.session.getId(), store.maxBrowserSessions);
+                SessionLimit.enforce(c.db, user, c.session.getId(), AccountSessionLimit.effective(c.db, user.get("user_id").toString(), store.maxBrowserSessions));
                 c.session.setAttribute("authenticated_at", issued);
                 c.session.setAttribute("csrf", csrf());
                 return redirect(PasswordReset.required(user) ? "/password-required" : "/");
@@ -665,6 +665,20 @@ public class WebController {
             method(method, "GET");
             c.noQuery();
             return json(map("result", map("csrf", c.session.getAttribute("csrf"))), 200);
+        }
+        Matcher accountSessionLimit = Pattern.compile(
+                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/session-limit").matcher(path);
+        if (accountSessionLimit.matches()) {
+            boolean api = path.startsWith("/api/");
+            method(method, api ? new String[]{"GET", "POST"} : new String[]{"POST"});
+            c.admin(); c.noQuery(); c.uniqueQuery();
+            String target = accountSessionLimit.group(1);
+            String actor = c.user.get("user_id").toString();
+            Service.requireAccountAdministrator(c.db, actor);
+            if (method.equals("GET")) return json(map("result", AccountSessionLimit.state(c.db, target, store.maxBrowserSessions)), 200);
+            var result = AccountSessionLimit.change(c.db, actor, target,
+                    api ? body(c) : map("maximum", AccountSessionLimit.form(c.parameter("maximum", ""))), store.maxBrowserSessions);
+            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + target + "/sessions");
         }
         Matcher adminAllSessions = Pattern.compile(
                 "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/revoke").matcher(path);
@@ -723,7 +737,9 @@ public class WebController {
                                     "table", "accounts",
                                     "account", inventory.get("account"),
                                     "sessions", inventory.get("result"),
-                                    "truncated", inventory.get("truncated")));
+                                    "truncated", inventory.get("truncated"),
+                                    "sessionPolicy", AccountSessionLimit.state(c.db, adminSessions.group(1), store.maxBrowserSessions),
+                                    "deploymentLimit", store.maxBrowserSessions));
         }
         Matcher basicAccess =
                 Pattern.compile(
@@ -928,7 +944,7 @@ public class WebController {
                                     "truncated",
                                     sessions.get("truncated"),
                                     "maximumSessions",
-                                    store.maxBrowserSessions));
+                                    AccountSessionLimit.effective(c.db, c.user.get("user_id").toString(), store.maxBrowserSessions)));
         }
         if (path.equals("/account")) {
             method(method, "GET");

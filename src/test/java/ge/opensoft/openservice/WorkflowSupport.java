@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorAccountLimitsApplyAtTheNextSignIn() throws Exception {
+        AccountSessionLimitAcceptance.run(this);
+    }
+
+    @Test
     void administratorsCanEndAllSessionsForOneAccount() throws Exception {
         AdminAllSessionsAcceptance.run(this);
     }

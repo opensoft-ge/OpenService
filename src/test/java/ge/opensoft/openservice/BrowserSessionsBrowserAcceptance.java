@@ -32,7 +32,7 @@ final class BrowserSessionsBrowserAcceptance {
             link.focus();
             link.press("Enter");
             assertThat(page.locator("tbody tr")).hasCount(2);
-            assertThat(page.getByText("This deployment allows up to 10 browser sessions per account.", new Page.GetByTextOptions().setExact(false))).isVisible();
+            assertThat(page.getByText("Browser session limit: 10.", new Page.GetByTextOptions().setExact(false))).isVisible();
             assertThat(page.getByText("This browser", new Page.GetByTextOptions().setExact(true)))
                     .isVisible();
             assertThat(page.getByText("Other browser", new Page.GetByTextOptions().setExact(true)))

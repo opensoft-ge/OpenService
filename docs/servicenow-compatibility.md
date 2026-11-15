@@ -399,3 +399,10 @@ Discovery merges configurable, narrowly scoped CORS into OS-DISC-API-AUTH-POLICY
 Administrator all-session termination is implemented as an account-scoped, reasoned, atomic registry deletion with audited counts and idempotent repeats. [Contract/evidence](paired-cycles-followup-2026-11-15.md#cycle-8--administrator-termination-of-all-account-sessions-os-f10-08). ADOPT-08/09 and OS-PARITY-08/10 remain partial; SSO logout, fleet operations, distributed continuity and M1–M3 gates remain open.
 
 OS-DISC-CONNECTION-ALIASES — missing P1/M2 under OS-PARITY-03/09: [Brazil connections/credentials/aliases](https://www.servicenow.com/docs/r/platform-security/connections-and-credentials/credentials-connections-alias.html), updated 2026-11-05, retrieved 2026-11-15. Requires secret storage, connector execution and versioned configuration; test environment-specific bindings, authorized alias use and secret-free promotion/rotation. Current per-request migration tokens are not reusable connection aliases. Next: account concurrency and connector environment binding.
+
+
+### Follow-up cycle 9 — OS-F10-09
+
+OS-DISC-SESSION-LIMIT is partial with a persisted per-account 1–100 override, zero/default inheritance, atomic audit and next-sign-in enforcement. [Contract/evidence](paired-cycles-followup-2026-11-15.md#cycle-9--account-specific-browser-session-limits-os-f10-09). Role policies, unlimited exemptions and distributed continuity remain missing. ADOPT-08/09, OS-PARITY-08/10 and M1–M3 remain incomplete.
+
+OS-DISC-SEARCH-AUTHORIZATION — missing P1/M2 under OS-PARITY-01/07/08: [Brazil release notes](https://www.servicenow.com/docs/r/release-notes/rn-summary-new-features.html), updated 2026-11-04, retrieved 2026-11-15, document column-level search authorization. Requires an index/search engine and current field policy; hidden fields must not influence matches, counts, snippets or export after role/policy changes. Existing SQL field boundaries do not constitute indexed search. Next: account authentication investigation and security monitoring/export.

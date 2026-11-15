@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanConfigureAccountSessionLimits() throws Exception {
+        AccountSessionLimitBrowserAcceptance.run(this);
+    }
+
+    @Test
     void administratorCanEndAllAccountSessionsFromTheBrowser() throws Exception {
         AdminAllSessionsBrowserAcceptance.run(this);
     }
