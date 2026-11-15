@@ -55,6 +55,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void personalAuthenticationHistoryIsPrivateAcrossPagesAndDownloads() throws Exception {
+        PersonalActivityAcceptance.run(this);
+    }
+
+    @Test
     void assistedRecoveryConfirmationIsThrottledWithoutReplacingExistingLink() throws Exception {
         account("RecoveryLimitUser", "reader");
         account("RecoveryLimitAdmin", "admin");
@@ -126,7 +131,7 @@ abstract class WorkflowSupport {
                     1L,
                     db.count(
                             "SELECT COUNT(*) FROM os_security_event WHERE"
-                                + " action='account.recovery_issued'"));
+                                    + " action='account.recovery_issued'"));
             db.update(
                     "UPDATE os_auth_attempt SET expires_at=0 WHERE identity_hash=?",
                     Passwords.tokenHash("RecoveryLimitAdmin"));
@@ -162,7 +167,7 @@ abstract class WorkflowSupport {
                     2L,
                     db.count(
                             "SELECT COUNT(*) FROM os_security_event WHERE"
-                                + " action='account.recovery_issued'"));
+                                    + " action='account.recovery_issued'"));
         }
     }
 

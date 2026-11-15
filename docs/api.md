@@ -228,3 +228,9 @@ Field rules may include `read_roles`; see [configuration](configuration.md#field
 ## Recovery-email enrollment
 
 `GET/POST/DELETE /api/openservice/me/email` and the corresponding browser journey support first verified recovery-email enrollment for existing local accounts. See [inputs, responses, security boundaries and migration](email-enrollment.md). This is a local extension, not a ServiceNow API.
+
+## Own authentication activity
+
+Every active role can use `GET /api/openservice/me/authentication-events` or **Account security → My sign-in activity** (`/account/authentication-events`). The response contains `result` and `next_before`; each row contains only `event_id`, `occurred_at` (UTC), `mechanism` and `outcome`. Identity IDs/names/fingerprints, passwords, session values and other accounts' events are absent. Filtering uses the current stable user ID before selection and returns at most 100 retained events, newest allocation first.
+
+Optional `before` is an event ID previously returned for this account; it anchors the next page internally without publishing global sequence counters. Foreign, unknown or expired cursors return 400; return to the latest page after retention removes an anchor. Duplicate or unsupported query parameters, including caller-selected identities, return 400. `download=true` on either route downloads that page as `my-authentication-events.json`; default/explicit `false` returns the usual API JSON or browser view. No snapshot/complete archive guarantee is made. The existing global 10,000-event retention cap applies, so older personal activity may disappear. Basic-authenticated reads record their own verification before selection; existing session reads do not. This is not a device/session inventory or IP-location tracker.

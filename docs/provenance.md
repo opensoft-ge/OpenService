@@ -25,3 +25,5 @@ The subsequent 2026-11-15 OS-051 theme refresh again updates only that CSS fixtu
 OS-A20-02 updates only the local stylesheet response fixture to include a visible keyboard focus ring for scrollable tables; all other fixture data remains unchanged.
 
 2026-11-15 OS-A20-04: refreshed only GET `/static/app.css` raw bytes for the retention confirmation layout. All other decoded fixture fields are unchanged. This local CSS fixture is not vendor conformance evidence.
+
+2026-11-15 OS-A20-08: refreshed only the GET `/static/app.css` raw fixture for the compact personal-activity table. Every other decoded fixture field remains unchanged; this is a local regression fixture, not vendor evidence.

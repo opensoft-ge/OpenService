@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void eachUserCanBrowseOnlyTheirOwnAuthenticationHistory() throws Exception {
+        PersonalActivityBrowserAcceptance.run(this);
+    }
+
+    @Test
     void existingAccountsVerifyRecoveryEmailInBothThemes() throws Exception {
         EmailEnrollmentBrowserAcceptance.run(this);
     }

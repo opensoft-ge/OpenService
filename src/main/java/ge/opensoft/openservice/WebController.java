@@ -596,6 +596,38 @@ public class WebController {
             c.session.invalidate();
             return redirect("/login");
         }
+        if (Set.of("/account/authentication-events", "/api/openservice/me/authentication-events")
+                .contains(path)) {
+            method(method, "GET");
+            var journal =
+                    AuthenticationEvents.mine(
+                            c.db, c.user.get("user_id").toString(), queryArguments(c));
+            boolean download = (Boolean) journal.get("download");
+            if (download) disposition(c, "my-authentication-events.json");
+            if (path.startsWith("/api/") || download)
+                return json(
+                        map(
+                                "result",
+                                journal.get("result"),
+                                "next_before",
+                                journal.get("next_before")),
+                        200);
+            String before = journal.get("before").toString();
+            return view(
+                    c,
+                    "personal-authentication",
+                    map(
+                            "table",
+                            "account",
+                            "events",
+                            journal.get("result"),
+                            "nextBefore",
+                            journal.get("next_before"),
+                            "methods",
+                            AuthenticationEvents.METHODS,
+                            "downloadQuery",
+                            before.isEmpty() ? "download=true" : "download=true&before=" + before));
+        }
         if (path.equals("/account")) {
             method(method, "GET");
             c.noQuery();
