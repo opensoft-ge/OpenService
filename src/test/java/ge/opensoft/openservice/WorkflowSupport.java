@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void expiredKeyCleanupPreservesWorkingCredentials() throws Exception { ApiKeyCleanupAcceptance.run(this); }
+
+    @Test
     void apiKeyActivityCountsSuccessfulRequestsOnly() throws Exception { ApiKeyUsageAcceptance.run(this); }
 
     @Test

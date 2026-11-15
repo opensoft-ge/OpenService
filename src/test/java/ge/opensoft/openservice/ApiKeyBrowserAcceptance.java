@@ -85,6 +85,20 @@ final class ApiKeyBrowserAcceptance {
             assertThat(page.getByText("Enabled", new Page.GetByTextOptions().setExact(true)))
                     .isVisible();
             ReleaseBrowserAcceptance.accessible(page);
+            try (var db = h.store.open()) {
+                String admin = RecordAccess.owner(db, "admin");
+                var expired = ApiKeys.issue(db, admin, target, map("label", "Expired demo", "table", "incident", "days", 1));
+                db.update("UPDATE os_api_key SET expires_at=0 WHERE key_id=?", expired.get("key_id"));
+                db.connection.commit();
+            }
+            page.navigate(h.base() + "/admin/accounts/" + target + "/api-keys");
+            assertThat(page.locator("tbody tr")).hasCount(2);
+            page.getByLabel("Reason for removing expired keys").fill("Remove obsolete credential");
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Remove expired API keys")).press("Enter");
+            assertThat(page.locator("tbody tr")).hasCount(1);
+            assertThat(page.getByText("Expired demo", new Page.GetByTextOptions().setExact(true))).hasCount(0);
+            assertThat(page.getByText("Nightly report", new Page.GetByTextOptions().setExact(true))).isVisible();
+            ReleaseBrowserAcceptance.accessible(page);
             page.screenshot(
                     new Page.ScreenshotOptions()
                             .setPath(Path.of("target/api-keys-desktop.png"))

@@ -669,6 +669,14 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
+        Matcher apiKeyCleanup = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/cleanup").matcher(path);
+        if (apiKeyCleanup.matches()) {
+            method(method, "POST"); c.admin(); c.noQuery();
+            boolean api = path.startsWith("/api/");
+            var result = ApiKeyCleanup.expired(c.db, c.user.get("user_id").toString(), apiKeyCleanup.group(1),
+                    api ? body(c) : map("reason", c.parameter("reason", "")));
+            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + apiKeyCleanup.group(1) + "/api-keys");
+        }
         Matcher apiKeyWrite = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/write").matcher(path);
         if (apiKeyWrite.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();

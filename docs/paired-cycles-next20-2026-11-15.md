@@ -1,4 +1,6 @@
-# Ten further OpenService feature and QA cycles
+# Twenty further OpenService feature and QA cycles
+
+The user extended this active batch from 10 to 20 paired cycles on 16 November. Existing OS-N10 identifiers remain stable; this report covers all 20.
 
 Starting commit: `bf1f422d9624bc1e575f0b2feba187c0438db654`, clean `main`, 15 November 2026. Local commits use opendevbot without co-author trailers. This batch does not authorize a push or deployment.
 
@@ -15,6 +17,7 @@ Stack verification: [Spring Boot system requirements](https://docs.spring.io/spr
 | 5 | Convert an integration account to API keys only | 594 tests; exact Java/JS gates passed |
 | 6 | Scoped API keys for record creation and updates | 596 tests; exact Java/JS gates passed |
 | 7 | Per-key successful-request activity | 598 tests; exact Java/JS gates passed |
+| 8 | Remove expired credentials without disrupting active integrations | 600 tests; exact Java/JS gates passed |
 
 ## Cycle 1 — OS-N10-01: scoped read-only integration keys
 
@@ -113,3 +116,15 @@ Discovery refinement OS-DISC-CATALOG-ENTITLEMENT — missing P1/M2, OS-PARITY-04
 Final QA: Reviewed the complete accumulated diff against 007c046, including the new tracker and acceptance file, migration fixtures, dispatch transaction handling, administrator-only metadata, concurrency and templates. After the stable-key rotation repair and regression, a complete subsequent review found no new or reopened defects and made no repairs. Real database concurrency, rollback, restart and failed-request exclusion passed. Desktop and mobile dark screenshots were visually inspected; the wide key table remains contained in its keyboard-accessible scroll region. Final clean `sh scripts/verify.sh`: 598 tests, zero failures/errors/skips; Java 5057/5057 lines, 2747/2747 branches, 299/299 methods. All 59 production Java files and both JavaScript files passed the exact skill gate; no scope exclusions or threshold changes. Source/tests remained unchanged during the full gate. JavaScript counters remain migrations 75/75 lines, 49/49 branches, 12/12 functions and theme 36/36 lines, 15/15 branches, 6/6 functions.
 
 Touched executable files (lines, branches, methods): `ApiKeyUsage.java` 5/5, no reported branches, 1/1; `ApiKeys.java` 75/75, 62/62, 5/5; `Migrations.java` 141/141, 80/80, 3/3; `WebController.java` 1809/1809, 949/949, 41/41. HTML is exercised by the browser journey. Raw evidence: `/tmp/openservice-next10-evidence/07`.
+
+## Cycle 8 — OS-N10-08: Remove expired credentials without disrupting active integrations
+
+Base: `fa19d44211df0485d8fa7f9d788ecaa78a2ca665`. ADOPT-08/09 and OS-PARITY-03/08/10. Expired credentials occupied the 20-key account limit and could only be individually revoked or removed with every other key. Add administrator-only, reasoned cleanup of one account's keys whose expiry is at or before a single action cutoff. Serialize with issuance and revocation, remove activity metadata with each expired key, preserve unexpired keys (including suspended keys), other accounts and existing audit records. Audit the actual positive deletion count with reason and cutoff; repeated or concurrent cleanup is safe. No scheduled job, configurable retention period, HMAC support, archival or native endpoint compatibility is claimed.
+
+Acceptance: Real SQLite/PostgreSQL HTTP authorization/method/query/body and CSRF boundaries; populated 20-key cap, cleanup freeing capacity, expired enabled/suspended removal, exact preservation of unexpired records, foreign-account isolation, concurrent exact deletion counts, transaction/audit rollback, restart, redacted audit evidence and keyboard/light/dark/mobile UI cleanup while a working key remains.
+
+Research and discovery: Retrieved 16 November 2026: [Brazil expired-token cleanup](https://www.servicenow.com/docs/r/platform-security/authentication/token-expiry-api-and-hmac.html), updated 10 September, resolves the earlier inaccessible-link uncertainty. ServiceNow documents scheduled deletion after a default seven-day post-expiry retention, with configurable enablement and separate API/HMAC retention. This implementation is explicit immediate per-account cleanup only. OS-DISC-API-KEY-RETENTION remains partial P1/M2: scheduled/configurable retention requires an authorized durable job and policy; test preservation until the retention deadline, restart idempotence, no live-key deletion and audit retention. Rotating [Catalog Builder](https://www.servicenow.com/docs/r/servicenow-platform/service-catalog/catalog-builder.html), updated 10 September, reconfirms template restrictions and isolated draft editing; merge into existing OS-PARITY-04/09 catalogue governance TODO rather than duplicate it. Acceptance retains published-version availability while drafts stay inaccessible to requesters. Next research: credential expiry changes and field access governance. Same-day official Java/Spring verification remains applicable; pins are unchanged. M1–M3 remain unmet.
+
+Final QA: Reviewed the full accumulated change against fa19d44, including the new cleanup service and acceptance file, shared reason validation, transaction locks, routes, templates and renamed consolidated report. A complete final review found no new or reopened defects and made no repairs. Concurrent deletion counts, exact live-record preservation, capacity recovery, audit rollback and both-theme browser cleanup passed. Desktop/mobile screenshots were visually inspected; the table remains in its keyboard-accessible scroll region. Final clean `sh scripts/verify.sh`: 600 tests, zero failures/errors/skips; Java 5077/5077 lines, 2755/2755 branches, 300/300 methods. All 60 production Java files and both JavaScript files passed the exact skill gate; no scope exclusions or threshold changes. Source/tests remained unchanged during the full gate. JavaScript counters remain migrations 75/75 lines, 49/49 branches, 12/12 functions and theme 36/36 lines, 15/15 branches, 6/6 functions.
+
+Touched executable files (lines, branches, methods): `ApiKeyCleanup.java` 13/13, 2/2, 1/1; `WebController.java` 1816/1816, 955/955, 41/41. HTML is exercised by the browser journey. Raw evidence: `/tmp/openservice-next10-evidence/08`.
