@@ -71,6 +71,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void invitationDirectoryFiltersComputedAvailabilityBeforePaging() throws Exception { InvitationStateAcceptance.run(this); }
+
+    @Test
     void apiKeyLabelsPreserveAuthorityAndRejectInvalidText() throws Exception { ApiKeyLabelAcceptance.run(this); }
 
     @Test

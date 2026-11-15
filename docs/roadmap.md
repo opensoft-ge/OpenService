@@ -466,3 +466,7 @@ ADOPT-09, PARITY-08/10: administrator account-targeted security journal and boun
 ## OS-N10-17 — Rename integration keys without changing their authority (implemented)
 
 PARITY-08: labels can be updated independently of credential authority. OS-DISC-CREDENTIAL-AFFINITY remains missing P2/M2 under PARITY-03/05, requiring outbound secret storage, device inventory and destination policy; isolate bindings, revalidate rotation and limit attempts. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-18 — Filter invitations by current acceptance availability (implemented)
+
+ADOPT-03/09, PARITY-08: invitation availability is filterable before count/pagination using the existing local lifecycle. Subject-aware configurable database predicates remain missing P1/M2, requiring scoped policy definitions and shared query planning; counts/reports/exports must preserve denied rows and administration boundaries. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.

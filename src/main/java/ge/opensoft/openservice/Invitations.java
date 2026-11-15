@@ -50,8 +50,8 @@ final class Invitations {
 
     static Map<String, Object> visible(Store.Db db, Map<String, Object> row) throws SQLException {
         long expires = ((Number) row.get("expires_at")).longValue();
-        String state = row.get("state").toString();
-        if (state.equals("pending")) {
+        String state = row.getOrDefault("availability", row.get("state")).toString();
+        if (!row.containsKey("availability") && state.equals("pending")) {
             if (expires <= System.currentTimeMillis()) state = "expired";
             else if (db.one(
                             "SELECT user_id FROM os_user WHERE user_id=? AND active=1 AND"

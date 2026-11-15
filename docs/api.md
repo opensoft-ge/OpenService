@@ -404,3 +404,7 @@ GET `/api/openservice/users/{id}/security-events` or `/admin/accounts/{id}/secur
 ### Rename integration keys without changing their authority
 
 POST `/api/openservice/users/{id}/api-keys/label` (or matching admin form) accepts exactly key_id and label. Administrator-only; label must be a nonblank NUL-free string of at most 80 Unicode codepoints. Returns result with key_id, label and changed. Foreign/missing key or account 404; invalid body 400; GET 405. A label change preserves all credential and account authority and records account.api_key_labeled with key ID only. Repeating the same label changes nothing. The same label validation applies to issuance.
+
+### Filter invitations by current acceptance availability
+
+GET `/api/openservice/invitation-directory` and `/admin/invitation-directory` additionally accept state, empty or pending/expired/invalidated/unavailable/revoked/accepted. The filter combines with q/role/page before totals and 25-row pages. Unknown/repeated values return 400. Computed availability uses a single observation time per request; acceptance still revalidates at submission. No tokens, emails or recipient secrets are returned.

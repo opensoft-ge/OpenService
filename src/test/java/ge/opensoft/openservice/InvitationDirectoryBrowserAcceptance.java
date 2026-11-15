@@ -30,6 +30,7 @@ final class InvitationDirectoryBrowserAcceptance {
                     .click();
             page.getByLabel("Find invited username").fill(prefix);
             page.getByLabel("Filter invited role").selectOption("reader");
+            page.getByLabel("Filter invitation availability").selectOption("pending");
             page.getByRole(
                             AriaRole.BUTTON,
                             new Page.GetByRoleOptions().setName("Find invitations").setExact(true))
@@ -40,6 +41,7 @@ final class InvitationDirectoryBrowserAcceptance {
             assertThat(page.locator("tbody tr")).hasCount(2);
             assertThat(page.getByLabel("Find invited username")).hasValue(prefix);
             assertThat(page.getByLabel("Filter invited role")).hasValue("reader");
+            assertThat(page.getByLabel("Filter invitation availability")).hasValue("pending");
             ReleaseBrowserAcceptance.accessible(page);
             page.screenshot(
                     new Page.ScreenshotOptions()
@@ -102,6 +104,8 @@ final class InvitationDirectoryBrowserAcceptance {
                     new Page.ScreenshotOptions()
                             .setPath(Path.of("target/invitation-audit-mobile-dark.png"))
                             .setFullPage(true));
+            page.navigate(h.base()+"/admin/invitation-directory");page.getByLabel("Find invited username").fill(prefix);page.getByLabel("Filter invitation availability").selectOption("revoked");page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Find invitations").setExact(true)).press("Enter");assertThat(page.locator("tbody tr")).hasCount(1);assertThat(page.locator("tbody tr")).containsText("revoked");ReleaseBrowserAcceptance.accessible(page);page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/invitation-state-mobile-dark.png")).setFullPage(true));page.setViewportSize(1280,900);page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();ReleaseBrowserAcceptance.accessible(page);page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/invitation-state-desktop.png")).setFullPage(true));
+
         }
     }
 }
