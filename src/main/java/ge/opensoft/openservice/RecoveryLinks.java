@@ -132,9 +132,7 @@ final class RecoveryLinks {
     }
 
     static void recover(Store.Db db, String token, String password) throws Exception {
-        if (password.codePointCount(0, password.length()) < 12
-                || password.codePointCount(0, password.length()) > 1024)
-            throw new Failure(400, "Password must contain 12–1024 characters");
+        Passwords.requireNewPassword(password);
         if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,2)");
         var link = pending(db, token, true);
         PasswordExclusions.check(db, password);

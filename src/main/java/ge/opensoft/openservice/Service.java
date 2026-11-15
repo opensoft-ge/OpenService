@@ -508,12 +508,10 @@ public final class Service {
         var value = object(body);
         if (!value.keySet().equals(Set.of("current_password", "new_password"))
                 || !(value.get("current_password") instanceof String current)
-                || current.codePointCount(0, current.length()) > 1024
-                || !(value.get("new_password") instanceof String password)
-                || password.codePointCount(0, password.length()) < 12
-                || password.codePointCount(0, password.length()) > 1024)
+                || current.codePointCount(0, current.length()) > 1024)
             throw new Failure(
-                    400, "Provide current_password and a new_password of 12–1024 characters");
+                    400, "Provide current_password and a new_password of 15–1024 characters");
+        String password = Passwords.requireNewPassword(value.get("new_password"));
         var account = db.one("SELECT name FROM os_user WHERE user_id=? AND active=1", userId);
         if (account == null) throw new Failure(401, "Active account required");
         // Commit authentication attempts before any credential mutation.
@@ -555,10 +553,7 @@ public final class Service {
             throw new Failure(400, "Provide name, password and role");
         if (!(value.get("name") instanceof String name) || !name.matches("[A-Za-z0-9]{1,80}"))
             throw new Failure(400, "Username must contain 1–80 ASCII letters or digits");
-        if (!(value.get("password") instanceof String password)
-                || password.codePointCount(0, password.length()) < 12
-                || password.codePointCount(0, password.length()) > 1024)
-            throw new Failure(400, "Password must contain 12–1024 characters");
+        String password = Passwords.requireNewPassword(value.get("password"));
         if (!(value.get("role") instanceof String role) || !ROLES.containsKey(role))
             throw new Failure(400, "Choose an admin, agent, reader or requester role");
         PasswordExclusions.check(db, password);

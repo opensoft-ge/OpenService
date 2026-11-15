@@ -29,3 +29,5 @@ OS-A20-02 updates only the local stylesheet response fixture to include a visibl
 2026-11-15 OS-A20-08: refreshed only the GET `/static/app.css` raw fixture for the compact personal-activity table. Every other decoded fixture field remains unchanged; this is a local regression fixture, not vendor evidence.
 
 2026-11-15 cycle 9: refreshed only the synthetic CSS contract raw bytes for the password-exclusion mobile layout; all other decoded fixture fields remain identical to the cycle baseline.
+
+2026-11-15 cycle 10: five synthetic password-length rejection fixtures now state 15–1024 instead of 12–1024 in their JSON detail/raw representations. Inputs, statuses and every other decoded field are unchanged. This is an explicit local policy change, not updated vendor conformance evidence.

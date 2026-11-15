@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void browserPasswordFieldsAllowTheFullUnicodePolicy() throws Exception {
+        PasswordLengthBrowserAcceptance.run(this);
+    }
+
+    @Test
     void administratorsManagePasswordExclusionsInBothThemes() throws Exception {
         PasswordExclusionBrowserAcceptance.run(this);
     }

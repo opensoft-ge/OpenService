@@ -19,7 +19,7 @@ For field isolation, install a configured table with an administrator-only `read
 ## Manual account fallback
 
 1. As administrator, choose **Accounts** in the navigation.
-2. Create an account such as `EvalAgent`, choose **Agent**, and supply a unique password of 12–1024 characters. Usernames accept 1–80 letters or digits and are case-sensitive.
+2. Create an account such as `EvalAgent`, choose **Agent**, and supply a unique password of 15–1024 characters. Usernames accept 1–80 letters or digits and are case-sensitive.
 3. Create `EvalReader` with **Reader**, the form's default role. Share credentials through an agreed secure channel.
 4. Confirm both names and roles appear in the list. With more than 25 accounts, use the page controls. Passwords are never displayed after submission.
 

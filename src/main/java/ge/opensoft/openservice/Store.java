@@ -109,6 +109,7 @@ public class Store {
                                 + index[2]
                                 + ")");
             if (db.one("SELECT name FROM os_user WHERE name=?", "admin") == null) {
+                Passwords.requireNewPassword(password);
                 PasswordExclusions.check(db, password);
                 db.update(
                         "INSERT INTO os_user(name,password,role,user_id) VALUES(?,?,?,?)",

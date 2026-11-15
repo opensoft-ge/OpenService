@@ -56,6 +56,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void newPasswordsUseFifteenCodePointsWithoutLockingOutLegacyAccounts() throws Exception {
+        PasswordLengthAcceptance.run(this);
+    }
+
+    @Test
     void administratorPasswordExclusionsCoverEveryPasswordSettingPath() throws Exception {
         PasswordExclusionAcceptance.run(this);
     }
@@ -2629,11 +2634,11 @@ abstract class WorkflowSupport {
             Service.changePassword(
                     db,
                     db.one("SELECT * FROM os_user WHERE user_id=?", id),
-                    map("current_password", next, "new_password", "x".repeat(12)));
+                    map("current_password", next, "new_password", "x".repeat(15)));
             Service.changePassword(
                     db,
                     db.one("SELECT * FROM os_user WHERE user_id=?", id),
-                    map("current_password", "x".repeat(12), "new_password", "🌟".repeat(1024)));
+                    map("current_password", "x".repeat(15), "new_password", "🌟".repeat(1024)));
             assertTrue(
                     Passwords.matches(
                             db.one("SELECT password FROM os_user WHERE user_id=?", id)

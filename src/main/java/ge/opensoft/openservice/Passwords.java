@@ -1,5 +1,7 @@
 package ge.opensoft.openservice;
 
+import ge.opensoft.openservice.Values.Failure;
+
 import org.bouncycastle.crypto.generators.SCrypt;
 
 import java.nio.charset.StandardCharsets;
@@ -13,6 +15,15 @@ public final class Passwords {
     private Passwords() {}
 
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    /** New credentials only: existing hashes retain their original authentication semantics. */
+    static String requireNewPassword(Object candidate) {
+        if (!(candidate instanceof String password)
+                || password.codePointCount(0, password.length()) < 15
+                || password.codePointCount(0, password.length()) > 1024)
+            throw new Failure(400, "Password must contain 15–1024 characters");
+        return password;
+    }
 
     public static String token() {
         byte[] value = new byte[24];
