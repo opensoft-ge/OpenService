@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void individualBrowserRevocationIsIsolatedAndAudited() throws Exception {
+        SessionRevocationAcceptance.run(this);
+    }
+
+    @Test
     void ownBrowserSessionInventoryIsPrivateAndEnforced() throws Exception {
         BrowserSessionsAcceptance.run(this);
     }

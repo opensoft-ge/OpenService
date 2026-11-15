@@ -40,6 +40,14 @@ class BrowserSessionsTest {
             assertTrue(objects(BrowserSessions.mine(db, user, "first", issued + SessionLifetime.MAX_AGE_MILLIS).get("result")).isEmpty());
             BrowserSessions.remove(db, "first");
             assertEquals(0, db.count("SELECT COUNT(*) FROM os_browser_session"));
+            BrowserSessions.register(db, user, "rollback", issued);
+            db.connection.commit();
+            String selected = db.one("SELECT session_id FROM os_browser_session").get("session_id").toString();
+            assertTrue(BrowserSessions.revoke(db, user, selected, "rollback"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_security_event WHERE action='account.session_revoked'"));
+            db.connection.rollback();
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_browser_session"));
+            assertEquals(0, db.count("SELECT COUNT(*) FROM os_security_event WHERE action='account.session_revoked'"));
         }
     }
 }

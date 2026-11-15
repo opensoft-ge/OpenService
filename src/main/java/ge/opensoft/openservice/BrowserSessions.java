@@ -57,6 +57,38 @@ final class BrowserSessions {
                 Passwords.tokenHash(session));
     }
 
+    /** Called after the business-write lock, without releasing that transaction. */
+    static void requireCurrent(Store.Db db, Map<String, Object> user, String session, long now)
+            throws Exception {
+        if (db.count(
+                        "SELECT COUNT(*) FROM os_browser_session WHERE session_hash=? AND user_id=?"
+                            + " AND auth_revision=? AND created_at<=? AND last_seen>? AND"
+                            + " expires_at>?",
+                        Passwords.tokenHash(session),
+                        user.get("user_id"),
+                        user.get("auth_revision"),
+                        now,
+                        now - IDLE_MILLIS,
+                        now)
+                != 1) throw new Failure(401, "Browser session ended; sign in again");
+    }
+
+    static boolean revoke(Store.Db db, Map<String, Object> user, String selected, String current)
+            throws Exception {
+        var row =
+                db.one(
+                        "SELECT session_hash FROM os_browser_session WHERE session_id=? AND"
+                            + " user_id=?",
+                        selected,
+                        user.get("user_id"));
+        if (row == null) throw new Failure(404, "Browser session not found");
+        db.update("DELETE FROM os_browser_session WHERE session_id=?", selected);
+        String userId = user.get("user_id").toString();
+        SecurityEvents.record(
+                db, userId, userId, "account.session_revoked", map("session_id", selected));
+        return row.get("session_hash").equals(Passwords.tokenHash(current));
+    }
+
     static Map<String, Object> mine(Store.Db db, Map<String, Object> user, String session, long now)
             throws Exception {
         var rows =

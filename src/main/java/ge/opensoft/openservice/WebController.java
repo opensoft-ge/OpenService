@@ -182,6 +182,8 @@ public class WebController {
                                         "/api/openservice/me/password",
                                         "/api/openservice/me/sessions/revoke")
                                 .contains(path)
+                        && !path.matches(
+                                "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
                                 && Set.of("/requests", "/api/openservice/requests").contains(path))
                         && !path.matches(
@@ -190,6 +192,9 @@ public class WebController {
                 // Configuration promotion, record writes and relationship deletion share a lock.
                 if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
                 Authentication.requireCurrent(db, user);
+                if (authorization == null || authorization.isEmpty())
+                    BrowserSessions.requireCurrent(
+                            db, user, session.getId(), System.currentTimeMillis());
             }
             var result = route(context, path, method.equals("HEAD") ? "GET" : method);
             if (result.getStatus() != null && result.getStatus().value() >= 400)
@@ -798,6 +803,23 @@ public class WebController {
                             AuthenticationEvents.METHODS,
                             "downloadQuery",
                             before.isEmpty() ? "download=true" : "download=true&before=" + before));
+        }
+        Matcher sessionRevoke =
+                Pattern.compile("/(?:account|api/openservice/me)/sessions/([0-9a-f]{32})/revoke")
+                        .matcher(path);
+        if (sessionRevoke.matches()) {
+            method(method, "POST");
+            c.noQuery();
+            c.uniqueQuery();
+            boolean api = path.startsWith("/api/");
+            if (api && !object(body(c)).isEmpty())
+                throw new Failure(400, "Provide an empty JSON object");
+            boolean current =
+                    BrowserSessions.revoke(c.db, c.user, sessionRevoke.group(1), c.session.getId());
+            if (current) c.session.invalidate();
+            return api
+                    ? json(map("result", map("revoked", true, "current", current)), 200)
+                    : redirect(current ? "/login" : "/account/sessions");
         }
         if (Set.of("/account/sessions", "/api/openservice/me/sessions").contains(path)) {
             method(method, "GET");
