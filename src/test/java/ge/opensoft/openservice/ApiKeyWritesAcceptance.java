@@ -241,7 +241,7 @@ final class ApiKeyWritesAcceptance {
                             .toString()
                             .contains(key.get("token").toString()));
             db.update("ALTER TABLE os_api_key DROP COLUMN can_write");
-            db.update("DELETE FROM os_migration WHERE version=26");
+            db.update("DELETE FROM os_migration WHERE version>=26");
             db.connection.commit();
             Migrations.apply(db);
             assertEquals(

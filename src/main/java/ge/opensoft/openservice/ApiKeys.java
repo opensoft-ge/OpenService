@@ -15,10 +15,12 @@ final class ApiKeys {
         Service.account(db, target);
         var rows =
                 db.all(
-                        "SELECT key_id,label,table_name,created_at,expires_at,enabled,can_write FROM os_api_key WHERE"
+                        "SELECT key_id,label,table_name,created_at,expires_at,enabled,can_write,use_count,last_used_at FROM os_api_key WHERE"
                             + " user_id=? ORDER BY created_at,key_id",
                         target);
         for (var row : rows) {
+            long lastUsed = ((Number) row.get("last_used_at")).longValue();
+            row.put("last_used_at_utc", lastUsed == 0 ? "Never" : java.time.Instant.ofEpochMilli(lastUsed).toString());
             row.put("access", ((Number) row.remove("can_write")).intValue() == 1 ? "Read, create and update" : "Read only");
             row.put("enabled", ((Number) row.get("enabled")).intValue() == 1);
             row.put(
@@ -114,6 +116,7 @@ final class ApiKeys {
                 && (((Number) key.get("can_write")).intValue() != 1
                     || (record ? !Set.of("PATCH", "PUT").contains(method) : !method.equals("POST"))))
             throw new Failure(403, "API key does not permit this operation");
+        user.put("api_key_id", key.get("key_id"));
         return user;
     }
 

@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 26;
+    static final int VERSION = 27;
 
     private Migrations() {}
 
@@ -310,6 +310,11 @@ final class Migrations {
         if (version < 26) {
             addColumn(db, "os_api_key", "can_write", "INTEGER NOT NULL DEFAULT 0 CHECK(can_write IN (0,1))");
             db.update("INSERT INTO os_migration(version,name) VALUES(26,?)", "API key create and update scope");
+        }
+        if (version < 27) {
+            addColumn(db, "os_api_key", "use_count", "BIGINT NOT NULL DEFAULT 0 CHECK(use_count>=0)");
+            addColumn(db, "os_api_key", "last_used_at", "BIGINT NOT NULL DEFAULT 0 CHECK(last_used_at>=0)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(27,?)", "API key successful request activity");
         }
     }
 

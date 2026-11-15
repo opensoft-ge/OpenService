@@ -203,7 +203,11 @@ public class WebController {
             var result = route(context, path, method.equals("HEAD") ? "GET" : method);
             if (result.getStatus() != null && result.getStatus().value() >= 400)
                 db.connection.rollback();
-            else db.connection.commit();
+            else {
+                if (authorization != null && authorization.startsWith("Bearer ") && !publicPath)
+                    ApiKeyUsage.accepted(db, user.get("api_key_id").toString());
+                db.connection.commit();
+            }
             return result;
         } catch (Failure error) {
             db.connection.rollback();

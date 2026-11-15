@@ -35,7 +35,7 @@ final class ApiKeyStateAcceptance {
                                     map("label", "Independent", "table", "incident", "days", 1))
                             .get("token")
                             .toString();
-            before = db.one("SELECT * FROM os_api_key WHERE key_id=?", key);
+            before = db.one("SELECT key_id,token_hash,user_id,auth_revision,label,table_name,created_at,expires_at,enabled,can_write FROM os_api_key WHERE key_id=?", key);
             db.connection.commit();
         }
         String api = "/api/openservice/users/" + target + "/api-keys/" + key + "/state",
@@ -99,7 +99,7 @@ final class ApiKeyStateAcceptance {
         assertEquals(302, h.form(form, map("csrf", csrf, "enabled", "false"), null).statusCode());
         assertEquals(200, h.json("POST", api, on, auth("admin")).statusCode());
         try (var db = h.store.open()) {
-            assertEquals(before, db.one("SELECT * FROM os_api_key WHERE key_id=?", key));
+            assertEquals(before, db.one("SELECT key_id,token_hash,user_id,auth_revision,label,table_name,created_at,expires_at,enabled,can_write FROM os_api_key WHERE key_id=?", key));
             assertEquals(
                     4,
                     db.count(

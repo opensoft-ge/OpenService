@@ -44,6 +44,24 @@ final class ApiKeyBrowserAcceptance {
             assertThat(page.locator("tbody tr")).hasCount(1);
             ReleaseBrowserAcceptance.accessible(page);
             String original = page.getByLabel("New API key").inputValue();
+            assertThat(page.getByText("Never", new Page.GetByTextOptions().setExact(true)))
+                    .isVisible();
+            var call =
+                    java.net.http.HttpRequest.newBuilder(
+                                    java.net.URI.create(h.base() + "/api/now/table/incident"))
+                            .header("Authorization", "Bearer " + original)
+                            .GET()
+                            .build();
+            try (var client = java.net.http.HttpClient.newHttpClient()) {
+                assertEquals(
+                        200,
+                        client.send(call, java.net.http.HttpResponse.BodyHandlers.ofString())
+                                .statusCode());
+            }
+            page.navigate(h.base() + "/admin/accounts/" + target + "/api-keys");
+            assertThat(page.getByText("Never", new Page.GetByTextOptions().setExact(true)))
+                    .hasCount(0);
+            assertThat(page.locator("tbody tr")).containsText("1");
             var rotate =
                     page.getByRole(
                             AriaRole.BUTTON,
