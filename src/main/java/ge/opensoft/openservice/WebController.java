@@ -307,15 +307,17 @@ public class WebController {
             return view(c, "delivery", directory);
         }
         Matcher delivery =
-                Pattern.compile("/(?:admin|api/openservice)/delivery/([0-9a-f]{32})/retry")
+                Pattern.compile("/(?:admin|api/openservice)/delivery/([0-9a-f]{32})/(retry|cancel)")
                         .matcher(path);
         if (delivery.matches()) {
             method(method, "POST");
             c.admin();
             c.noQuery();
-            Outbox.retry(c.db, c.user.get("user_id").toString(), delivery.group(1));
+            boolean cancel = delivery.group(2).equals("cancel");
+            if (cancel) Outbox.cancel(c.db, c.user.get("user_id").toString(), delivery.group(1));
+            else Outbox.retry(c.db, c.user.get("user_id").toString(), delivery.group(1));
             return path.startsWith("/api/")
-                    ? json(map("result", "queued"), 200)
+                    ? json(map("result", cancel ? "cancelled" : "queued"), 200)
                     : redirect("/admin/delivery");
         }
         if (path.equals("/healthz")) {

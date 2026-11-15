@@ -169,6 +169,17 @@ final class Outbox {
         return result;
     }
 
+    static void cancel(Store.Db db, String actor, String id) throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        if (db.update(
+                        "UPDATE os_outbox SET"
+                            + " state='cancelled',envelope='',lease='',error='OPERATOR_CANCELLED'"
+                            + " WHERE job_id=? AND state IN ('queued','failed')",
+                        id)
+                != 1) throw new Failure(409, "Only queued or failed deliveries can be cancelled");
+        SecurityEvents.record(db, actor, actor, "delivery.cancelled", map("job_id", id));
+    }
+
     static void retry(Store.Db db, String actor, String id) throws SQLException {
         Service.requireAccountAdministrator(db, actor);
         if (db.update(

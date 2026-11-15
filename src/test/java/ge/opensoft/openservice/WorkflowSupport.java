@@ -51,6 +51,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorsCancelOnlyUnclaimedDeliveries() throws Exception {
+        DeliveryOperationsAcceptance.cancellation(this);
+    }
+
+    @Test
     void administratorsCanFindOlderDeliveriesWithStrictFilters() throws Exception {
         DeliveryOperationsAcceptance.directory(this);
     }

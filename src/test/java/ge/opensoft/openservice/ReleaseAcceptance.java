@@ -75,6 +75,16 @@ final class ReleaseAcceptance {
             var result = object(parsed(response).get("result"));
             assertFalse(result.containsKey("accept_path"));
             String job = result.get("delivery_id").toString();
+            assertEquals(
+                    job,
+                    objects(
+                                    parsed(
+                                                    h.get(
+                                                            "/api/openservice/delivery?kind=invitation",
+                                                            auth("admin")))
+                                            .get("result"))
+                            .getFirst()
+                            .get("job_id"));
             assertFalse(
                     html(h.get("/api/openservice/delivery", auth("admin"))).contains("Recipient"));
             assertEquals(403, h.get("/admin/delivery", auth("Reader")).statusCode());

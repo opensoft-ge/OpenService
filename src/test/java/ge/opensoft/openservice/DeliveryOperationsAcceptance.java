@@ -14,7 +14,7 @@ final class DeliveryOperationsAcceptance {
         db.update(
                 "INSERT INTO os_outbox VALUES(?,?,?,? ,?,0,?,?,?,'','')",
                 job,
-                "invitation",
+                "email.invitation",
                 id(),
                 "private-envelope",
                 state,
@@ -22,6 +22,67 @@ final class DeliveryOperationsAcceptance {
                 expires,
                 created);
         return job;
+    }
+
+    static void cancellation(WorkflowSupport h) throws Exception {
+        String api = "/api/openservice/delivery/";
+        String queued, failed, processing, delivered, cancelled;
+        h.account("CancelReader", "reader");
+        try (var db = h.store.open()) {
+            queued = seed(db, "queued", 1, 0, Long.MAX_VALUE);
+            failed = seed(db, "failed", 1, 0, 1);
+            processing = seed(db, "processing", 1, Long.MAX_VALUE, Long.MAX_VALUE);
+            delivered = seed(db, "delivered", 1, 0, Long.MAX_VALUE);
+            cancelled = seed(db, "cancelled", 1, 0, Long.MAX_VALUE);
+            db.connection.commit();
+        }
+        String path = api + queued + "/cancel";
+        assertEquals(401, h.json("POST", path, map(), null).statusCode());
+        assertEquals(403, h.json("POST", path, map(), auth("CancelReader")).statusCode());
+        assertEquals(405, h.get(path, auth("admin")).statusCode());
+        assertEquals(
+                400, h.json("POST", path + "?state=queued", map(), auth("admin")).statusCode());
+        assertEquals("cancelled", parsed(h.json("POST", path, map(), auth("admin"))).get("result"));
+        assertEquals(
+                200, h.json("POST", api + failed + "/cancel", map(), auth("admin")).statusCode());
+        for (String job : List.of(queued, processing, delivered, cancelled, id()))
+            assertEquals(
+                    409, h.json("POST", api + job + "/cancel", map(), auth("admin")).statusCode());
+        try (var db = h.store.open()) {
+            for (String job : List.of(queued, failed)) {
+                var row = db.one("SELECT * FROM os_outbox WHERE job_id=?", job);
+                assertEquals("cancelled", row.get("state"));
+                assertEquals("", row.get("envelope"));
+                assertEquals("", row.get("lease"));
+                assertEquals("OPERATOR_CANCELLED", row.get("error"));
+                Outbox.finish(
+                        db, map("job_id", job, "lease", "", "attempts", 1), "delivered", "", 0);
+                assertEquals(
+                        "cancelled",
+                        db.one("SELECT state FROM os_outbox WHERE job_id=?", job).get("state"));
+            }
+            assertNull(Outbox.claim(db, System.currentTimeMillis()));
+            assertEquals(
+                    "private-envelope",
+                    db.one("SELECT envelope FROM os_outbox WHERE job_id=?", processing)
+                            .get("envelope"));
+            var events =
+                    db.all(
+                            "SELECT detail FROM os_security_event WHERE"
+                                    + " action='delivery.cancelled'");
+            assertEquals(2, events.size());
+            assertEquals(
+                    Set.of(queued, failed),
+                    events.stream()
+                            .map(e -> object(e.get("detail")).get("job_id"))
+                            .collect(java.util.stream.Collectors.toSet()));
+            assertThrows(
+                    Failure.class,
+                    () -> Outbox.cancel(db, RecordAccess.owner(db, "CancelReader"), processing));
+        }
+        h.login("admin");
+        assertEquals(
+                403, h.form("/admin/delivery/" + processing + "/cancel", map(), null).statusCode());
     }
 
     static void diagnostics(WorkflowSupport h) throws Exception {
@@ -112,7 +173,7 @@ final class DeliveryOperationsAcceptance {
         try (var db = h.store.open()) {
             for (int i = 0; i < 101; i++) ids.add(seed(db, "delivered", 100, 0, Long.MAX_VALUE));
             failure = seed(db, "failed", 1, 0, Long.MAX_VALUE);
-            db.update("UPDATE os_outbox SET kind='recovery' WHERE job_id=?", failure);
+            db.update("UPDATE os_outbox SET kind='email.recovery' WHERE job_id=?", failure);
             db.connection.commit();
         }
         Collections.sort(ids);

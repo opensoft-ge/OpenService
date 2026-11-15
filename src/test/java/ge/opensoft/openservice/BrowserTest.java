@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void deliveryCancellationIsAccessibleAndPersistent() throws Exception {
+        DeliveryOperationsBrowserAcceptance.cancellation(this);
+    }
+
+    @Test
     void deliveryFiltersAndPagingReachOlderFailuresInBothThemes() throws Exception {
         DeliveryOperationsBrowserAcceptance.directory(this);
     }

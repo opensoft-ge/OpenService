@@ -27,7 +27,7 @@ final class DeliveryDirectory {
         }
         if (!kind.isEmpty()) {
             where += " AND kind=?";
-            parameters.add(kind);
+            parameters.add("email." + kind);
         }
         int page = Integer.parseInt(args.getOrDefault("page", "1"));
         long total =
