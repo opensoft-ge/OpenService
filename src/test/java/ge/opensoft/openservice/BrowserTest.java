@@ -1087,6 +1087,33 @@ class BrowserTest {
                     "",
                     page.getByLabel("New password", new Page.GetByLabelOptions().setExact(true))
                             .inputValue());
+            for (int attempt = 1; attempt <= 5; attempt++) {
+                page.getByLabel("Current password", new Page.GetByLabelOptions().setExact(true))
+                        .fill("incorrect-password");
+                page.getByLabel("New password", new Page.GetByLabelOptions().setExact(true))
+                        .fill(next);
+                var result =
+                        page.waitForResponse(
+                                r -> r.url().endsWith("/account/password"),
+                                () ->
+                                        page.getByRole(
+                                                        AriaRole.BUTTON,
+                                                        new Page.GetByRoleOptions()
+                                                                .setName("Change password")
+                                                                .setExact(true))
+                                                .click());
+                assertEquals(attempt < 5 ? 400 : 429, result.status());
+            }
+            assertTrue(page.getByRole(AriaRole.ALERT).innerText().contains("five minutes"));
+            ReleaseBrowserAcceptance.accessible(page);
+            page.setViewportSize(390, 844);
+            ReleaseBrowserAcceptance.accessible(page);
+            try (var db = store.open()) {
+                db.update(
+                        "UPDATE os_auth_attempt SET expires_at=0 WHERE identity_hash=?",
+                        Passwords.tokenHash(name));
+                db.connection.commit();
+            }
             page.getByLabel("Current password", new Page.GetByLabelOptions().setExact(true))
                     .fill(WorkflowSupport.PASSWORD);
             page.getByLabel("New password", new Page.GetByLabelOptions().setExact(true)).fill(next);

@@ -55,6 +55,110 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void passwordChangeAttemptsAreDurableAndThrottled() throws Exception {
+        String name = "ThrottledPassword";
+        account(name, "reader");
+        String csrf = login(name);
+        String passwordHash;
+        try (var db = store.open()) {
+            passwordHash =
+                    db.one("SELECT password FROM os_user WHERE name=?", name)
+                            .get("password")
+                            .toString();
+        }
+        for (int i = 0; i < 6; i++) {
+            var result =
+                    form(
+                            "/account/password",
+                            map(
+                                    "csrf",
+                                    csrf,
+                                    "current_password",
+                                    "incorrect-private-secret",
+                                    "new_password",
+                                    "next-private-secret"),
+                            null);
+            assertEquals(i < 5 ? 400 : 429, result.statusCode());
+            if (i == 5)
+                assertEquals("300", result.headers().firstValue("Retry-After").orElseThrow());
+            assertFalse(html(result).contains("incorrect-private-secret"));
+            assertFalse(html(result).contains("next-private-secret"));
+        }
+        new Store(environment);
+        assertEquals(
+                429,
+                form(
+                                "/account/password",
+                                map(
+                                        "csrf",
+                                        csrf,
+                                        "current_password",
+                                        PASSWORD,
+                                        "new_password",
+                                        "next-private-secret"),
+                                null)
+                        .statusCode());
+        try (var db = store.open()) {
+            assertEquals(
+                    passwordHash,
+                    db.one("SELECT password FROM os_user WHERE name=?", name).get("password"));
+            assertEquals(
+                    5L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_event WHERE user_name=? AND"
+                                + " mechanism='password-change' AND outcome='failed'",
+                            name));
+            assertEquals(
+                    2L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_event WHERE user_name=? AND"
+                                + " mechanism='password-change' AND outcome='limited'",
+                            name));
+            assertEquals(
+                    0L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_security_event WHERE"
+                                + " action='account.password_changed'"));
+            db.update(
+                    "UPDATE os_auth_attempt SET expires_at=0 WHERE identity_hash=?",
+                    Passwords.tokenHash(name));
+            db.connection.commit();
+        }
+        assertEquals(
+                302,
+                form(
+                                "/account/password",
+                                map(
+                                        "csrf",
+                                        csrf,
+                                        "current_password",
+                                        PASSWORD,
+                                        "new_password",
+                                        "next-private-secret"),
+                                null)
+                        .statusCode());
+        assertEquals(401, get("/api/openservice/me", null).statusCode());
+        try (var db = store.open()) {
+            assertEquals(
+                    0L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_attempt WHERE identity_hash=?",
+                            Passwords.tokenHash(name)));
+            assertEquals(
+                    1L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_event WHERE user_name=? AND"
+                                + " mechanism='password-change' AND outcome='succeeded'",
+                            name));
+            assertEquals(
+                    1L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_security_event WHERE"
+                                + " action='account.password_changed'"));
+        }
+    }
+
+    @Test
     void localAccountsEnrollAndCancelVerifiedRecoveryEmail() throws Exception {
         EmailEnrollmentAcceptance.run(this);
     }
@@ -2388,7 +2492,7 @@ abstract class WorkflowSupport {
                                     () ->
                                             Service.changePassword(
                                                     db,
-                                                    "missing",
+                                                    map("user_id", "missing"),
                                                     map(
                                                             "current_password",
                                                             PASSWORD,
@@ -2400,10 +2504,12 @@ abstract class WorkflowSupport {
                             .get("user_id")
                             .toString();
             Service.changePassword(
-                    db, id, map("current_password", next, "new_password", "x".repeat(12)));
+                    db,
+                    db.one("SELECT * FROM os_user WHERE user_id=?", id),
+                    map("current_password", next, "new_password", "x".repeat(12)));
             Service.changePassword(
                     db,
-                    id,
+                    db.one("SELECT * FROM os_user WHERE user_id=?", id),
                     map("current_password", "x".repeat(12), "new_password", "🌟".repeat(1024)));
             assertTrue(
                     Passwords.matches(

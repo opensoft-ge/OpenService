@@ -502,7 +502,9 @@ public final class Service {
         return account(db, userId);
     }
 
-    public static void changePassword(Store.Db db, String userId, Object body) throws Exception {
+    public static void changePassword(Store.Db db, Map<String, Object> caller, Object body)
+            throws Exception {
+        String userId = caller.get("user_id").toString();
         var value = object(body);
         if (!value.keySet().equals(Set.of("current_password", "new_password"))
                 || !(value.get("current_password") instanceof String current)
@@ -512,14 +514,16 @@ public final class Service {
                 || password.codePointCount(0, password.length()) > 1024)
             throw new Failure(
                     400, "Provide current_password and a new_password of 12–1024 characters");
-        var user =
-                db.one(
-                        "SELECT password FROM os_user WHERE user_id=? AND active=1"
-                                + (db.postgres ? " FOR UPDATE" : ""),
-                        userId);
-        if (user == null) throw new Failure(401, "Active account required");
-        if (!Passwords.matches(user.get("password").toString(), current))
-            throw new Failure(400, "Current password is incorrect");
+        var account = db.one("SELECT name FROM os_user WHERE user_id=? AND active=1", userId);
+        if (account == null) throw new Failure(401, "Active account required");
+        // Commit authentication attempts before any credential mutation.
+        if (Authentication.verify(db, account.get("name").toString(), current, "password-change")
+                == null) throw new Failure(400, "Current password is incorrect");
+        if (db.postgres) {
+            db.all("SELECT pg_advisory_xact_lock(18439,4)");
+            db.all("SELECT user_id FROM os_user WHERE user_id=? FOR UPDATE", userId);
+        }
+        Authentication.requireCurrent(db, caller);
         if (password.equals(current)) throw new Failure(400, "Choose a different password");
         db.update(
                 "UPDATE os_user SET password=? WHERE user_id=?", Passwords.hash(password), userId);

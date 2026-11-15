@@ -1,6 +1,6 @@
 # Twenty-cycle verification — 15 November 2026
 
-5 of 20 cycles complete. Latest gate: 472 tests, zero failures/errors/skips; Java 3864/3864 lines, 2047/2047 branches, 234/234 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. See [numbered feature and QA evidence](paired-cycles-2026-11-15.md). Later cycles are not yet complete.
+6 of 20 cycles complete. Latest gate: 476 tests, zero failures/errors/skips; Java 3867/3867 lines, 2049/2049 branches, 234/234 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. See [numbered feature and QA evidence](paired-cycles-2026-11-15.md). Later cycles are not yet complete.
 
 # Professional light/dark experience — 15 November 2026
 

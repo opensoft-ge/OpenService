@@ -169,44 +169,102 @@ class MigrationsTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
+    void passwordChangeRechecksCallerAndRollsBackBusinessMutation(boolean postgres)
+            throws Exception {
+        var store = new Store(configuration(postgres));
+        try (var db = store.open()) {
+            var caller = db.one("SELECT * FROM os_user WHERE name='admin'");
+            var body =
+                    Values.map(
+                            "current_password",
+                            "migration-test-password",
+                            "new_password",
+                            "next-private-password");
+            String originalHash = caller.get("password").toString();
+            db.update("UPDATE os_user SET active=0 WHERE name='admin'");
+            db.connection.commit();
+            assertEquals(
+                    401,
+                    assertThrows(
+                                    Values.Failure.class,
+                                    () -> Service.changePassword(db, caller, body))
+                            .status);
+            db.update("UPDATE os_user SET active=1 WHERE name='admin'");
+            db.connection.commit();
+            caller.put("auth_revision", -1L);
+            assertEquals(
+                    401,
+                    assertThrows(
+                                    Values.Failure.class,
+                                    () -> Service.changePassword(db, caller, body))
+                            .status);
+            db.connection.rollback();
+            assertEquals(
+                    originalHash,
+                    db.one("SELECT password FROM os_user WHERE name='admin'").get("password"));
+            caller.put("auth_revision", 0L);
+            Service.changePassword(db, caller, body);
+            db.connection.rollback();
+            assertEquals(
+                    originalHash,
+                    db.one("SELECT password FROM os_user WHERE name='admin'").get("password"));
+            assertEquals(
+                    0L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_security_event WHERE"
+                                + " action='account.password_changed'"));
+            assertEquals(
+                    2L,
+                    db.count(
+                            "SELECT COUNT(*) FROM os_auth_event WHERE mechanism='password-change'"
+                                + " AND outcome='succeeded'"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
     void concurrentPasswordChangesCannotReuseThePreviousSecret(boolean postgres) throws Exception {
         var store = new Store(configuration(postgres));
         String id;
+        Map<String, Object> caller;
         try (var db = store.open()) {
-            id = db.one("SELECT user_id FROM os_user WHERE name='admin'").get("user_id").toString();
+            caller = db.one("SELECT * FROM os_user WHERE name='admin'");
+            id = caller.get("user_id").toString();
         }
         try (var executor = Executors.newFixedThreadPool(2)) {
             var start = new CountDownLatch(1);
             List<Future<Integer>> results = new ArrayList<>();
             for (String next : List.of("first-new-password", "second-new-password"))
                 results.add(
-                        executor.submit(() -> {
-                            start.await();
-                            try (var db = store.open()) {
-                                try {
-                                    Service.changePassword(
-                                            db,
-                                            id,
-                                            Values.map(
-                                                    "current_password",
-                                                    "migration-test-password",
-                                                    "new_password",
-                                                    next));
-                                    db.connection.commit();
-                                    return 200;
-                                } catch (Values.Failure failure) {
-                                    db.connection.rollback();
-                                    return failure.status;
-                                }
-                            }
-                        }));
+                        executor.submit(
+                                () -> {
+                                    start.await();
+                                    try (var db = store.open()) {
+                                        try {
+                                            Service.changePassword(
+                                                    db,
+                                                    caller,
+                                                    Values.map(
+                                                            "current_password",
+                                                            "migration-test-password",
+                                                            "new_password",
+                                                            next));
+                                            db.connection.commit();
+                                            return 200;
+                                        } catch (Values.Failure failure) {
+                                            db.connection.rollback();
+                                            return failure.status;
+                                        }
+                                    }
+                                }));
             start.countDown();
             var statuses =
                     List.of(
                             results.get(0).get(30, TimeUnit.SECONDS),
                             results.get(1).get(30, TimeUnit.SECONDS));
             assertEquals(1, statuses.stream().filter(status -> status == 200).count());
-            assertEquals(1, statuses.stream().filter(status -> status == 400).count());
+            assertEquals(
+                    1, statuses.stream().filter(status -> status == 400 || status == 401).count());
         }
         try (var db = store.open()) {
             var user = db.one("SELECT password,auth_revision FROM os_user WHERE user_id=?", id);

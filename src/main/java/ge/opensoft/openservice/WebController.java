@@ -609,7 +609,7 @@ public class WebController {
             try {
                 Service.changePassword(
                         c.db,
-                        c.user.get("user_id").toString(),
+                        c.user,
                         api
                                 ? body(c)
                                 : map(
@@ -621,6 +621,7 @@ public class WebController {
                 return api ? json(map("result", map("changed", true)), 200) : redirect("/login");
             } catch (Failure failure) {
                 if (api) throw failure;
+                if (failure.status == 429) c.response.setHeader("Retry-After", "300");
                 var result =
                         view(c, "account", map("table", "account", "error", failure.getMessage()));
                 result.setStatus(HttpStatus.valueOf(failure.status));
