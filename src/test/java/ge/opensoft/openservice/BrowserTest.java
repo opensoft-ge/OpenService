@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void withdrawalJourneyPreservesHistoryAndRemovesPendingWork() throws Exception {
+        ApprovalWithdrawalBrowserAcceptance.run(this);
+    }
+
+    @Test
     void personalApprovalQueueSupportsNavigationFilteringAndPaging() throws Exception {
         ApprovalInboxBrowserAcceptance.run(this);
     }

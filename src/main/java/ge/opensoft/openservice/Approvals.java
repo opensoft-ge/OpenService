@@ -191,6 +191,53 @@ final class Approvals {
                 definition);
     }
 
+    static Map<String, Object> withdraw(
+            Store.Db db,
+            String table,
+            String id,
+            String approval,
+            Map<String, Object> actor,
+            Object body)
+            throws SQLException {
+        if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
+        Authentication.requireCurrent(db, actor);
+        var item = context(db, table, id);
+        var definition = Service.schema(db, table);
+        RecordPolicy.require(definition, "update", db.viewerRole);
+        var row =
+                db.one(
+                        "SELECT * FROM os_approval WHERE record_id=? AND approval_id=?",
+                        id,
+                        approval);
+        if (row == null) throw new Failure(404, "Approval not found");
+        if (!"admin".equals(db.viewerRole) && !row.get("requested_by").equals(actor.get("user_id")))
+            throw new Failure(403, "Only the requester or an administrator can withdraw a review");
+        var value = object(body);
+        if (!value.keySet().equals(Set.of("comment")))
+            throw new Failure(400, "Provide only a withdrawal comment");
+        String comment = text(value.get("comment"), true);
+        if (!row.get("status").equals("requested"))
+            throw new Failure(409, "This review is already completed");
+        db.update(
+                "UPDATE os_approval SET"
+                    + " status='withdrawn',comment=?,decided_at=?,decision_revision=? WHERE"
+                    + " approval_id=?",
+                comment,
+                now(),
+                actor.get("auth_revision"),
+                approval);
+        Service.audit(
+                db,
+                item,
+                actor.get("name").toString(),
+                "approval.withdrawn",
+                map("approval_id", approval));
+        return publicRow(
+                db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
+                item,
+                definition);
+    }
+
     static Map<String, Object> decide(
             Store.Db db,
             String table,

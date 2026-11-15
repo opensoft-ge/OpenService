@@ -57,6 +57,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void pendingReviewsCanBeWithdrawnWithoutDecidingOrChangingRecords() throws Exception {
+        ApprovalWithdrawalAcceptance.run(this);
+    }
+
+    @Test
     void personalReviewQueuesRespectCurrentRecordAndFieldBoundaries() throws Exception {
         ApprovalInboxAcceptance.run(this);
     }

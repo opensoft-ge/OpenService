@@ -14,8 +14,8 @@ final class ApprovalInbox {
             throw new Failure(403, "Staff access is required for approvals");
         String status = args.getOrDefault("status", "requested");
         if (!Set.of("status", "before").containsAll(args.keySet())
-                || !Set.of("requested", "approved", "rejected").contains(status))
-            throw new Failure(400, "Choose requested, approved or rejected reviews");
+                || !Set.of("requested", "approved", "rejected", "withdrawn").contains(status))
+            throw new Failure(400, "Choose requested, approved, rejected or withdrawn reviews");
         long before = Long.MAX_VALUE;
         if (args.containsKey("before")) {
             String cursor = args.get("before");
@@ -23,7 +23,7 @@ final class ApprovalInbox {
             var row =
                     db.one(
                             "SELECT sequence FROM os_approval WHERE approval_id=? AND"
-                                + " approver_id=?",
+                                    + " approver_id=?",
                             cursor,
                             db.viewerId);
             if (row == null)

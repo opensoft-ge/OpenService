@@ -1465,7 +1465,7 @@ public class WebController {
         }
         Matcher approval =
                 Pattern.compile(
-                                "/(api/openservice/records|record)/([^/]+)/([0-9a-f]{32})/approvals(?:/([0-9a-f]{32})/decision)?")
+                                "/(api/openservice/records|record)/([^/]+)/([0-9a-f]{32})/approvals(?:/([0-9a-f]{32})/(decision|withdraw))?")
                         .matcher(path);
         if (approval.matches()) return approvals(c, approval, method);
         Matcher detail =
@@ -1579,6 +1579,7 @@ public class WebController {
         Authentication.requireCurrent(c.db, c.user);
         boolean api = route.group(1).startsWith("api/");
         String table = route.group(2), id = route.group(3), decision = route.group(4);
+        boolean withdraw = "withdraw".equals(route.group(5));
         method(method, decision == null ? new String[] {"GET", "POST"} : new String[] {"POST"});
         c.uniqueQuery();
         String location = "/record/" + table + "/" + id + "/approvals";
@@ -1586,7 +1587,11 @@ public class WebController {
             c.noQuery();
             Object payload;
             if (api) payload = body(c);
-            else if (decision != null)
+            else if (withdraw) {
+                if (!Set.of("csrf", "withdrawal_reason").containsAll(c.arguments().keySet()))
+                    throw new Failure(400, "Provide only a withdrawal reason");
+                payload = map("comment", c.parameter("withdrawal_reason", ""));
+            } else if (decision != null)
                 payload =
                         map(
                                 "decision",
@@ -1612,7 +1617,9 @@ public class WebController {
             var result =
                     decision == null
                             ? Approvals.request(c.db, table, id, c.user, payload)
-                            : Approvals.decide(c.db, table, id, decision, c.user, payload);
+                            : withdraw
+                                    ? Approvals.withdraw(c.db, table, id, decision, c.user, payload)
+                                    : Approvals.decide(c.db, table, id, decision, c.user, payload);
             return api
                     ? json(map("result", result), decision == null ? 201 : 200)
                     : redirect(location);

@@ -256,3 +256,5 @@ Administrator GET/POST `/api/openservice/users/{id}/access-mode` reads or sets s
 See [assigned-review endpoints](approvals.md#http-contract). These record an authorized decision for one record/configuration revision; they do not yet enforce approval prerequisites or execute the proposed state change.
 
 `GET /api/openservice/me/approvals` exposes the [personal assigned-review queue](approvals.md#personal-queue), with status filtering and current-account cursors.
+
+POST `.../approvals/{approval_id}/withdraw` closes a pending review without deciding or executing it; see [withdrawal authorization and input contract](approvals.md#withdrawal).
