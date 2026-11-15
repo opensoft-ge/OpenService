@@ -15,10 +15,11 @@ final class ApiKeys {
         Service.account(db, target);
         var rows =
                 db.all(
-                        "SELECT key_id,label,table_name,created_at,expires_at,enabled FROM os_api_key WHERE"
+                        "SELECT key_id,label,table_name,created_at,expires_at,enabled,can_write FROM os_api_key WHERE"
                             + " user_id=? ORDER BY created_at,key_id",
                         target);
         for (var row : rows) {
+            row.put("access", ((Number) row.remove("can_write")).intValue() == 1 ? "Read, create and update" : "Read only");
             row.put("enabled", ((Number) row.get("enabled")).intValue() == 1);
             row.put(
                     "expires_at_utc",
@@ -105,11 +106,13 @@ final class ApiKeys {
                         key.get("user_id"),
                         key.get("auth_revision"));
         if (user == null) throw new Failure(401, "Invalid API key");
+        String collection = "/api/now/table/" + Pattern.quote(key.get("table_name").toString());
+        boolean record = path.matches(collection + "/[0-9a-f]{32}");
+        if (!path.matches(collection) && !record)
+            throw new Failure(403, "API key does not permit this operation");
         if (!Set.of("GET", "HEAD").contains(method)
-                || !path.matches(
-                        "/api/now/table/"
-                                + Pattern.quote(key.get("table_name").toString())
-                                + "(?:/[0-9a-f]{32})?"))
+                && (((Number) key.get("can_write")).intValue() != 1
+                    || (record ? !Set.of("PATCH", "PUT").contains(method) : !method.equals("POST"))))
             throw new Failure(403, "API key does not permit this operation");
         return user;
     }

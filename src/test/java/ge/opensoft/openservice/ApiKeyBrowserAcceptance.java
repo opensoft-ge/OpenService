@@ -17,7 +17,7 @@ final class ApiKeyBrowserAcceptance {
         try (var db = h.store.open()) {
             String name = "Machine" + id().substring(0, 8);
             Service.createAccount(
-                    db, map("name", name, "password", WorkflowSupport.PASSWORD, "role", "reader"));
+                    db, map("name", name, "password", WorkflowSupport.PASSWORD, "role", "agent"));
             target = RecordAccess.owner(db, name);
             db.update("UPDATE os_user SET api_only=1 WHERE user_id=?", target);
             db.connection.commit();
@@ -100,6 +100,18 @@ final class ApiKeyBrowserAcceptance {
                     .press("Enter");
             assertThat(page.getByText("No API keys.")).isVisible();
             assertThat(page.getByLabel("New API key")).hasCount(0);
+            ReleaseBrowserAcceptance.accessible(page);
+            page.getByLabel("Key label").fill("Writer");
+            page.getByLabel("Table name").fill("incident");
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Issue create/update key"))
+                    .press("Enter");
+            assertThat(
+                            page.getByText(
+                                    "Read, create and update",
+                                    new Page.GetByTextOptions().setExact(true)))
+                    .isVisible();
             ReleaseBrowserAcceptance.accessible(page);
             page.getByLabel("Key label").fill("Key only");
             page.getByLabel("Table name").fill("incident");

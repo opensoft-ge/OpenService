@@ -416,3 +416,7 @@ ADOPT-05/08/09 and OS-PARITY-03/08 gain bounded account-wide credential withdraw
 ## OS-N10-05 — Convert an integration account to API keys only (implemented)
 
 OS-DISC-API-AUTH-POLICY remains partial; explicit key-only conversion provides a supported alternative to Basic for eligible integration accounts. Knowledge read/contribute deny precedence merges into OS-PARITY-04/08. OS-DISC-SCOPED-KNOWLEDGE is unverified P1/M2: scoped bases require explicit authorization even for administrators according to the knowledge access page; depends on scoped policy and direct primary-page verification, acceptance must deny unauthorized administrative access. Next: scoped writes and scoped knowledge administration. [Contract, discovery and evidence](paired-cycles-next10-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-06 — Scoped API keys for record creation and updates (implemented)
+
+OS-DISC-API-AUTH-POLICY is partial with table-specific create/update credentials and post-lock revocation checks. Native OAuth/profiles remain missing. OS-DISC-MCP-CLIENT-POLICY merges into OS-PARITY-06/08, missing P1/M2: authenticated clients/tool runtime are prerequisites; deny ungranted tools and enforce revoked policy. Scoped-knowledge-base details remain unverified because the primary link was inaccessible. Next: credential activity and inbound integration administration. [Contract, discovery and evidence](paired-cycles-next10-2026-11-15.md). M1–M3 remain unmet.

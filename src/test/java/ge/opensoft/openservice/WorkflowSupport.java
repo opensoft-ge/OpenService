@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void apiKeyWriteScopeRetainsBusinessBoundaries() throws Exception { ApiKeyWritesAcceptance.run(this); }
+
+    @Test
     void apiKeyOnlyConversionIsAtomic() throws Exception { ApiKeyOnlyAcceptance.run(this); }
 
     @Test

@@ -130,7 +130,7 @@ final class ApiKeyStateAcceptance {
             }
             // Reconstruct a populated schema-24 database, then verify default and rollback.
             db.update("ALTER TABLE os_api_key DROP COLUMN enabled");
-            db.update("DELETE FROM os_migration WHERE version=25");
+            db.update("DELETE FROM os_migration WHERE version>=25");
             db.connection.commit();
             Migrations.apply(db);
             assertEquals(

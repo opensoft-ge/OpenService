@@ -194,6 +194,8 @@ public class WebController {
                 // Configuration promotion, record writes and relationship deletion share a lock.
                 if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
                 Authentication.requireCurrent(db, user);
+                if (authorization != null && authorization.startsWith("Bearer "))
+                    ApiKeys.authenticate(db, authorization, path, method);
                 if (authorization == null || authorization.isEmpty())
                     BrowserSessions.requireCurrent(
                             db, user, session.getId(), System.currentTimeMillis());
@@ -662,6 +664,17 @@ public class WebController {
                     "password-required",
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
+        }
+        Matcher apiKeyWrite = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/write").matcher(path);
+        if (apiKeyWrite.matches()) {
+            method(method, "POST"); c.admin(); c.noQuery();
+            String target = apiKeyWrite.group(1), actor = c.user.get("user_id").toString();
+            boolean api = path.startsWith("/api/");
+            var issued = ApiKeyWrites.issue(c.db, actor, target,
+                    api ? body(c) : map("label", c.parameter("label", ""), "table", c.parameter("table", ""), "days", ApiKeys.days(c.parameter("days", ""))));
+            if (api) return json(map("result", issued), 201);
+            return view(c, "api-keys", map("table", "accounts", "account", Service.account(c.db, target),
+                    "keys", ApiKeys.list(c.db, actor, target), "issued", issued));
         }
         Matcher apiKeyOnly = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/key-only").matcher(path);
         if (apiKeyOnly.matches()) {
