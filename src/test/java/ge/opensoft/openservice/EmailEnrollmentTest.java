@@ -33,7 +33,7 @@ class EmailEnrollmentTest {
                             .get("password")
                             .toString();
             db.update("DROP TABLE os_email_enrollment");
-            db.update("DELETE FROM os_migration WHERE version=15");
+            db.update("DELETE FROM os_migration WHERE version>=15");
             db.connection.commit();
         }
         store = new Store(env);
@@ -48,7 +48,7 @@ class EmailEnrollmentTest {
             assertEquals(
                     hash,
                     db.one("SELECT password FROM os_user WHERE user_id=?", actor).get("password"));
-            assertEquals(15L, db.count("SELECT COUNT(*) FROM os_migration"));
+            assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
             var caller = db.one("SELECT * FROM os_user WHERE user_id=?", actor);
             var job = EmailEnrollment.request(store, db, caller, payload).get("delivery_id");
             token =
@@ -86,7 +86,7 @@ class EmailEnrollmentTest {
                     map("name", "Other", "role", "reader", "password", WorkflowSupport.PASSWORD));
             db.update(
                     "UPDATE os_user SET email='proof@example.invalid',email_verified=1 WHERE"
-                        + " name='Other'");
+                            + " name='Other'");
             assertEquals(
                     409,
                     assertThrows(Failure.class, () -> EmailEnrollment.confirm(db, token)).status);
@@ -153,7 +153,7 @@ class EmailEnrollmentTest {
                     1L,
                     db.count(
                             "SELECT COUNT(*) FROM os_security_event WHERE"
-                                + " action='account.email_enrollment_confirmed'"));
+                                    + " action='account.email_enrollment_confirmed'"));
         }
     }
 }

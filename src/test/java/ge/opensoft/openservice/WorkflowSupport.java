@@ -48,10 +48,16 @@ abstract class WorkflowSupport {
                             "os_outbox",
                             "os_recovery_budget",
                             "os_requester_record",
-                            "os_email_enrollment")) db.update("DELETE FROM " + table);
+                            "os_email_enrollment",
+                            "os_password_exclusion")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
+    }
+
+    @Test
+    void administratorPasswordExclusionsCoverEveryPasswordSettingPath() throws Exception {
+        PasswordExclusionAcceptance.run(this);
     }
 
     @Test

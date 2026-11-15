@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void administratorsManagePasswordExclusionsInBothThemes() throws Exception {
+        PasswordExclusionBrowserAcceptance.run(this);
+    }
+
+    @Test
     void eachUserCanBrowseOnlyTheirOwnAuthenticationHistory() throws Exception {
         PersonalActivityBrowserAcceptance.run(this);
     }

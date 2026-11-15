@@ -102,6 +102,11 @@ if [ "$drill_source_version" -ge 15 ]; then
     api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/enrollment.json" \
         "$drill_address/api/openservice/me/email" | jq -e '.issued.delivery_id != null' >/dev/null
 fi
+if [ "$drill_source_version" -ge 16 ]; then
+    api -X POST -H 'Content-Type: application/json' \
+        --data '{"label":"Restore example","password":"restore-unsafe-password"}' \
+        "$drill_address/api/openservice/password-exclusions" | jq -e '.result.exclusion_id != null' >/dev/null
+fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null
 snapshot_delivery() {
@@ -116,6 +121,11 @@ snapshot_enrollment() {
         -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_email_enrollment ORDER BY user_id) q' > "$drill_directory/$1-enrollment.jsonl"
 }
 if [ "$drill_source_version" -ge 15 ]; then snapshot_enrollment source; fi
+snapshot_password_policy() {
+    docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+        -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_password_exclusion ORDER BY exclusion_id) q' > "$drill_directory/$1-password-policy.jsonl"
+}
+if [ "$drill_source_version" -ge 16 ]; then snapshot_password_policy source; fi
 docker exec "$drill_prefix-source-db" pg_dump -U openservice -d openservice -Fc > "$drill_directory/backup.dump"
 docker stop "$drill_prefix-source-db" >/dev/null
 start_database restored
@@ -124,6 +134,16 @@ start_application restored
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored
+if [ "$drill_source_version" -ge 16 ]; then
+    snapshot_password_policy restored
+    cmp "$drill_directory/source-password-policy.jsonl" "$drill_directory/restored-password-policy.jsonl"
+    drill_status=$(curl --max-time 30 -sS -o /dev/null -w '%{http_code}' --user "admin:$drill_password" \
+        -X POST -H 'Content-Type: application/json' \
+        --data '{"name":"RejectedRestore","password":"restore-unsafe-password","role":"reader"}' \
+        "$drill_address/api/openservice/users")
+    [ "$drill_status" = 400 ]
+    echo 'PASS: custom password exclusions survive restore and reject prohibited account creation.'
+fi
 if [ "$drill_source_version" -ge 15 ]; then
     snapshot_enrollment restored
     cmp "$drill_directory/source-enrollment.jsonl" "$drill_directory/restored-enrollment.jsonl"

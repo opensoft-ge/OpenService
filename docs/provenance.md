@@ -27,3 +27,5 @@ OS-A20-02 updates only the local stylesheet response fixture to include a visibl
 2026-11-15 OS-A20-04: refreshed only GET `/static/app.css` raw bytes for the retention confirmation layout. All other decoded fixture fields are unchanged. This local CSS fixture is not vendor conformance evidence.
 
 2026-11-15 OS-A20-08: refreshed only the GET `/static/app.css` raw fixture for the compact personal-activity table. Every other decoded fixture field remains unchanged; this is a local regression fixture, not vendor evidence.
+
+2026-11-15 cycle 9: refreshed only the synthetic CSS contract raw bytes for the password-exclusion mobile layout; all other decoded fixture fields remain identical to the cycle baseline.

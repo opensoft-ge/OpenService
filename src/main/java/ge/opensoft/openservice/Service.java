@@ -525,6 +525,7 @@ public final class Service {
         }
         Authentication.requireCurrent(db, caller);
         if (password.equals(current)) throw new Failure(400, "Choose a different password");
+        PasswordExclusions.check(db, password);
         db.update(
                 "UPDATE os_user SET password=? WHERE user_id=?", Passwords.hash(password), userId);
         revokeSessions(db, userId);
@@ -560,6 +561,7 @@ public final class Service {
             throw new Failure(400, "Password must contain 12–1024 characters");
         if (!(value.get("role") instanceof String role) || !ROLES.containsKey(role))
             throw new Failure(400, "Choose an admin, agent, reader or requester role");
+        PasswordExclusions.check(db, password);
         try {
             db.update(
                     "INSERT INTO os_user(name,password,role,user_id) VALUES(?,?,?,?)",

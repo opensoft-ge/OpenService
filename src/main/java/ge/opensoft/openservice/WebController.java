@@ -596,6 +596,56 @@ public class WebController {
             c.session.invalidate();
             return redirect("/login");
         }
+        if (Set.of("/admin/password-exclusions", "/api/openservice/password-exclusions")
+                .contains(path)) {
+            method(method, "GET", "POST");
+            c.admin();
+            c.uniqueQuery();
+            if (method.equals("POST")) {
+                c.noQuery();
+                var entry =
+                        PasswordExclusions.add(
+                                c.db,
+                                c.user.get("user_id").toString(),
+                                path.startsWith("/api/")
+                                        ? body(c)
+                                        : map(
+                                                "label",
+                                                c.parameter("label", ""),
+                                                "password",
+                                                c.parameter("password", "")));
+                return path.startsWith("/api/")
+                        ? json(map("result", entry), 201)
+                        : redirect("/admin/password-exclusions");
+            }
+            var directory = PasswordExclusions.page(c.db, queryArguments(c));
+            return path.startsWith("/api/")
+                    ? json(directory, 200)
+                    : view(
+                            c,
+                            "password-exclusions",
+                            map("table", "accounts", "directory", directory));
+        }
+        Matcher exclusionRemove =
+                Pattern.compile(
+                                "/(?:admin/password-exclusions/([0-9a-f]{32})/remove|api/openservice/password-exclusions/([0-9a-f]{32}))")
+                        .matcher(path);
+        if (exclusionRemove.matches()) {
+            boolean api = path.startsWith("/api/");
+            method(method, api ? "DELETE" : "POST");
+            c.admin();
+            c.noQuery();
+            c.uniqueQuery();
+            if (api && !object(body(c)).isEmpty())
+                throw new Failure(400, "Provide an empty JSON object");
+            PasswordExclusions.remove(
+                    c.db,
+                    c.user.get("user_id").toString(),
+                    api ? exclusionRemove.group(2) : exclusionRemove.group(1));
+            return api
+                    ? json(map("result", map("removed", true)), 200)
+                    : redirect("/admin/password-exclusions");
+        }
         if (Set.of("/account/authentication-events", "/api/openservice/me/authentication-events")
                 .contains(path)) {
             method(method, "GET");

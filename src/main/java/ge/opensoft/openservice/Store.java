@@ -108,13 +108,15 @@ public class Store {
                                 + "("
                                 + index[2]
                                 + ")");
-            if (db.one("SELECT name FROM os_user WHERE name=?", "admin") == null)
+            if (db.one("SELECT name FROM os_user WHERE name=?", "admin") == null) {
+                PasswordExclusions.check(db, password);
                 db.update(
                         "INSERT INTO os_user(name,password,role,user_id) VALUES(?,?,?,?)",
                         "admin",
                         Passwords.hash(password),
                         "admin",
                         id());
+            }
             try (var input = Store.class.getResourceAsStream("/catalog.json")) {
                 for (var entry :
                         object(JSON.readValue(Objects.requireNonNull(input), Object.class))

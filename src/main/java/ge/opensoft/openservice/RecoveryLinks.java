@@ -137,6 +137,7 @@ final class RecoveryLinks {
             throw new Failure(400, "Password must contain 12–1024 characters");
         if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,2)");
         var link = pending(db, token, true);
+        PasswordExclusions.check(db, password);
         if (Passwords.matches(link.get("password").toString(), password))
             throw new Failure(400, "Choose a different password");
         String target = link.get("user_id").toString();
