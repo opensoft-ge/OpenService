@@ -58,6 +58,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorsCanEndOnlyTheSelectedSessionWithAnAuditedReason() throws Exception {
+        AdminSessionRevocationAcceptance.run(this);
+    }
+
+    @Test
     void administratorsCanInspectAccountSessionsWithoutExposingCredentials() throws Exception {
         AdminSessionsAcceptance.run(this);
     }

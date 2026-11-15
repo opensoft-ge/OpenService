@@ -118,8 +118,8 @@ final class SessionRevocationAcceptance {
                                         JSON.writeValueAsBytes(
                                                 map("short_description", "Must not be written"))))
                         .build();
-        try (var db = h.store.open();
-                var executor = Executors.newSingleThreadExecutor()) {
+        try (var executor = Executors.newSingleThreadExecutor();
+                var db = h.store.open()) {
             db.all("SELECT pg_advisory_xact_lock(18439,4)");
             var write =
                     executor.submit(
