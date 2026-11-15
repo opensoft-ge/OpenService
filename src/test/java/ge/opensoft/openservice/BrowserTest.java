@@ -968,10 +968,11 @@ class BrowserTest {
 
     @Test
     void administratorAddsAndRemovesAGroupMemberInTheBrowser() throws Exception {
-        String name = "GroupBrowser" + id().substring(0, 8), group;
+        String name = "GroupBrowser" + id().substring(0, 8), group, target;
         try (var db = store.open()) {
             Service.createAccount(
                     db, map("name", name, "role", "reader", "password", WorkflowSupport.PASSWORD));
+            target = RecordAccess.owner(db,name);
             group =
                     Service.create(
                                     db,
@@ -1007,6 +1008,8 @@ class BrowserTest {
                             .count());
             page.setViewportSize(390, 844);
             assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth<=innerWidth"));
+            page.navigate(base()+"/admin/accounts/"+target+"/security-events");assertThat(page.locator("tbody tr")).hasCount(2);assertThat(page.locator("tbody tr").first()).containsText("account.group_membership_removed");assertThat(page.locator("tbody tr").last()).containsText("account.group_membership_added");ReleaseBrowserAcceptance.accessible(page);page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();ReleaseBrowserAcceptance.accessible(page);page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/account-security-membership-mobile-dark.png")).setFullPage(true));page.setViewportSize(1280,900);page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();ReleaseBrowserAcceptance.accessible(page);page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/account-security-membership-desktop.png")).setFullPage(true));
+
         }
     }
 

@@ -408,3 +408,7 @@ POST `/api/openservice/users/{id}/api-keys/label` (or matching admin form) accep
 ### Filter invitations by current acceptance availability
 
 GET `/api/openservice/invitation-directory` and `/admin/invitation-directory` additionally accept state, empty or pending/expired/invalidated/unavailable/revoked/accepted. The filter combines with q/role/page before totals and 25-row pages. Unknown/repeated values return 400. Computed availability uses a single observation time per request; acceptance still revalidates at submission. No tokens, emails or recipient secrets are returned.
+
+### Include group membership changes in account security history
+
+Existing PUT `/api/openservice/groups/{group}/members` and DELETE `.../members/{user}` plus browser actions now record account.group_membership_added/removed in the affected account security journal when membership actually changes. Detail contains only group_id. Existing group audit and response shapes remain unchanged. Repeated actions emit no additional event; failures/rollbacks emit none. Bulk removal retains its separate account.memberships_removed summary. Group deletion does not yet generate per-account removal events.

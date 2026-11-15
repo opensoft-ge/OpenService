@@ -71,6 +71,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void groupMembershipChangesHaveTransactionalAccountEvidence() throws Exception { GroupSecurityAcceptance.run(this); }
+
+    @Test
     void invitationDirectoryFiltersComputedAvailabilityBeforePaging() throws Exception { InvitationStateAcceptance.run(this); }
 
     @Test

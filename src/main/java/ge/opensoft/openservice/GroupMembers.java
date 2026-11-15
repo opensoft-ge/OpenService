@@ -80,7 +80,7 @@ final class GroupMembers {
                             "DELETE FROM os_group_member WHERE group_id=? AND user_id=?",
                             group,
                             user);
-        if (changed != 0)
+        if (changed != 0) {
             Service.audit(
                     db,
                     record,
@@ -89,6 +89,13 @@ final class GroupMembers {
                             .toString(),
                     add ? "member_added" : "member_removed",
                     map("user_id", user));
+            SecurityEvents.record(
+                    db,
+                    actor,
+                    user,
+                    add ? "account.group_membership_added" : "account.group_membership_removed",
+                    map("group_id", group));
+        }
         return list(db, group);
     }
 }
