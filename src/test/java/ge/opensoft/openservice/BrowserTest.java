@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void deliveryFiltersAndPagingReachOlderFailuresInBothThemes() throws Exception {
+        DeliveryOperationsBrowserAcceptance.directory(this);
+    }
+
+    @Test
     void professionalThemesPersistAndRemainAccessible() throws Exception {
         ThemeBrowserAcceptance.run(this);
     }

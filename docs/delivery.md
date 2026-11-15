@@ -22,7 +22,7 @@ Restart after configuration changes. Use an HTTPS deployment with secure cookies
 
 ## Invitation and recovery journey
 
-As administrator, open **Invitations**, choose a new username and role, enter the recipient email and submit. The response contains a delivery ID, not a bearer link. **Delivery queue** shows the latest 100 jobs and sanitized failure codes. The recipient follows the emailed link, chooses a password and signs in. Acceptance verifies possession of the invited address, normalizes it to lowercase and enforces account-email uniqueness. Links are single-use and expire after 24 hours. Revocation, replacement and issuer security changes invalidate outstanding links.
+As administrator, open **Invitations**, choose a new username and role, enter the recipient email and submit. The response contains a delivery ID, not a bearer link. **Delivery queue** shows sanitized jobs in 100-row pages, with state/kind filters and complete queue diagnostics. The recipient follows the emailed link, chooses a password and signs in. Acceptance verifies possession of the invited address, normalizes it to lowercase and enforces account-email uniqueness. Links are single-use and expire after 24 hours. Revocation, replacement and issuer security changes invalidate outstanding links.
 
 An empty recipient email retains the manual invitation flow for a disposable walkthrough; those accounts have no verified address. Existing accounts are not silently treated as verified. Email changes/reverification and converting existing manual accounts are future work; assisted recovery remains available.
 
@@ -34,12 +34,12 @@ Queue insertion and account-link creation commit together. Envelopes are AES-GCM
 
 Workers claim jobs transactionally, release the database before network I/O and hold a 60-second lease. PostgreSQL uses row locks with `SKIP LOCKED`; SQLite serializes writes. Expired leases are reclaimable after a process restart. A stale worker cannot overwrite a newer lease's state. SMTP failures retry with exponential delay; five failed attempts produce a visible `failed` job; five abandoned processing leases also produce `failed` with `LEASE_EXHAUSTED`. Administrators can retry an unexpired failed job. A maximum of 1000 unfinished jobs and 20 invitation jobs per minute bound account-email submissions. Expired or invalid links are cancelled before sending. Terminal delivered/cancelled jobs have their encrypted payload erased.
 
-Delivery is **at least once**. A crash after SMTP acceptance but before acknowledgement can send a duplicate. A stable Message-ID helps correlation but cannot promise provider deduplication. `delivered` means the SMTP server accepted the message, not that it arrived in an inbox. Metadata is retained in the database; the latest-100 view is not a retention policy. Scheduled retention, provider/bounce telemetry, alerting and dead-letter bulk operations remain roadmap work.
+Delivery is **at least once**. A crash after SMTP acceptance but before acknowledgement can send a duplicate. A stable Message-ID helps correlation but cannot promise provider deduplication. `delivered` means the SMTP server accepted the message, not that it arrived in an inbox. Metadata is retained in the database; the paged view is not a retention policy. Scheduled retention, provider/bounce telemetry, alerting and dead-letter bulk operations remain roadmap work.
 
 | Interface | Access and behavior |
 |---|---|
 | `POST /api/openservice/email-invitations` | Administrator; exactly `name`, `role`, `email`; 201 with invitation metadata and `delivery_id` |
-| `GET /admin/delivery`, `GET /api/openservice/delivery` | Administrator; latest 100 sanitized jobs plus complete queue diagnostics |
+| `GET /admin/delivery`, `GET /api/openservice/delivery` | Administrator; 100 sanitized jobs per page, state/kind filters and complete queue diagnostics |
 | `POST /admin/delivery/{id}/retry`, API equivalent | Administrator; only unexpired failed jobs; browser CSRF required |
 | `GET/POST /forgot` | Public recovery form; POST requires CSRF; does not expose account existence |
 
@@ -50,3 +50,7 @@ These are original OpenService contracts, not ServiceNow Email API compatibility
 `GET /api/openservice/delivery` retains its `result` array and adds `diagnostics`: `total`, `queued`, `processing`, `failed`, `delivered`, `cancelled`, `ready`, `expired_leases`, `expired_links`, `oldest_pending_age_seconds` and `observed_at_epoch_ms`. Counts cover all retained rows, independent of the page limit. Empty counts and age are zero. Ready means queued, due and unexpired; expired leases count unexpired processing jobs whose lease deadline has arrived. Expired links count unfinished rows awaiting worker cleanup. Pending age excludes failed, terminal and expired jobs and clamps future timestamps to zero.
 
 The administrator screen gives readable labels for these values in both themes. It exposes no message content, recipient, reference ID, bearer link or SMTP error text. Observations are point-in-time diagnostics, not inbox delivery guarantees or a substitute for a monitoring/alerting service. Expired leases may be retried or exhausted according to the bounded worker policy.
+
+## Delivery directory
+
+Both queue GET routes accept optional `state` (`queued`, `processing`, `failed`, `delivered`, `cancelled`), `kind` (`invitation`, `recovery`) and `page` (1–999999). Empty state/kind means all. Unknown, repeated, invalid or out-of-range parameters return 400; filtering never grants access. The API preserves `result` and `diagnostics` and adds `page`, `pages`, filtered `total`, `state` and `kind`. Ordering is creation time descending then ID ascending. Each page contains at most 100 rows; the empty list has page 1 of 1. Global diagnostics remain independent of filters. Browser next/previous links preserve the filters; submitting a new filter returns to page one. This live directory is not a transaction-spanning snapshot: concurrent changes may move rows or invalidate a page; refresh page one when instructed.

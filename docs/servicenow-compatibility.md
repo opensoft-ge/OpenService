@@ -265,3 +265,5 @@ Original professional blue-grey/slate styling with a persistent, keyboard-access
 ## Twenty-cycle delivery — November 2026
 
 See the [cycle evidence ledger](paired-cycles-2026-11-15.md). OS-A20-01 adds complete protected queue diagnostics to OS-PARITY-10/ADOPT-07, with full acceptance and exact coverage passed. The Brazil discovery sweep also merges AI-admin readiness into the unimplemented OS-PARITY-06 backlog; neither addition expands native API compatibility claims.
+
+OS-A20-02: delivery directory state/kind filters and bounded pages are implemented with acceptance and exact coverage passed, extending the local PARITY-10 operating contract. Noncascading/time-bounded delegation remains missing under PARITY-02/08; see the roadmap and cycle evidence.

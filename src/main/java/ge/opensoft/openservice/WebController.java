@@ -299,15 +299,12 @@ public class WebController {
         if (Set.of("/admin/delivery", "/api/openservice/delivery").contains(path)) {
             method(method, "GET");
             c.admin();
-            c.noQuery();
-            var jobs = Outbox.list(c.db);
-            var diagnostics = Outbox.diagnostics(c.db, System.currentTimeMillis());
-            return path.startsWith("/api/")
-                    ? json(map("result", jobs, "diagnostics", diagnostics), 200)
-                    : view(
-                            c,
-                            "delivery",
-                            map("table", "delivery", "jobs", jobs, "diagnostics", diagnostics));
+            var directory = DeliveryDirectory.page(c.db, queryArguments(c));
+            directory.put("diagnostics", Outbox.diagnostics(c.db, System.currentTimeMillis()));
+            if (path.startsWith("/api/")) return json(directory, 200);
+            directory.put("table", "delivery");
+            directory.put("jobs", directory.get("result"));
+            return view(c, "delivery", directory);
         }
         Matcher delivery =
                 Pattern.compile("/(?:admin|api/openservice)/delivery/([0-9a-f]{32})/retry")

@@ -288,3 +288,5 @@ input[type=checkbox],input[type=radio]{accent-color:var(--accent)}
 
 .theme-toggle::after{content:"";width:24px;height:14px;border:1px solid var(--control);border-radius:20px;background:radial-gradient(circle at 6px 6px,var(--muted) 4px,transparent 4.5px) var(--surface)}
 .theme-toggle[aria-pressed=true]::after{border-color:var(--accent);background:radial-gradient(circle at 16px 6px,var(--on-accent) 4px,transparent 4.5px) var(--accent)}
+
+.table-scroll:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}

@@ -51,6 +51,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorsCanFindOlderDeliveriesWithStrictFilters() throws Exception {
+        DeliveryOperationsAcceptance.directory(this);
+    }
+
+    @Test
     void completeDeliveryDiagnosticsAreProtectedAndNotPageLimited() throws Exception {
         DeliveryOperationsAcceptance.diagnostics(this);
     }

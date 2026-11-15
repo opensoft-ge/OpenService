@@ -13,6 +13,9 @@ import javax.crypto.spec.SecretKeySpec;
 
 /** Transactional, leased delivery. SMTP is at-least-once; message IDs remain stable on retry. */
 final class Outbox {
+    static final String PUBLIC_COLUMNS =
+            "job_id,kind,state,attempts,available_at,expires_at,created_at,error";
+
     private Outbox() {}
 
     static String encrypt(String secret, String plaintext) throws Exception {
@@ -130,8 +133,9 @@ final class Outbox {
 
     static List<Map<String, Object>> list(Store.Db db) throws SQLException {
         return db.all(
-                "SELECT job_id,kind,state,attempts,available_at,expires_at,created_at,error FROM"
-                        + " os_outbox ORDER BY created_at DESC,job_id LIMIT 100");
+                "SELECT "
+                        + PUBLIC_COLUMNS
+                        + " FROM os_outbox ORDER BY created_at DESC,job_id LIMIT 100");
     }
 
     static Map<String, Object> diagnostics(Store.Db db, long now) throws SQLException {
