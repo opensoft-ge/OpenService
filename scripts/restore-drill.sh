@@ -107,6 +107,13 @@ if [ "$drill_source_version" -ge 16 ]; then
         --data '{"label":"Restore example","password":"restore-unsafe-password"}' \
         "$drill_address/api/openservice/password-exclusions" | jq -e '.result.exclusion_id != null' >/dev/null
 fi
+if [ "$drill_source_version" -ge 17 ]; then
+    jq -n --arg password "$drill_password" '{name:"RestoreRequired",password:$password,role:"reader"}' > "$drill_directory/required.json"
+    api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/required.json" "$drill_address/api/openservice/users" >/dev/null
+    drill_required=$(docker exec "$drill_prefix-source-db" psql -At -U openservice -d openservice -c "SELECT user_id FROM os_user WHERE name='RestoreRequired'")
+    api -X POST -H 'Content-Type: application/json' --data '{}' \
+        "$drill_address/api/openservice/users/$drill_required/require-password-change" | jq -e '.result.required == true' >/dev/null
+fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null
 snapshot_delivery() {
@@ -126,6 +133,11 @@ snapshot_password_policy() {
         -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_password_exclusion ORDER BY exclusion_id) q' > "$drill_directory/$1-password-policy.jsonl"
 }
 if [ "$drill_source_version" -ge 16 ]; then snapshot_password_policy source; fi
+snapshot_password_requirements() {
+    docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+        -c 'SELECT row_to_json(q) FROM (SELECT user_id,password_reset_required FROM os_user ORDER BY user_id) q' > "$drill_directory/$1-password-requirements.jsonl"
+}
+if [ "$drill_source_version" -ge 17 ]; then snapshot_password_requirements source; fi
 docker exec "$drill_prefix-source-db" pg_dump -U openservice -d openservice -Fc > "$drill_directory/backup.dump"
 docker stop "$drill_prefix-source-db" >/dev/null
 start_database restored
@@ -134,6 +146,14 @@ start_application restored
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored
+if [ "$drill_source_version" -ge 17 ]; then
+    snapshot_password_requirements restored
+    cmp "$drill_directory/source-password-requirements.jsonl" "$drill_directory/restored-password-requirements.jsonl"
+    drill_status=$(curl --max-time 30 -sS -o /dev/null -w '%{http_code}' --user "RestoreRequired:$drill_password" \
+        "$drill_address/api/openservice/me")
+    [ "$drill_status" = 403 ]
+    echo 'PASS: required password replacement survives restore and blocks ordinary API access.'
+fi
 if [ "$drill_source_version" -ge 16 ]; then
     snapshot_password_policy restored
     cmp "$drill_directory/source-password-policy.jsonl" "$drill_directory/restored-password-policy.jsonl"

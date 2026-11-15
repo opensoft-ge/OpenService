@@ -525,7 +525,9 @@ public final class Service {
         if (password.equals(current)) throw new Failure(400, "Choose a different password");
         PasswordExclusions.check(db, password);
         db.update(
-                "UPDATE os_user SET password=? WHERE user_id=?", Passwords.hash(password), userId);
+                "UPDATE os_user SET password=?,password_reset_required=0 WHERE user_id=?",
+                Passwords.hash(password),
+                userId);
         revokeSessions(db, userId);
         SecurityEvents.record(db, userId, userId, "account.password_changed", map());
     }

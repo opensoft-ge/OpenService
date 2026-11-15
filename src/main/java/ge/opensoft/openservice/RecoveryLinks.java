@@ -140,7 +140,9 @@ final class RecoveryLinks {
             throw new Failure(400, "Choose a different password");
         String target = link.get("user_id").toString();
         db.update(
-                "UPDATE os_user SET password=? WHERE user_id=?", Passwords.hash(password), target);
+                "UPDATE os_user SET password=?,password_reset_required=0 WHERE user_id=?",
+                Passwords.hash(password),
+                target);
         Service.revokeSessions(db, target);
         db.update("DELETE FROM os_recovery WHERE user_id=?", target);
         SecurityEvents.record(

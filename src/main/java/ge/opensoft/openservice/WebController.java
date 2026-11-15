@@ -138,6 +138,17 @@ public class WebController {
                 if (path.startsWith("/api/")) throw new Failure(401, "Authentication required");
                 return redirect("/login");
             }
+            if (!publicPath
+                    && PasswordReset.required(user)
+                    && !Set.of("/password-required", "/api/openservice/me/password", "/logout")
+                            .contains(path)) {
+                if (path.startsWith("/api/"))
+                    throw new Failure(
+                            403,
+                            "Password replacement required; change your password before accessing"
+                                + " the workspace");
+                return redirect("/password-required");
+            }
             db.viewerId = user == null ? "" : user.get("user_id").toString();
             db.viewerRole = user == null ? "" : user.get("role").toString();
             var context = new Request(db, request, response, session, user);
@@ -152,6 +163,7 @@ public class WebController {
                 if (Set.of("reader", "requester").contains(context.role())
                         && !Set.of(
                                         "/logout",
+                                        "/password-required",
                                         "/account/sessions/revoke",
                                         "/account/password",
                                         "/account/email",
@@ -587,7 +599,7 @@ public class WebController {
                         "auth_revision", ((Number) user.get("auth_revision")).longValue());
                 c.session.setAttribute("authenticated_at", System.currentTimeMillis());
                 c.session.setAttribute("csrf", csrf());
-                return redirect("/");
+                return redirect(PasswordReset.required(user) ? "/password-required" : "/");
             }
             return new ModelAndView("login", map("csrf", c.session.getAttribute("csrf")));
         }
@@ -595,6 +607,54 @@ public class WebController {
             method(method, "POST");
             c.session.invalidate();
             return redirect("/login");
+        }
+        if (path.equals("/password-required")) {
+            method(method, "GET", "POST");
+            c.noQuery();
+            c.uniqueQuery();
+            if (!PasswordReset.required(c.user)) return redirect("/account");
+            String error = null;
+            int status = 200;
+            if (method.equals("POST")) {
+                try {
+                    Service.changePassword(
+                            c.db,
+                            c.user,
+                            map(
+                                    "current_password",
+                                    c.parameter("current_password", ""),
+                                    "new_password",
+                                    c.parameter("new_password", "")));
+                    c.session.invalidate();
+                    return redirect("/login");
+                } catch (Failure failure) {
+                    error = failure.getMessage();
+                    status = failure.status;
+                    if (status == 429) c.response.setHeader("Retry-After", "300");
+                }
+            }
+            return new ModelAndView(
+                    "password-required",
+                    map("csrf", c.session.getAttribute("csrf"), "error", error),
+                    HttpStatus.valueOf(status));
+        }
+        Matcher passwordRequirement =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/require-password-change")
+                        .matcher(path);
+        if (passwordRequirement.matches()) {
+            boolean api = path.startsWith("/api/");
+            method(method, api ? new String[] {"GET", "POST"} : new String[] {"POST"});
+            c.admin();
+            c.noQuery();
+            c.uniqueQuery();
+            String id = passwordRequirement.group(1);
+            if (method.equals("GET"))
+                return json(map("result", PasswordReset.state(c.db, id)), 200);
+            if (api && !object(body(c)).isEmpty())
+                throw new Failure(400, "Provide an empty JSON object");
+            var state = PasswordReset.require(c.db, c.user.get("user_id").toString(), id);
+            return api ? json(map("result", state), 200) : redirect("/admin/accounts/" + id);
         }
         if (Set.of("/admin/password-exclusions", "/api/openservice/password-exclusions")
                 .contains(path)) {
@@ -1694,6 +1754,8 @@ public class WebController {
                                 "accounts",
                                 "account",
                                 account,
+                                "passwordChangeRequired",
+                                PasswordReset.state(c.db, id).get("required"),
                                 "error",
                                 error,
                                 "roles",

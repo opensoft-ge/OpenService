@@ -242,3 +242,7 @@ Optional `before` is an event ID previously returned for this account; it anchor
 ## New-password length and compatibility
 
 All newly set passwords (account creation, invitation acceptance, self-service change, recovery and missing-administrator bootstrap) use one 15–1024 Unicode-code-point rule. Existing credentials remain valid without rewriting hashes, and an unchanged existing administrator can restart with its previous bootstrap environment. New bootstrap credentials outside the bounds fail initialization transactionally. Browser controls allow up to 2048 UTF-16 units to accommodate 1024 supplementary characters; the server still rejects more than 1024 code points. No normalization or character-class composition rule is introduced. Custom exclusions continue to apply. This is a local security-policy change, not a vendor-default or full NIST conformance claim.
+
+## Required credential replacement
+
+Administrators can GET/POST `/api/openservice/users/{id}/require-password-change`; POST accepts an empty object and enforces replacement before ordinary browser/API access, including Basic-authenticated calls. The existing password-change endpoint and recovery can satisfy the requirement. See [behavior, allowed routes, audit and upgrade contract](required-password-change.md).

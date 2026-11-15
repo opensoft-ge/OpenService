@@ -56,6 +56,11 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void requiredPasswordReplacementBlocksSessionsAndApiBypasses() throws Exception {
+        PasswordRequirementAcceptance.run(this);
+    }
+
+    @Test
     void newPasswordsUseFifteenCodePointsWithoutLockingOutLegacyAccounts() throws Exception {
         PasswordLengthAcceptance.run(this);
     }

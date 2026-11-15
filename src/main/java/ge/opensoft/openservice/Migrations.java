@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 16;
+    static final int VERSION = 17;
 
     private Migrations() {}
 
@@ -203,11 +203,17 @@ final class Migrations {
         if (version < 16) {
             db.update(
                     "CREATE TABLE IF NOT EXISTS os_password_exclusion(exclusion_id VARCHAR(32)"
-                        + " PRIMARY KEY,label VARCHAR(80) NOT NULL,digest VARCHAR(64) NOT NULL"
-                        + " UNIQUE,created_at VARCHAR(40) NOT NULL)");
+                            + " PRIMARY KEY,label VARCHAR(80) NOT NULL,digest VARCHAR(64) NOT NULL"
+                            + " UNIQUE,created_at VARCHAR(40) NOT NULL)");
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(16,?)",
                     "organization password exclusions");
+        }
+        if (version < 17) {
+            addColumn(db, "os_user", "password_reset_required", "INTEGER NOT NULL DEFAULT 0");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(17,?)",
+                    "required password replacement");
         }
     }
 

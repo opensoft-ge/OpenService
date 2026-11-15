@@ -28,7 +28,7 @@ class PasswordExclusionTest {
             actor = user.get("user_id").toString();
             hash = user.get("password").toString();
             db.update("DROP TABLE os_password_exclusion");
-            db.update("DELETE FROM os_migration WHERE version=16");
+            db.update("DELETE FROM os_migration WHERE version>=16");
             db.connection.commit();
         }
         var store = new Store(env);

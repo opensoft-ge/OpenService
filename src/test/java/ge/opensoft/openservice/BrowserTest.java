@@ -50,6 +50,11 @@ class BrowserTest {
     }
 
     @Test
+    void administratorRequiredPasswordChangeIsAccessibleAndCannotBeBypassed() throws Exception {
+        PasswordRequirementBrowserAcceptance.run(this);
+    }
+
+    @Test
     void browserPasswordFieldsAllowTheFullUnicodePolicy() throws Exception {
         PasswordLengthBrowserAcceptance.run(this);
     }
