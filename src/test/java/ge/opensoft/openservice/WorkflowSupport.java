@@ -58,6 +58,9 @@ abstract class WorkflowSupport {
     }
 
     @Test
+    void administratorDiagnosesSubjectPermissionsWithoutChangingIdentity() throws Exception { AccountPermissionsAcceptance.run(this); }
+
+    @Test
     void credentialStatusMatchesAuthenticationEligibility() throws Exception { ApiKeyStatusAcceptance.run(this); }
 
     @Test

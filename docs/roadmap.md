@@ -438,3 +438,7 @@ Expiry shortening partially advances ADOPT-08/09 and OS-DISC-API-AUTH-POLICY wit
 ## OS-N10-10 — Explain effective credential eligibility to administrators (implemented)
 
 Credential-status explanation partially advances OS-DISC-03 and ADOPT-08/09. Full user comparison/simulation, AI-tool evaluation and native access-analysis exports remain missing; Store applicability and exact Brazil detail require verification. OS-DISC-QUERY-ACL merges into OS-PARITY-01/07/08, missing P1/M2: shared query policy is prerequisite; reject forbidden predicates across data, counts, ordering and reports. Current hidden-field rejection is preserved. Next: administrator subject-level permission diagnosis and invitation administration. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
+
+## OS-N10-11 — Administrator diagnosis of another account's record permissions (implemented)
+
+OS-DISC-03 now has bounded administrator subject-level record-policy diagnosis; comparison/simulation and native exports remain missing. Scoped administration is merged into ADOPT-03/06/09 and OS-PARITY-08, missing P1/M2, requiring composable permissions and denied unrelated administration after delegation/revocation. Exact Brazil Access Analyzer behavior and native invitation-specific behavior remain unverified. Next: credential downscoping and invitation directory administration. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.

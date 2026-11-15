@@ -50,6 +50,9 @@ class BrowserTest {
     }
 
     @Test
+    void administratorCanInspectAnotherAccountsPermissions() throws Exception { AccountPermissionsBrowserAcceptance.run(this); }
+
+    @Test
     void administratorCanManageScopedApiKeys() throws Exception { ApiKeyBrowserAcceptance.run(this); }
 
     @Test

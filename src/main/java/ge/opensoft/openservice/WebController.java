@@ -669,6 +669,18 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
+        Matcher accountPermissions = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permissions").matcher(path);
+        if (accountPermissions.matches()) {
+            method(method, "GET"); c.admin(); c.uniqueQuery();
+            boolean api = path.startsWith("/api/");
+            String target = accountPermissions.group(1);
+            var args = queryArguments(c);
+            Map<String,Object> inspection = map();
+            if (api || !args.isEmpty()) inspection = AccountPermissions.inspect(c.db, c.user.get("user_id").toString(), target, args);
+            if (api) return json(map("result", inspection), 200);
+            return view(c, "account-permissions", map("table", "accounts", "account", Service.account(c.db, target),
+                    "inspection", inspection, "selectedTable", args.getOrDefault("table", ""), "selectedRecord", args.getOrDefault("record_id", "")));
+        }
         Matcher apiKeyExpiry = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/expiry").matcher(path);
         if (apiKeyExpiry.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();

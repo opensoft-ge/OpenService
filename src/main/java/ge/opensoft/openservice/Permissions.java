@@ -11,6 +11,12 @@ final class Permissions {
 
     static Map<String, Object> inspect(Store.Db db, String table, String id) throws SQLException {
         Service.record(db, table, id);
+        return describeVisible(db, table, id);
+    }
+
+    /** Caller must already have established record visibility for the bound principal. */
+    static Map<String, Object> describeVisible(Store.Db db, String table, String id)
+            throws SQLException {
         var definition = FieldAccess.schema(db, Service.schema(db, table));
         var update = decision(definition, "update", db.viewerRole);
         var fields = new LinkedHashMap<String, Object>();
