@@ -352,7 +352,8 @@ public class WebController {
             method(method, "GET", "POST", "DELETE");
             boolean historyQuery=platform.group(1).equals("knowledge") && method.equals("GET");
             boolean clockQuery=platform.group(1).equals("clocks") && platform.group(2)!=null && method.equals("GET");
-            if(!historyQuery && !clockQuery) c.noQuery();
+            boolean auditQuery=platform.group(1).equals("audit-checkpoint") && method.equals("GET");
+            if(!historyQuery && !clockQuery && !auditQuery) c.noQuery();
             String actor = c.user.get("user_id").toString();
             return json(
                     map(

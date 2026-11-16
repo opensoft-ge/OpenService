@@ -456,6 +456,40 @@ final class DiverseBatchAcceptance {
         assertEquals(404,h.get(path,auth("OwnClockRequester")).statusCode());
     }
 
+    static void auditVerification(WorkflowSupport h) throws Exception {
+        h.account("DigestViewer","reader");
+        String viewer;
+        try(var db=h.store.open()) { viewer=RecordAccess.owner(db,"DigestViewer"); }
+        String path=ROOT+"audit-checkpoint";
+        assertEquals(401,h.get(path,null).statusCode());
+        assertEquals(403,h.get(path,auth("DigestViewer")).statusCode());
+        PlatformOperationsAcceptance.post(h,"audit-access",map("user_id",viewer,"enabled",true));
+        var retained=result(h,"audit-checkpoint");
+        String query="?algorithm=sha256-chain-v1&count="+retained.get("count")+"&last_sequence="+retained.get("last_sequence")+"&hash="+retained.get("hash");
+        assertEquals(true,object(parsed(h.get(path+query,auth("DigestViewer"))).get("result")).get("verified"));
+        try(var db=h.store.open()) {
+            SecurityEvents.record(db,viewer,viewer,"checkpoint.following",map());
+            db.connection.commit();
+        }
+        assertEquals(true,result(h,"audit-checkpoint"+query).get("verified"));
+        assertNotEquals(retained.get("hash"),result(h,"audit-checkpoint").get("hash"));
+        assertEquals(400,h.get(path+"?count=0",auth("admin")).statusCode());
+        for(String invalid : new String[]{query.replace("sha256-chain-v1","other"),query.replace("hash="+retained.get("hash"),"hash=bad"),query.replace("count="+retained.get("count"),"count=-1"),query.replace("count="+retained.get("count"),"count=9999999999999999999"),query+"&count=1"})
+            assertEquals(400,h.get(path+invalid,auth("admin")).statusCode());
+        assertEquals(false,result(h,"audit-checkpoint"+query.replace("count="+retained.get("count"),"count=999999")).get("verified"));
+        var latest=result(h,"audit-checkpoint");
+        assertEquals(false,result(h,"audit-checkpoint"+query.replace("count="+retained.get("count"),"count="+latest.get("count")).replace("last_sequence="+retained.get("last_sequence"),"last_sequence=9223372036854775807")).get("verified"));
+        assertEquals(false,result(h,"audit-checkpoint"+query.replace("hash="+retained.get("hash"),"hash="+"0".repeat(64))).get("verified"));
+        assertEquals(true,result(h,"audit-checkpoint?algorithm=sha256-chain-v1&count=0&last_sequence=0&hash="+"0".repeat(64)).get("verified"));
+        try(var db=h.store.open()) {
+            db.update("UPDATE os_security_event SET detail='{}' WHERE sequence=?",retained.get("last_sequence"));
+            db.connection.commit();
+        }
+        assertEquals(false,result(h,"audit-checkpoint"+query).get("verified"));
+        PlatformOperationsAcceptance.post(h,"audit-access",map("user_id",viewer,"enabled",false));
+        assertEquals(403,h.get(path+query,auth("DigestViewer")).statusCode());
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

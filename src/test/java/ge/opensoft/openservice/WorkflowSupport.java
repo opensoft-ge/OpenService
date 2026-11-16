@@ -62,6 +62,9 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void retainedAuditCheckpointsVerifyPrefixesAfterNewEvents() throws Exception { DiverseBatchAcceptance.auditVerification(this); }
+
+    @Test
     void recordClockInspectionUsesLiveRecordPermissions() throws Exception { DiverseBatchAcceptance.recordClocks(this); }
 
     @Test

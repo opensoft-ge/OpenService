@@ -64,7 +64,7 @@ final class Operations {
             throws Exception {
         if (resource.equals("audit-checkpoint") && method.equals("GET")) {
             AuditGovernance.requireViewer(db, actor);
-            return AuditGovernance.checkpoint(db);
+            return AuditGovernance.inspect(db,input);
         }
         if (resource.equals("reports")) {
             if (method.equals("GET"))

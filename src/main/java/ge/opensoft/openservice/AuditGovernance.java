@@ -43,13 +43,40 @@ final class AuditGovernance {
     }
 
     static Map<String, Object> checkpoint(Store.Db db) throws SQLException {
+        return prefix(db,Long.MAX_VALUE);
+    }
+
+    static Map<String,Object> inspect(Store.Db db,Object input) throws SQLException {
+        var args=object(input);
+        if(args.isEmpty()) return checkpoint(db);
+        require(args.keySet().equals(Set.of("algorithm","count","last_sequence","hash")),
+                "Provide the complete retained checkpoint");
+        require("sha256-chain-v1".equals(args.get("algorithm")),"Unsupported checkpoint algorithm");
+        String hash=WorkJobs.text(args.get("hash"),64);
+        require(hash.matches("[0-9a-f]{64}"),"Invalid checkpoint hash");
+        long count=number(args.get("count")),sequence=number(args.get("last_sequence"));
+        var observed=prefix(db,sequence);
+        boolean verified=count==((Number)observed.get("count")).longValue()
+                && sequence==((Number)observed.get("last_sequence")).longValue()
+                && hash.equals(observed.get("hash"));
+        return map("verified",verified,"observed",observed);
+    }
+
+    static long number(Object input) {
+        String value=WorkJobs.text(input,19);
+        require(value.matches("[0-9]+"),"Checkpoint counts must be nonnegative integers");
+        try { return Long.parseLong(value); }
+        catch(NumberFormatException invalid) { throw new Failure(400,"Checkpoint count exceeds the limit"); }
+    }
+
+    static Map<String, Object> prefix(Store.Db db,long through) throws SQLException {
         String hash = "0".repeat(64);
         long count = 0, sequence = 0;
         try (var query =
                         db.statement(
                                 "SELECT"
                                     + " sequence,event_id,occurred_at,actor_id,actor_name,target_id,target_name,action,detail"
-                                    + " FROM os_security_event ORDER BY sequence");
+                                    + " FROM os_security_event WHERE sequence<=? ORDER BY sequence",through);
                 var rows = query.executeQuery()) {
             while (rows.next()) {
                 var row = new ArrayList<String>();
