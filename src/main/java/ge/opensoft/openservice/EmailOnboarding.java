@@ -110,7 +110,9 @@ final class EmailOnboarding {
         try {
             if (kind.equals("email.enrollment")) {
                 return payload.get("email")
-                        .equals(EmailEnrollment.describe(db, path.substring(14)).get("email"));
+                        .equals(
+                                EmailEnrollment.describe(db, path.substring(14))
+                                        .get("delivery_email"));
             }
             if (kind.equals("email.invitation")) {
                 String token = path.substring(6);

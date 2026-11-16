@@ -1,0 +1,130 @@
+package ge.opensoft.openservice;
+
+import static ge.opensoft.openservice.TypedFields.require;
+import static ge.opensoft.openservice.Values.*;
+
+import java.sql.SQLException;
+import java.util.*;
+
+/** Each clock snapshots its calendar, so editing a schedule cannot rewrite elapsed service time. */
+final class ServiceClocks {
+    private ServiceClocks() {}
+
+    static void calendar(Store.Db db, String actor, Object input) throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        var body = object(input);
+        require(body.keySet().equals(Set.of("name", "calendar")), "Provide name and calendar");
+        String name = WorkJobs.text(body.get("name"), 80);
+        var definition = BusinessCalendar.validate(body.get("calendar"));
+        db.update(
+                "INSERT INTO os_calendar(calendar_id,definition) VALUES(?,?) ON"
+                    + " CONFLICT(calendar_id) DO UPDATE SET definition=excluded.definition",
+                name,
+                JSON.writeValueAsString(definition));
+        SecurityEvents.record(db, actor, actor, "sla.calendar_saved", map("calendar", name));
+    }
+
+    static Map<String, Object> start(Store.Db db, String actor, Object input, long now)
+            throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        var body = object(input);
+        require(
+                body.keySet().equals(Set.of("table", "record_id", "calendar", "minutes")),
+                "Provide table, record_id, calendar and minutes");
+        String table = WorkJobs.text(body.get("table"), 80),
+                record = WorkJobs.text(body.get("record_id"), 32),
+                calendar = WorkJobs.text(body.get("calendar"), 80);
+        require(
+                body.get("minutes") instanceof Integer n && n > 0 && n <= 525600,
+                "Budget must be 1–525600 business minutes");
+        Service.record(db, table, record);
+        var schedule = db.one("SELECT definition FROM os_calendar WHERE calendar_id=?", calendar);
+        if (schedule == null) throw new Failure(404, "Business calendar not found");
+        String id = id();
+        db.update(
+                "INSERT INTO"
+                    + " os_sla(sla_id,table_name,record_id,definition,remaining_ms,last_tick,state,owner_id)"
+                    + " VALUES(?,?,?,?,?,?,'running',?)",
+                id,
+                table,
+                record,
+                JSON.writeValueAsString(schedule.get("definition")),
+                ((Number) body.get("minutes")).longValue() * 60000,
+                now,
+                actor);
+        SecurityEvents.record(
+                db, actor, actor, "sla.started", map("sla_id", id, "record_id", record));
+        return db.one("SELECT * FROM os_sla WHERE sla_id=?", id);
+    }
+
+    static void advance(Store.Db db, Map<String, Object> row, long now) throws SQLException {
+        long previous = ((Number) row.get("last_tick")).longValue();
+        if (!row.get("state").equals("running") || now <= previous) return;
+        long remaining =
+                Math.max(
+                        0,
+                        ((Number) row.get("remaining_ms")).longValue()
+                                - BusinessCalendar.elapsed(
+                                        object(row.get("definition")), previous, now));
+        boolean breach = remaining == 0;
+        db.update(
+                "UPDATE os_sla SET remaining_ms=?,last_tick=?,state=?,breached_at=? WHERE sla_id=?",
+                remaining,
+                now,
+                breach ? "breached" : "running",
+                breach ? now : 0,
+                row.get("sla_id"));
+        if (breach) {
+            var user = db.one("SELECT name FROM os_user WHERE user_id=?", row.get("owner_id"));
+            if (user != null)
+                Notifications.deliver(
+                        db,
+                        row.get("sla_id").toString(),
+                        map(
+                                "username",
+                                user.get("name"),
+                                "message",
+                                "Service clock "
+                                        + row.get("sla_id")
+                                        + " has breached its business-time budget."),
+                        now);
+        }
+    }
+
+    static void control(Store.Db db, String actor, String id, String operation, long now)
+            throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        require(
+                Set.of("pause", "resume", "complete").contains(operation),
+                "Choose pause, resume or complete");
+        var row = db.one("SELECT * FROM os_sla WHERE sla_id=?", id);
+        if (row == null) throw new Failure(404, "Service clock not found");
+        require(
+                Set.of("running", "paused").contains(row.get("state")),
+                "This clock is already terminal");
+        advance(db, row, now);
+        if (db.one("SELECT state FROM os_sla WHERE sla_id=?", id).get("state").equals("breached"))
+            return;
+        String state =
+                switch (operation) {
+                    case "pause" -> "paused";
+                    case "resume" -> "running";
+                    default -> "completed";
+                };
+        db.update(
+                "UPDATE os_sla SET state=?,last_tick=? WHERE sla_id=?",
+                state,
+                Math.max(now, ((Number) row.get("last_tick")).longValue()),
+                id);
+        SecurityEvents.record(db, actor, actor, "sla." + operation, map("sla_id", id));
+    }
+
+    static void tick(Store.Db db, long now) throws SQLException {
+        if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
+        for (var row :
+                db.all(
+                        "SELECT * FROM os_sla WHERE state='running' ORDER BY last_tick,sla_id LIMIT"
+                            + " 100"))
+            advance(db, row, now);
+    }
+}

@@ -1,3 +1,7 @@
+# Coordinated platform expansion — 16 November 2026
+
+Final clean `sh scripts/verify.sh`: **663 tests**, zero failures/errors/skips; whole-project Java **6437/6437 lines, 3353/3353 branches, 361/361 methods**, all 82 production source files passing the exact-count gate. JavaScript migration/theme gates also remain exact. The final image, same-version restore, schema 23 → 33 upgrade, dependency/image/secret scans, local load smoke, browser checks and remaining limits are documented in the [platform expansion report](platform-expansion-2026-11-16.md#research-and-validation). New feature work is one coordinated batch, not a product/QA loop. This evidence supersedes historical totals below and does not close shared-deployment or production gates.
+
 # Twenty further cycles — 15–16 November 2026
 
 20 of 20 cycles complete. Latest gate: 631 tests, zero failures/errors/skips; Java 5338/5338 lines, 2945/2945 branches, 311/311 methods. Exact per-file Java and JavaScript gates pass. [New feature and QA report](paired-cycles-next20-2026-11-15.md). This batch is local only; earlier batch evidence below is historical.

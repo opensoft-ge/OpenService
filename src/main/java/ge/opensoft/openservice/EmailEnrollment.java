@@ -6,9 +6,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
 
-/**
- * First recovery-email enrollment. Replacing an existing address requires a different proof flow.
- */
+/** Recovery-email enrollment and revision-bound dual-proof address replacement. */
 final class EmailEnrollment {
     private EmailEnrollment() {}
 
@@ -16,8 +14,8 @@ final class EmailEnrollment {
         var user = db.one("SELECT email,email_verified FROM os_user WHERE user_id=?", actor);
         var pending =
                 db.one(
-                        "SELECT email,expires_at FROM os_email_enrollment WHERE user_id=? AND"
-                                + " cancelled=0",
+                        "SELECT email,expires_at,previous_email,old_confirmed,new_confirmed FROM"
+                            + " os_email_enrollment WHERE user_id=? AND cancelled=0",
                         actor);
         if (pending != null)
             pending.put(
@@ -39,7 +37,7 @@ final class EmailEnrollment {
         var values = object(body);
         if (!values.keySet().equals(Set.of("email", "current_password"))
                 || !(values.get("current_password") instanceof String password)
-                || password.codePointCount(0, password.length()) > 1024)
+                || !Passwords.withinLimit(password))
             throw new Failure(400, "Provide email and current_password");
         String email = EmailOnboarding.email(values.get("email"));
         if (!store.environment.getProperty("DELIVERY_ENABLED", Boolean.class, false))
@@ -54,14 +52,13 @@ final class EmailEnrollment {
         if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
         var user =
                 db.one(
-                        "SELECT email FROM os_user WHERE user_id=?"
+                        "SELECT email,email_verified FROM os_user WHERE user_id=?"
                                 + (db.postgres ? " FOR UPDATE" : ""),
                         actor);
         Authentication.requireCurrent(db, caller);
-        if (!user.get("email").equals(""))
-            throw new Failure(
-                    409,
-                    "An email address is already registered; replacing it is not supported here");
+        String previous = user.get("email").toString();
+        if (!previous.isEmpty() && ((Number) user.get("email_verified")).intValue() != 1)
+            throw new Failure(409, "Verify the registered address before changing it");
         if (db.one("SELECT user_id FROM os_user WHERE email=?", email) != null)
             throw new Failure(409, "Email address is unavailable");
         long now = System.currentTimeMillis();
@@ -85,6 +82,23 @@ final class EmailEnrollment {
                 verified.get("auth_revision"),
                 expires,
                 now);
+        String oldToken = Passwords.token();
+        db.update(
+                "UPDATE os_email_enrollment SET"
+                        + " previous_email=?,old_token_hash=?,old_confirmed=?,new_confirmed=0 WHERE"
+                        + " user_id=?",
+                previous,
+                Passwords.tokenHash(oldToken),
+                previous.isEmpty() ? 1 : 0,
+                actor);
+        if (!previous.isEmpty())
+            Outbox.enqueue(
+                    db,
+                    store.secret,
+                    "email.enrollment",
+                    Passwords.tokenHash(oldToken),
+                    map("email", previous, "path", "/verify-email/" + oldToken),
+                    expires);
         String job =
                 Outbox.enqueue(
                         db,
@@ -101,14 +115,25 @@ final class EmailEnrollment {
     static Map<String, Object> describe(Store.Db db, String token) throws Exception {
         var row =
                 db.one(
-                        "SELECT e.user_id,e.email,e.expires_at,u.name FROM os_email_enrollment e"
-                            + " JOIN os_user u ON u.user_id=e.user_id WHERE e.token_hash=? AND"
-                            + " e.expires_at>? AND u.active=1 AND u.auth_revision=e.auth_revision"
-                            + " AND u.email='' AND e.cancelled=0",
+                        "SELECT"
+                            + " e.user_id,e.email,e.previous_email,e.expires_at,e.old_confirmed,e.new_confirmed,u.name,CASE"
+                            + " WHEN e.old_token_hash=? THEN 1 ELSE 0 END AS old_proof FROM"
+                            + " os_email_enrollment e JOIN os_user u ON u.user_id=e.user_id WHERE"
+                            + " ((e.token_hash=? AND e.new_confirmed=0) OR (e.old_token_hash=? AND"
+                            + " e.old_confirmed=0)) AND e.expires_at>? AND u.active=1 AND"
+                            + " u.auth_revision=e.auth_revision AND u.email=e.previous_email AND"
+                            + " e.cancelled=0",
+                        Passwords.tokenHash(token),
+                        Passwords.tokenHash(token),
                         Passwords.tokenHash(token),
                         System.currentTimeMillis());
         if (row == null)
             throw new Failure(400, "Email verification link is unavailable or expired");
+        row.put(
+                "delivery_email",
+                ((Number) row.get("old_proof")).intValue() == 1
+                        ? row.get("previous_email")
+                        : row.get("email"));
         return row;
     }
 
@@ -120,6 +145,21 @@ final class EmailEnrollment {
         row = describe(db, token);
         if (db.one("SELECT user_id FROM os_user WHERE email=?", row.get("email")) != null)
             throw new Failure(409, "Email address is unavailable");
+        boolean old = ((Number) row.get("old_proof")).intValue() == 1;
+        db.update(
+                "UPDATE os_email_enrollment SET "
+                        + (old ? "old_confirmed" : "new_confirmed")
+                        + "=1 WHERE user_id=?",
+                actor);
+        if (((Number) row.get(old ? "new_confirmed" : "old_confirmed")).intValue() == 0) {
+            SecurityEvents.record(
+                    db,
+                    actor,
+                    actor,
+                    "account.email_change_proof",
+                    map("proof", old ? "old_address" : "new_address"));
+            return;
+        }
         db.update(
                 "UPDATE os_user SET email=?,email_verified=1 WHERE user_id=?",
                 row.get("email"),

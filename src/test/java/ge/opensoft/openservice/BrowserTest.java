@@ -50,6 +50,12 @@ class BrowserTest {
     }
 
     @Test
+    void platformOperationsWorkInBothThemes() throws Exception { PlatformBrowserAcceptance.run(this); }
+
+    @Test
+    void changingRegisteredEmailRequiresBothMailboxProofs() throws Exception { PlatformBrowserAcceptance.replacement(this); }
+
+    @Test
     void administratorCanCompareTwoAccountsRecordPermissions() throws Exception { PermissionComparisonBrowserAcceptance.run(this); }
 
     @Test

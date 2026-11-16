@@ -1,0 +1,126 @@
+package ge.opensoft.openservice;
+
+import static ge.opensoft.openservice.Values.*;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+
+@Component
+final class WorkWorker {
+    private final Store store;
+
+    WorkWorker(Store store) {
+        this.store = store;
+    }
+
+    @Scheduled(fixedDelayString = "${WORK_POLL_MS:1000}")
+    void tick() {
+        if (!store.environment.getProperty("WORK_ENABLED", Boolean.class, false)) return;
+        try {
+            runOne(System.currentTimeMillis());
+            try (var db = store.open()) {
+                ServiceClocks.tick(db, System.currentTimeMillis());
+                db.update(
+                        "DELETE FROM os_notice WHERE acknowledged=1 AND created_at<?",
+                        System.currentTimeMillis() - 30L * 86400000);
+                db.connection.commit();
+            }
+        } catch (Exception failure) {
+            org.slf4j.LoggerFactory.getLogger(WorkWorker.class)
+                    .warn("Platform worker unavailable; durable work remains pending");
+        }
+    }
+
+    boolean runOne(long now) throws Exception {
+        Map<String, Object> job;
+        try (var db = store.open()) {
+            job = WorkJobs.claim(db, now);
+            db.connection.commit();
+        }
+        if (job == null) return false;
+        return runClaimed(job, now);
+    }
+
+    boolean runClaimed(Map<String, Object> job, long now) throws Exception {
+        try (var db = store.open()) {
+            if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
+            var current =
+                    db.one(
+                            "SELECT * FROM os_work WHERE job_id=? AND lease=? AND"
+                                    + " state='processing'"
+                                    + (db.postgres ? " FOR UPDATE" : ""),
+                            job.get("job_id"),
+                            job.get("lease"));
+            if (current != null) {
+                var owner = db.one("SELECT * FROM os_user WHERE user_id=?", job.get("owner_id"));
+                String state = "succeeded", error = "", result = "";
+                var savepoint = db.connection.setSavepoint();
+                try {
+                    if (owner == null
+                            || ((Number) owner.get("active")).intValue() != 1
+                            || !owner.get("role").equals("admin")
+                            || ((Number) owner.get("auth_revision")).longValue()
+                                    != ((Number) job.get("auth_revision")).longValue())
+                        throw new Failure(403, "Job authority is no longer current");
+                    db.viewerId = owner.get("user_id").toString();
+                    db.viewerRole = "admin";
+                    var payload = Outbox.decrypt(store.secret, job.get("envelope").toString());
+                    Object output =
+                            switch (job.get("kind").toString()) {
+                                case "notification" ->
+                                        Notifications.deliver(
+                                                db, job.get("job_id").toString(), payload, now);
+                                case "connector.read" -> Connectors.read(store, db, payload);
+                                case "migration.step" ->
+                                        TransferJobs.step(
+                                                db,
+                                                WorkJobs.text(payload.get("migration_id"), 32),
+                                                WorkJobs.text(payload.get("token"), 4096),
+                                                store.migrationOrigins);
+                                default -> throw new Failure(400, "Unsupported job kind");
+                            };
+                    // Keep bounded receipts only. Migration details remain in the migration
+                    // journal.
+                    result =
+                            Outbox.encrypt(
+                                    store.secret,
+                                    JSON.writeValueAsString(
+                                            map(
+                                                    "completed",
+                                                    true,
+                                                    "kind",
+                                                    job.get("kind"),
+                                                    "receipt",
+                                                    job.get("kind").equals("migration.step")
+                                                            ? map()
+                                                            : output)));
+                } catch (Exception failure) {
+                    db.connection.rollback(savepoint);
+                    boolean permanent = failure instanceof Failure f && f.status < 500;
+                    state =
+                            permanent
+                                    ? "cancelled"
+                                    : ((Number) job.get("attempts")).intValue() >= 5
+                                            ? "failed"
+                                            : "queued";
+                    error = permanent ? "AUTHORITY_OR_INPUT_UNAVAILABLE" : "EXECUTION_FAILED";
+                }
+                boolean terminal = Set.of("succeeded", "cancelled").contains(state);
+                db.update(
+                        "UPDATE os_work SET state=?,error=?,result=?,envelope="
+                                + (terminal ? "''" : "envelope")
+                                + ",lease='',available_at=? WHERE job_id=? AND lease=?",
+                        state,
+                        error,
+                        result,
+                        now + Math.min(300000L, 1000L << ((Number) job.get("attempts")).intValue()),
+                        job.get("job_id"),
+                        job.get("lease"));
+                db.connection.commit();
+            }
+        }
+        return true;
+    }
+}

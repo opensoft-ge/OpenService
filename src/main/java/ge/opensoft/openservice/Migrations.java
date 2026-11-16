@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 27;
+    static final int VERSION = 33;
 
     private Migrations() {}
 
@@ -238,7 +238,7 @@ final class Migrations {
                             + " NULL,UNIQUE(record_id,record_revision,schema_version,target_state,approver_id))");
             db.update(
                     "CREATE INDEX IF NOT EXISTS ix_os_approval_record ON"
-                        + " os_approval(record_id,sequence)");
+                            + " os_approval(record_id,sequence)");
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(19,?)",
                     "revision-bound staff review");
@@ -263,7 +263,7 @@ final class Migrations {
             if (db.postgres)
                 db.all(
                         "SELECT setval(pg_get_serial_sequence('os_approval','sequence'),"
-                            + " COALESCE(MAX(sequence),1), COUNT(*)>0) FROM os_approval");
+                                + " COALESCE(MAX(sequence),1), COUNT(*)>0) FROM os_approval");
             db.update("CREATE INDEX ix_os_approval_record ON os_approval(record_id,sequence)");
             db.update(
                     "CREATE UNIQUE INDEX ix_os_approval_proposal ON"
@@ -279,7 +279,9 @@ final class Migrations {
                         + " KEY,session_hash VARCHAR(64) NOT NULL UNIQUE,user_id VARCHAR(32) NOT"
                         + " NULL,auth_revision BIGINT NOT NULL,created_at BIGINT NOT NULL,last_seen"
                         + " BIGINT NOT NULL,expires_at BIGINT NOT NULL)");
-            db.update("CREATE INDEX IF NOT EXISTS ix_os_browser_session_user ON os_browser_session(user_id)");
+            db.update(
+                    "CREATE INDEX IF NOT EXISTS ix_os_browser_session_user ON"
+                        + " os_browser_session(user_id)");
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(21,?)",
                     "browser session inventory");
@@ -295,26 +297,159 @@ final class Migrations {
                     "per-account Basic authentication policy");
         }
         if (version < 23) {
-            addColumn(db, "os_user", "browser_limit", "INTEGER NOT NULL DEFAULT 0 CHECK(browser_limit BETWEEN 0 AND 100)");
-            db.update("INSERT INTO os_migration(version,name) VALUES(23,?)", "per-account browser session limits");
+            addColumn(
+                    db,
+                    "os_user",
+                    "browser_limit",
+                    "INTEGER NOT NULL DEFAULT 0 CHECK(browser_limit BETWEEN 0 AND 100)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(23,?)",
+                    "per-account browser session limits");
         }
         if (version < 24) {
-            db.update("CREATE TABLE IF NOT EXISTS os_api_key(key_id VARCHAR(32) PRIMARY KEY,token_hash VARCHAR(64) NOT NULL UNIQUE,user_id VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,label VARCHAR(160) NOT NULL,table_name VARCHAR(160) NOT NULL,created_at BIGINT NOT NULL,expires_at BIGINT NOT NULL)");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_api_key(key_id VARCHAR(32) PRIMARY"
+                        + " KEY,token_hash VARCHAR(64) NOT NULL UNIQUE,user_id VARCHAR(32) NOT"
+                        + " NULL,auth_revision BIGINT NOT NULL,label VARCHAR(160) NOT"
+                        + " NULL,table_name VARCHAR(160) NOT NULL,created_at BIGINT NOT"
+                        + " NULL,expires_at BIGINT NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_api_key_user ON os_api_key(user_id)");
-            db.update("INSERT INTO os_migration(version,name) VALUES(24,?)", "scoped integration API keys");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(24,?)",
+                    "scoped integration API keys");
         }
         if (version < 25) {
-            addColumn(db, "os_api_key", "enabled", "INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1))");
+            addColumn(
+                    db,
+                    "os_api_key",
+                    "enabled",
+                    "INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1))");
             db.update("INSERT INTO os_migration(version,name) VALUES(25,?)", "API key suspension");
         }
         if (version < 26) {
-            addColumn(db, "os_api_key", "can_write", "INTEGER NOT NULL DEFAULT 0 CHECK(can_write IN (0,1))");
-            db.update("INSERT INTO os_migration(version,name) VALUES(26,?)", "API key create and update scope");
+            addColumn(
+                    db,
+                    "os_api_key",
+                    "can_write",
+                    "INTEGER NOT NULL DEFAULT 0 CHECK(can_write IN (0,1))");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(26,?)",
+                    "API key create and update scope");
         }
         if (version < 27) {
-            addColumn(db, "os_api_key", "use_count", "BIGINT NOT NULL DEFAULT 0 CHECK(use_count>=0)");
-            addColumn(db, "os_api_key", "last_used_at", "BIGINT NOT NULL DEFAULT 0 CHECK(last_used_at>=0)");
-            db.update("INSERT INTO os_migration(version,name) VALUES(27,?)", "API key successful request activity");
+            addColumn(
+                    db, "os_api_key", "use_count", "BIGINT NOT NULL DEFAULT 0 CHECK(use_count>=0)");
+            addColumn(
+                    db,
+                    "os_api_key",
+                    "last_used_at",
+                    "BIGINT NOT NULL DEFAULT 0 CHECK(last_used_at>=0)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(27,?)",
+                    "API key successful request activity");
+        }
+        if (version < 28) {
+            addColumn(
+                    db,
+                    "os_email_enrollment",
+                    "previous_email",
+                    "VARCHAR(254) NOT NULL DEFAULT ''");
+            addColumn(
+                    db, "os_email_enrollment", "old_token_hash", "VARCHAR(64) NOT NULL DEFAULT ''");
+            addColumn(db, "os_email_enrollment", "old_confirmed", "INTEGER NOT NULL DEFAULT 1");
+            addColumn(db, "os_email_enrollment", "new_confirmed", "INTEGER NOT NULL DEFAULT 0");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(28,?)",
+                    "dual-proof registered email replacement");
+        }
+        if (version < 29) {
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_work(job_id VARCHAR(32) PRIMARY KEY,owner_id"
+                        + " VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,kind VARCHAR(40) NOT"
+                        + " NULL,dedupe VARCHAR(80) NOT NULL,fingerprint VARCHAR(64) NOT"
+                        + " NULL,envelope TEXT NOT NULL,state VARCHAR(20) NOT NULL,attempts INTEGER"
+                        + " NOT NULL,available_at BIGINT NOT NULL,created_at BIGINT NOT NULL,lease"
+                        + " VARCHAR(32) NOT NULL,error VARCHAR(40) NOT NULL,result TEXT NOT"
+                        + " NULL,UNIQUE(owner_id,dedupe))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_work_ready ON os_work(state,available_at)");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_notice(notice_id VARCHAR(32) PRIMARY KEY,user_id"
+                        + " VARCHAR(32) NOT NULL,message TEXT NOT NULL,created_at BIGINT NOT"
+                        + " NULL,acknowledged INTEGER NOT NULL DEFAULT 0)");
+            addColumn(
+                    db,
+                    "os_user",
+                    "notifications",
+                    "INTEGER NOT NULL DEFAULT 1 CHECK(notifications IN (0,1))");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_connector(alias VARCHAR(80) PRIMARY KEY,origin"
+                        + " TEXT NOT NULL,envelope TEXT NOT NULL,revision INTEGER NOT NULL)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(29,?)",
+                    "durable platform work and connector aliases");
+        }
+        if (version < 30) {
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_calendar(calendar_id VARCHAR(80) PRIMARY"
+                        + " KEY,definition TEXT NOT NULL)");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_sla(sla_id VARCHAR(32) PRIMARY KEY,table_name"
+                        + " VARCHAR(80) NOT NULL,record_id VARCHAR(32) NOT NULL,definition TEXT NOT"
+                        + " NULL,remaining_ms BIGINT NOT NULL,last_tick BIGINT NOT NULL,state"
+                        + " VARCHAR(20) NOT NULL,owner_id VARCHAR(32) NOT NULL,breached_at BIGINT"
+                        + " NOT NULL DEFAULT 0)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(30,?)",
+                    "business calendars and persistent SLA clocks");
+        }
+        if (version < 31) {
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_saved_report(report_id VARCHAR(32) PRIMARY"
+                        + " KEY,owner_id VARCHAR(32) NOT NULL,name VARCHAR(160) NOT NULL,table_name"
+                        + " VARCHAR(80) NOT NULL,definition TEXT NOT NULL,shared INTEGER NOT"
+                        + " NULL)");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_publication(article_id VARCHAR(32) NOT"
+                        + " NULL,version INTEGER NOT NULL,title TEXT NOT NULL,content TEXT NOT"
+                        + " NULL,published_at VARCHAR(40) NOT NULL,retired INTEGER NOT NULL DEFAULT"
+                        + " 0,PRIMARY KEY(article_id,version))");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_dependency(dependent VARCHAR(32) NOT"
+                        + " NULL,dependency VARCHAR(32) NOT NULL,PRIMARY"
+                        + " KEY(dependent,dependency))");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_operational_event(event_key VARCHAR(160) PRIMARY"
+                        + " KEY,asset_id VARCHAR(32) NOT NULL,severity VARCHAR(20) NOT NULL,summary"
+                        + " TEXT NOT NULL,occurrences BIGINT NOT NULL,first_seen BIGINT NOT"
+                        + " NULL,last_seen BIGINT NOT NULL)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(31,?)",
+                    "shared reports, published knowledge and operational dependencies");
+        }
+        if (version < 32) {
+            addColumn(
+                    db,
+                    "os_user",
+                    "audit_viewer",
+                    "INTEGER NOT NULL DEFAULT 0 CHECK(audit_viewer IN (0,1))");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_identity(source VARCHAR(80) NOT NULL,external_id"
+                        + " VARCHAR(160) NOT NULL,user_id VARCHAR(32) NOT NULL UNIQUE,PRIMARY"
+                        + " KEY(source,external_id))");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(32,?)",
+                    "identity provisioning and independent audit access");
+        }
+        if (version < 33) {
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_password_policy(policy_id INTEGER PRIMARY"
+                        + " KEY,definition TEXT NOT NULL)");
+            db.update(
+                    "CREATE TABLE IF NOT EXISTS os_password_corpus(digest VARCHAR(64) PRIMARY"
+                        + " KEY)");
+            db.update(
+                    "INSERT INTO os_migration(version,name) VALUES(33,?)",
+                    "versioned organization password screening policy");
         }
     }
 

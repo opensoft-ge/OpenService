@@ -256,6 +256,14 @@ public final class Service {
         audit(db, item, actor, "deleted", map("before", serialize(item)));
         db.update("DELETE FROM os_attachment WHERE record_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_requester_record WHERE record_id=?", item.get("sys_id"));
+        for (var member :
+                db.all("SELECT user_id FROM os_group_member WHERE group_id=?", item.get("sys_id")))
+            SecurityEvents.record(
+                    db,
+                    RecordAccess.owner(db, actor),
+                    member.get("user_id").toString(),
+                    "account.group_deleted",
+                    map("group_id", item.get("sys_id")));
         db.update("DELETE FROM os_group_member WHERE group_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
@@ -506,7 +514,7 @@ public final class Service {
         var value = object(body);
         if (!value.keySet().equals(Set.of("current_password", "new_password"))
                 || !(value.get("current_password") instanceof String current)
-                || current.codePointCount(0, current.length()) > 1024)
+                || !Passwords.withinLimit(current))
             throw new Failure(
                     400, "Provide current_password and a new_password of 15–1024 characters");
         String password = Passwords.requireNewPassword(value.get("new_password"));
@@ -520,7 +528,8 @@ public final class Service {
             db.all("SELECT user_id FROM os_user WHERE user_id=? FOR UPDATE", userId);
         }
         Authentication.requireCurrent(db, caller);
-        if (password.equals(current)) throw new Failure(400, "Choose a different password");
+        if (password.equals(Passwords.normalize(current)))
+            throw new Failure(400, "Choose a different password");
         PasswordExclusions.check(db, password);
         db.update(
                 "UPDATE os_user SET password=?,password_reset_required=0 WHERE user_id=?",

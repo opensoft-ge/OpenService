@@ -49,6 +49,7 @@ start_application() {
         -p 127.0.0.1::8080 -e ADMIN_PASSWORD="$drill_password" -e SECRET_KEY="$drill_secret" \
         -e DATABASE_URL="postgresql://openservice:$drill_password@$drill_prefix-$drill_side-db:5432/openservice" \
         -e DELIVERY_ENABLED="$drill_delivery" -e PUBLIC_BASE_URL=https://example.invalid \
+        -e CONNECTOR_ALLOWED_ORIGINS=https://example.invalid \
         -e MAIL_HOST=127.0.0.1 -e MAIL_PORT=1 -e MAIL_FROM=accounts@example.invalid \
         "$drill_application_image" >/dev/null
     drill_address="http://$(docker port "$drill_prefix-$drill_side-app" 8080/tcp)"
@@ -132,6 +133,35 @@ if [ "$drill_source_version" -ge 19 ]; then
         drill_approval=$(api -X POST -H 'Content-Type: application/json' --data '{"expected_revision":0,"approver":"RestoreReviewer","target_state":"2","reason":"Fresh review after withdrawal"}' "$drill_address/api/openservice/records/incident/$drill_review_record/approvals" | jq -er '.result.approval_id')
     fi
 fi
+if [ "$drill_source_version" -ge 33 ]; then
+    api -X POST -H 'Content-Type: application/json' --data '{"kind":"notification","key":"restore-work","payload":{"username":"RestoreReader","message":"Queued through recovery"}}' \
+        "$drill_address/api/openservice/operations/jobs" | jq -e '.result.job_id != null' >/dev/null
+    api -X POST -H 'Content-Type: application/json' --data '{"alias":"restore","origin":"https://example.invalid","token":"synthetic-restore-token"}' \
+        "$drill_address/api/openservice/operations/connectors" >/dev/null
+    api -X POST -H 'Content-Type: application/json' --data '{"name":"restore","calendar":{"zone":"Europe/London","start":"09:00","end":"17:00","days":[1,2,3,4,5],"holidays":["2026-12-25"]}}' \
+        "$drill_address/api/openservice/operations/calendars" >/dev/null
+    jq -n --arg record "$drill_case" '{table:"u_service_case",record_id:$record,calendar:"restore",minutes:480}' > "$drill_directory/clock.json"
+    drill_clock=$(api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/clock.json" \
+        "$drill_address/api/openservice/operations/clocks" | jq -er '.result.sla_id')
+    api -X POST -H 'Content-Type: application/json' --data '{"operation":"pause"}' \
+        "$drill_address/api/openservice/operations/clocks/$drill_clock" >/dev/null
+    api -X POST -H 'Content-Type: application/json' --data '{"name":"Restore totals","table":"u_service_case","query":{"field":"estimate"},"shared":true}' \
+        "$drill_address/api/openservice/operations/reports" >/dev/null
+    drill_article=$(api -X POST -H 'Content-Type: application/json' --data '{"short_description":"Published recovery guide","text":"Preserve publication through recovery"}' \
+        "$drill_address/api/now/table/kb_knowledge" | jq -er '.result.sys_id')
+    api -X POST -H 'Content-Type: application/json' --data '{"operation":"publish"}' \
+        "$drill_address/api/openservice/operations/knowledge/$drill_article" >/dev/null
+    api -X POST -H 'Content-Type: application/json' --data '{"source":"restore-idp","external_id":"subject-1","username":"RestoredIdentity","role":"reader","active":true,"groups":[]}' \
+        "$drill_address/api/openservice/operations/provisioning" >/dev/null
+    drill_reader=$(docker exec "$drill_prefix-source-db" psql -At -U openservice -d openservice -c "SELECT user_id FROM os_user WHERE name='RestoreReader'")
+    jq -n --arg user "$drill_reader" '{user_id:$user,enabled:true}' > "$drill_directory/audit-access.json"
+    api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/audit-access.json" \
+        "$drill_address/api/openservice/operations/audit-access" >/dev/null
+    drill_digest=$(printf 'synthetic corpus restore value' | openssl dgst -sha256 | awk '{print $NF}')
+    jq -n --arg digest "$drill_digest" '{minimum_length:15,source:"Synthetic restore fixture",version:"1",digests:[$digest]}' > "$drill_directory/corpus.json"
+    api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/corpus.json" \
+        "$drill_address/api/openservice/operations/password-policy" >/dev/null
+fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null
 snapshot_delivery() {
@@ -142,8 +172,12 @@ snapshot_delivery() {
 }
 if [ "$drill_source_version" -ge 14 ]; then snapshot_delivery source; fi
 snapshot_enrollment() {
+    drill_enrollment_columns='user_id,token_hash,email,auth_revision,expires_at,created_at,cancelled'
+    if [ "$drill_source_version" -ge 28 ]; then
+        drill_enrollment_columns="$drill_enrollment_columns,previous_email,old_token_hash,old_confirmed,new_confirmed"
+    fi
     docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
-        -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_email_enrollment ORDER BY user_id) q' > "$drill_directory/$1-enrollment.jsonl"
+        -c "SELECT row_to_json(q) FROM (SELECT $drill_enrollment_columns FROM os_email_enrollment ORDER BY user_id) q" > "$drill_directory/$1-enrollment.jsonl"
 }
 if [ "$drill_source_version" -ge 15 ]; then snapshot_enrollment source; fi
 snapshot_password_policy() {
@@ -166,6 +200,15 @@ snapshot_approvals() {
         -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_approval ORDER BY sequence) q' > "$drill_directory/$1-approvals.jsonl"
 }
 if [ "$drill_source_version" -ge 19 ]; then snapshot_approvals source; fi
+snapshot_platform() {
+    for drill_table in os_work os_notice os_connector os_calendar os_sla os_saved_report os_publication os_dependency os_operational_event os_identity os_password_policy os_password_corpus; do
+        docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+            -c "SELECT row_to_json(q) FROM (SELECT * FROM $drill_table ORDER BY 1) q" > "$drill_directory/$1-$drill_table.jsonl"
+    done
+    docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+        -c 'SELECT row_to_json(q) FROM (SELECT user_id,audit_viewer,notifications FROM os_user ORDER BY user_id) q' > "$drill_directory/$1-platform-permissions.jsonl"
+}
+if [ "$drill_source_version" -ge 33 ]; then snapshot_platform source; fi
 docker exec "$drill_prefix-source-db" pg_dump -U openservice -d openservice -Fc > "$drill_directory/backup.dump"
 docker stop "$drill_prefix-source-db" >/dev/null
 start_database restored
@@ -175,6 +218,19 @@ curl --max-time 10 -fsS "$drill_address/readyz" | jq -e '.status == "ready"' >/d
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored
+if [ "$drill_source_version" -ge 33 ]; then
+    snapshot_platform restored
+    for drill_table in os_work os_notice os_connector os_calendar os_sla os_saved_report os_publication os_dependency os_operational_event os_identity os_password_policy os_password_corpus platform-permissions; do
+        cmp "$drill_directory/source-$drill_table.jsonl" "$drill_directory/restored-$drill_table.jsonl"
+    done
+    curl --max-time 30 -fsS --user "RestoreReader:$drill_password" "$drill_address/api/openservice/knowledge" \
+        | jq -e '.result | any(.title == "Published recovery guide")' >/dev/null
+    curl --max-time 30 -fsS --user "RestoreReader:$drill_password" "$drill_address/api/openservice/operations/audit-checkpoint" \
+        | jq -e '.result.count > 0' >/dev/null
+    api "$drill_address/api/openservice/operations/jobs" | jq -e '.result | any(.state == "queued")' >/dev/null
+    api "$drill_address/api/openservice/operations/clocks" | jq -e '.result | any(.state == "paused")' >/dev/null
+    echo 'PASS: queued encrypted work/aliases, paused SLA calendars, saved reports, knowledge, identity bindings, audit grants and password corpus survive restore.'
+fi
 if [ "$drill_source_version" -ge 19 ]; then
     snapshot_approvals restored
     cmp "$drill_directory/source-approvals.jsonl" "$drill_directory/restored-approvals.jsonl"

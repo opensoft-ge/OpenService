@@ -51,11 +51,17 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_browser_session", "os_api_key")) db.update("DELETE FROM " + table);
+                            "os_browser_session", "os_api_key", "os_work", "os_notice", "os_connector", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
     }
+
+    @Test
+    void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
+
+    @Test
+    void platformOperationsShareRealAuthenticationAndPersistence() throws Exception { PlatformOperationsAcceptance.run(this); }
 
     @Test
     void apiKeyIssuanceRejectsNulLabelsAcrossDatabases() throws Exception {

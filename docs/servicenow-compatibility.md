@@ -1,6 +1,12 @@
 # ServiceNow compatibility ledger
 
-Current checkpoint, 16 November 2026: all OS-N10-01 through OS-N10-20 slices passed their local gates. See the [20-cycle feature and QA report](paired-cycles-next20-2026-11-15.md) for the current capability/coverage summary. Earlier checkpoints below preserve the development history; they do not supersede later implemented slices. Parent parity areas remain partial and M1–M3 remain unmet.
+Current checkpoint, 16 November 2026: the coordinated [platform expansion](platform-expansion-2026-11-16.md) extends the earlier 20-cycle batch with durable business jobs, identity synchronization, account lifecycle controls, SLA calendars, knowledge publishing, dependencies/events, saved reports and governed provider assistance. These are bounded local contracts; parent parity areas remain partial and M1–M3 remain unmet. Earlier checkpoints are historical.
+
+## OS-EXP-01 through OS-EXP-16 — coordinated platform expansion
+
+Each identifier corresponds, in order, to one of the 16 practical roadmap areas in the [batch report](platform-expansion-2026-11-16.md#scope-and-remaining-boundaries). Each area remains **partial**. The report defines the implementation, API inputs, remaining dependencies and observable acceptance boundaries. Final acceptance/coverage and container evidence is recorded there and in [validation](validation.md).
+
+The new operations APIs are original OpenService contracts. Identity synchronization is not SCIM/SSO; AI summaries are not autonomous agents; migration jobs advance a checkpoint rather than orchestrating a cutover; an audit hash needs trusted external retention. Reference lists and shared reports always reuse current record/field visibility. No vendor-instance or enterprise-readiness claim is made.
 
 Baseline: empty Git repository. The user expanded the first iteration from one feature into a broad, connected foundation with a polished UI, migration and three-cloud Terraform. Reference inventory: `../skills/open-service/references/servicenow-blueprint.md`.
 

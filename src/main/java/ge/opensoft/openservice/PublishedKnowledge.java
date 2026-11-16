@@ -1,0 +1,62 @@
+package ge.opensoft.openservice;
+
+import static ge.opensoft.openservice.TypedFields.require;
+import static ge.opensoft.openservice.Values.*;
+
+import java.sql.SQLException;
+import java.util.*;
+
+/** Explicit immutable publication snapshots. Draft edits never change requester-visible content. */
+final class PublishedKnowledge {
+    private PublishedKnowledge() {}
+
+    static Map<String, Object> publish(Store.Db db, String actor, String id) throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        var item = Service.record(db, "kb_knowledge", id);
+        require(
+                RecordAccess.status(db, id).get("visibility").equals("workspace"),
+                "Private or group articles cannot be published to all requesters");
+        var data = object(FieldAccess.serialize(db, item));
+        String title = WorkJobs.text(data.get("short_description"), 1000),
+                content = WorkJobs.text(data.get("text"), 100000);
+        int version =
+                (int)
+                                db.count(
+                                        "SELECT COALESCE(MAX(version),0) FROM os_publication WHERE"
+                                            + " article_id=?",
+                                        id)
+                        + 1;
+        db.update(
+                "INSERT INTO os_publication(article_id,version,title,content,published_at)"
+                    + " VALUES(?,?,?,?,?)",
+                id,
+                version,
+                title,
+                content,
+                now());
+        Service.audit(
+                db,
+                item,
+                db.one("SELECT name FROM os_user WHERE user_id=?", actor).get("name").toString(),
+                "knowledge.published",
+                map("version", version));
+        return map("article_id", id, "version", version);
+    }
+
+    static void retire(Store.Db db, String actor, String id) throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        if (db.update("UPDATE os_publication SET retired=1 WHERE article_id=?", id) == 0)
+            throw new Failure(404, "Published article not found");
+        SecurityEvents.record(db, actor, actor, "knowledge.retired", map("article_id", id));
+    }
+
+    static List<Map<String, Object>> list(Store.Db db) throws SQLException {
+        return db.all(
+                "SELECT p.* FROM os_publication p WHERE p.retired=0 AND EXISTS (SELECT 1 FROM"
+                    + " os_record r WHERE r.sys_id=p.article_id AND r.\"table\"='kb_knowledge') AND"
+                    + " NOT EXISTS (SELECT 1 FROM os_record_access a WHERE a.record_id=p.article_id"
+                    + " AND a.visibility<>'workspace') AND p.version=(SELECT MAX(v.version) FROM"
+                    + " os_publication v WHERE v.article_id=p.article_id) ORDER BY p.published_at"
+                    + " DESC,p.article_id LIMIT 100");
+    }
+}

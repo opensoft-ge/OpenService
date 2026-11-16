@@ -1,5 +1,7 @@
 # Release foundation qualification — 15 November 2026
 
+The 16 November platform batch has a separate [qualification report](platform-expansion-2026-11-16.md#research-and-validation). Historical image and recovery results below apply only to the named builds; consult the latest report for schema 33 and the current source.
+
 Foundation evidence baseline: local commit `31e4e21`; later appearance changes are qualified separately in [product experience](product-experience.md) and [validation](validation.md). Image/scan/drill results below identify that foundation image and must not be represented as a later image without requalification.
 
 Scope: the five user-selected release priorities, reviewed against `ca4c6dedea6042c241de5078c7e82e08024fa814`. This is a local release candidate for synthetic-data evaluation, not a claim of complete ServiceNow parity or production certification. No cloud deployment, external invitation or publication is part of this qualification.

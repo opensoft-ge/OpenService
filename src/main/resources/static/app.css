@@ -298,3 +298,9 @@ input[type=checkbox],input[type=radio]{accent-color:var(--accent)}
 @media(max-width:850px){.password-exclusions table{min-width:0}.password-exclusions th,.password-exclusions td{padding:12px 8px;overflow-wrap:anywhere}}
 
 .account-settings>.panel{margin-bottom:24px}.account-settings>.panel>p,.account-settings>.panel>ul,.account-settings>.panel>.notice{margin:20px 24px}.account-settings>.panel>.button{margin:0 24px 24px}.account-settings .record-form>p{margin-top:12px}
+
+.knowledge-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.platform-page > section + section { margin-top: 24px; }
+.platform-page dt { font-weight: 600; text-transform: capitalize; }
+.platform-page dd { margin: 4px 0 14px; overflow-wrap: anywhere; }

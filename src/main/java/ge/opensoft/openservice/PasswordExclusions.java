@@ -10,9 +10,13 @@ final class PasswordExclusions {
     private PasswordExclusions() {}
 
     static void check(Store.Db db, String password) throws Exception {
+        PasswordPolicies.check(db, password);
         if (db.one(
-                        "SELECT exclusion_id FROM os_password_exclusion WHERE digest=?",
-                        Passwords.tokenHash(password))
+                        "SELECT exclusion_id FROM os_password_exclusion WHERE digest IN (?,?)",
+                        Passwords.tokenHash(password),
+                        Passwords.tokenHash(
+                                java.text.Normalizer.normalize(
+                                        password, java.text.Normalizer.Form.NFC)))
                 != null)
             throw new Failure(
                     400,
@@ -47,12 +51,14 @@ final class PasswordExclusions {
                 || label.codePoints().anyMatch(Character::isISOControl)
                 || !(value.get("password") instanceof String password)
                 || password.isEmpty()
-                || password.codePointCount(0, password.length()) > 1024)
+                || !Passwords.withinLimit(password))
             throw new Failure(
                     400,
                     "Provide a descriptive label of 1–80 characters and a value of 1–1024"
                             + " characters to exclude");
-        String digest = Passwords.tokenHash(password);
+        String digest =
+                Passwords.tokenHash(
+                        java.text.Normalizer.normalize(password, java.text.Normalizer.Form.NFC));
         if (db.one("SELECT exclusion_id FROM os_password_exclusion WHERE digest=?", digest) != null)
             throw new Failure(409, "This value is already excluded");
         if (db.count("SELECT COUNT(*) FROM os_password_exclusion") >= 1000)

@@ -24,7 +24,7 @@ final class RecoveryLinks {
         var value = object(body);
         if (!value.keySet().equals(Set.of("current_password"))
                 || !(value.get("current_password") instanceof String password)
-                || password.codePointCount(0, password.length()) > 1024)
+                || !Passwords.withinLimit(password))
             throw new Failure(400, "Confirm your current administrator password");
         Service.requireAccountAdministrator(db, actor);
         var account = db.one("SELECT name FROM os_user WHERE user_id=?", actor);

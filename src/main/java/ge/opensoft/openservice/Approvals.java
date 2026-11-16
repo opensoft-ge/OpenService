@@ -226,8 +226,8 @@ final class Approvals {
             throw new Failure(409, "This review is already completed");
         db.update(
                 "UPDATE os_approval SET"
-                    + " status='withdrawn',comment=?,decided_at=?,decision_revision=? WHERE"
-                    + " approval_id=?",
+                        + " status='withdrawn',comment=?,decided_at=?,decision_revision=? WHERE"
+                        + " approval_id=?",
                 comment,
                 now(),
                 actor.get("auth_revision"),
@@ -238,6 +238,86 @@ final class Approvals {
                 actor.get("name").toString(),
                 "approval.withdrawn",
                 map("approval_id", approval));
+        return publicRow(
+                db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
+                item,
+                definition);
+    }
+
+    static Map<String, Object> delegate(
+            Store.Db db,
+            String table,
+            String id,
+            String approval,
+            Map<String, Object> actor,
+            Object input)
+            throws SQLException {
+        if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
+        Authentication.requireCurrent(db, actor);
+        var item = context(db, table, id);
+        var definition = Service.schema(db, table);
+        var row =
+                db.one(
+                        "SELECT * FROM os_approval WHERE approval_id=? AND record_id=?",
+                        approval,
+                        id);
+        if (row == null) throw new Failure(404, "Approval not found");
+        if (!actor.get("user_id").equals(row.get("approver_id"))
+                && !actor.get("role").equals("admin"))
+            throw new Failure(403, "Only the assigned reviewer or an administrator can delegate");
+        if (!row.get("status").equals("requested") || !current(row, item, definition))
+            throw new Failure(409, "Only a current pending review can be delegated");
+        var body = object(input);
+        TypedFields.require(body.keySet().equals(Set.of("approver")), "Provide approver");
+        String name = WorkJobs.text(body.get("approver"), 80);
+        var target =
+                db.one(
+                        "SELECT * FROM os_user WHERE name=? AND active=1 AND role IN"
+                            + " ('admin','agent')",
+                        name);
+        if (target == null
+                || target.get("user_id").equals(row.get("requested_by"))
+                || target.get("user_id").equals(row.get("approver_id")))
+            throw new Failure(
+                    400, "Choose a different active staff reviewer who did not request the review");
+        if (db.one(
+                        "SELECT approval_id FROM os_approval WHERE record_id=? AND"
+                            + " record_revision=? AND schema_version=? AND target_state=? AND"
+                            + " approver_id=? AND status<>'withdrawn'",
+                        id,
+                        row.get("record_revision"),
+                        row.get("schema_version"),
+                        row.get("target_state"),
+                        target.get("user_id"))
+                != null)
+            throw new Failure(409, "This reviewer already has a request for the proposal");
+        String previousId = db.viewerId, previousRole = db.viewerRole;
+        try {
+            db.viewerId = target.get("user_id").toString();
+            db.viewerRole = target.get("role").toString();
+            Service.record(db, table, id);
+            eligible(db, table, item, definition, row.get("target_state").toString());
+        } finally {
+            db.viewerId = previousId;
+            db.viewerRole = previousRole;
+        }
+        db.update(
+                "UPDATE os_approval SET approver_id=?,approver_name=? WHERE approval_id=?",
+                target.get("user_id"),
+                target.get("name"),
+                approval);
+        Service.audit(
+                db,
+                item,
+                actor.get("name").toString(),
+                "approval.delegated",
+                map(
+                        "approval_id",
+                        approval,
+                        "from",
+                        row.get("approver_id"),
+                        "to",
+                        target.get("user_id")));
         return publicRow(
                 db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
                 item,

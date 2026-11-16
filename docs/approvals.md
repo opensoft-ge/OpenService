@@ -1,5 +1,7 @@
 # Assigned staff reviews
 
+A pending review can be delegated by its assigned reviewer or an administrator through the review form or delegate API. The replacement must be active, eligible, able to see the current proposal, different from the requester/current reviewer, and not already reviewing that proposal. The original requester and record revision remain bound; delegation is audited. See [platform expansion](platform-expansion-2026-11-16.md).
+
 OpenService records separate review evidence for a proposed state change and can enforce a configured minimum number of current peer approvals before entering a state. Decisions do not automatically execute actions. Notifications, delegation, mandatory named responses and deadlines remain OS-PARITY-02 follow-ups. This is an original local contract, not a replica of ServiceNow endpoints.
 
 From a record, choose **Record approvals**. An administrator or agent requests review from a different active administrator/agent with access and the required state-entry/field-write authority. The reviewer opens the same page and records approval or rejection; rejection requires a comment. Each request captures record revision and configuration version. Editing either makes the proposal outdated and undecidable; request a review of the new revision. All access is checked again when reading or deciding, including state-field read rules, record visibility and the reviewer's current permissions. Deactivation or required credential replacement blocks the account normally; it never implies approval.

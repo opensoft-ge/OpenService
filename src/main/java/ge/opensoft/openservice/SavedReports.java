@@ -1,0 +1,70 @@
+package ge.opensoft.openservice;
+
+import static ge.opensoft.openservice.TypedFields.require;
+import static ge.opensoft.openservice.Values.*;
+
+import java.sql.SQLException;
+import java.util.*;
+
+/**
+ * Share definitions, never cached author-visible results. Every execution uses the current viewer.
+ */
+final class SavedReports {
+    private SavedReports() {}
+
+    static Map<String, Object> save(Store.Db db, String actor, Object input) throws SQLException {
+        var body = object(input);
+        require(
+                body.keySet().equals(Set.of("name", "table", "query", "shared")),
+                "Provide name, table, query and shared");
+        require(body.get("shared") instanceof Boolean, "Shared must be boolean");
+        String name = WorkJobs.text(body.get("name"), 160),
+                table = WorkJobs.text(body.get("table"), 80);
+        var definition = object(body.get("query"));
+        var args = new LinkedHashMap<String, String>();
+        for (var entry : definition.entrySet()) {
+            require(entry.getValue() instanceof String, "Report parameters must be strings");
+            args.put(entry.getKey(), (String) entry.getValue());
+        }
+        Analytics.report(db, table, args);
+        require(
+                db.count("SELECT COUNT(*) FROM os_saved_report WHERE owner_id=?", actor) < 100,
+                "Saved report limit reached");
+        String id = id();
+        db.update(
+                "INSERT INTO os_saved_report(report_id,owner_id,name,table_name,definition,shared)"
+                    + " VALUES(?,?,?,?,?,?)",
+                id,
+                actor,
+                name,
+                table,
+                JSON.writeValueAsString(definition),
+                body.get("shared").equals(true) ? 1 : 0);
+        return map("report_id", id, "name", name);
+    }
+
+    static List<Map<String, Object>> list(Store.Db db, String actor) throws SQLException {
+        return db.all(
+                "SELECT report_id,owner_id,name,table_name,shared FROM os_saved_report WHERE"
+                    + " owner_id=? OR shared=1 ORDER BY name,report_id LIMIT 200",
+                actor);
+    }
+
+    static Map<String, Object> run(Store.Db db, String actor, String id) throws SQLException {
+        var report =
+                db.one(
+                        "SELECT * FROM os_saved_report WHERE report_id=? AND (owner_id=? OR"
+                            + " shared=1)",
+                        id,
+                        actor);
+        if (report == null) throw new Failure(404, "Report not found");
+        var args = new LinkedHashMap<String, String>();
+        object(report.get("definition")).forEach((key, value) -> args.put(key, value.toString()));
+        return Analytics.report(db, report.get("table_name").toString(), args);
+    }
+
+    static void remove(Store.Db db, String actor, String id) throws SQLException {
+        if (db.update("DELETE FROM os_saved_report WHERE report_id=? AND owner_id=?", id, actor)
+                != 1) throw new Failure(404, "Owned report not found");
+    }
+}

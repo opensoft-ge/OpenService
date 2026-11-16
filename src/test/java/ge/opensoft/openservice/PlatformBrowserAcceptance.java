@@ -1,0 +1,217 @@
+package ge.opensoft.openservice;
+
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+import static ge.opensoft.openservice.Values.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
+
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+
+import java.nio.file.Path;
+import java.util.*;
+
+final class PlatformBrowserAcceptance {
+    static void run(BrowserTest h) throws Exception {
+        String name = "Platform" + id().substring(0, 6), actor, clock;
+        try (var db = h.store.open()) {
+            actor = PlatformFoundationTest.bind(db);
+            db.update("DELETE FROM os_work");
+            Service.createAccount(
+                    db, map("name", name, "role", "reader", "password", WorkflowSupport.PASSWORD));
+            String record = PlatformFoundationTest.record(db, "incident", "Response clock");
+            ServiceClocks.calendar(
+                    db,
+                    actor,
+                    map("name", "Browser office", "calendar", PlatformFoundationTest.calendar()));
+            clock =
+                    ServiceClocks.start(
+                                    db,
+                                    actor,
+                                    map(
+                                            "table",
+                                            "incident",
+                                            "record_id",
+                                            record,
+                                            "calendar",
+                                            "Browser office",
+                                            "minutes",
+                                            120),
+                                    System.currentTimeMillis())
+                            .get("sla_id")
+                            .toString();
+            var knowledge =
+                    Service.create(
+                            db,
+                            "kb_knowledge",
+                            map(
+                                    "short_description",
+                                    "How to request help",
+                                    "text",
+                                    "Use My requests to submit an issue."),
+                            "admin");
+            PublishedKnowledge.publish(db, actor, knowledge.get("sys_id").toString());
+            db.connection.commit();
+        }
+        try (var p = Playwright.create();
+                var browser = p.chromium().launch();
+                var context = browser.newContext()) {
+            var page = context.newPage();
+            h.login(page, "admin");
+            page.getByRole(
+                            AriaRole.LINK,
+                            new Page.GetByRoleOptions().setName("Operations").setExact(true))
+                    .click();
+            page.getByLabel("Recipient username").fill(name);
+            page.getByLabel("Message", new Page.GetByLabelOptions().setExact(true))
+                    .fill("Your request is ready for review.");
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Queue notification"))
+                    .press("Enter");
+            assertThat(page.locator("tbody").first()).containsText("queued");
+            assertTrue(new WorkWorker(h.store).runOne(System.currentTimeMillis() + 100));
+            page.reload();
+            assertThat(page.locator("tbody").first()).containsText("succeeded");
+            var row =
+                    page.locator("tr")
+                            .filter(
+                                    new Locator.FilterOptions()
+                                            .setHas(
+                                                    page.locator(
+                                                            "input[name='sla_id'][value='"
+                                                                    + clock
+                                                                    + "']")));
+            row.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Pause")).click();
+            assertThat(page.locator("tbody").last()).containsText("paused");
+            ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(Path.of("target/platform-operations-desktop.png"))
+                            .setFullPage(true));
+            page.setViewportSize(390, 844);
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Dark mode").setExact(true))
+                    .click();
+            ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(Path.of("target/platform-operations-mobile-dark.png"))
+                            .setFullPage(true));
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Sign out"))
+                    .click();
+            h.login(page, name);
+            page.navigate(h.base() + "/account/notifications");
+            assertThat(page.getByText("Your request is ready for review.")).isVisible();
+            page.getByRole(
+                            AriaRole.BUTTON,
+                            new Page.GetByRoleOptions().setName("Acknowledge").setExact(true))
+                    .click();
+            assertThat(page.getByText("Acknowledged", new Page.GetByTextOptions().setExact(true)))
+                    .isVisible();
+            page.getByLabel("Business notifications").selectOption("false");
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Save preference"))
+                    .click();
+            ReleaseBrowserAcceptance.accessible(page);
+            page.getByRole(
+                            AriaRole.LINK,
+                            new Page.GetByRoleOptions().setName("Published knowledge"))
+                    .click();
+            assertThat(
+                            page.getByRole(
+                                    AriaRole.HEADING,
+                                    new Page.GetByRoleOptions().setName("How to request help")))
+                    .isVisible();
+            ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(
+                    new Page.ScreenshotOptions()
+                            .setPath(Path.of("target/platform-knowledge-mobile-dark.png"))
+                            .setFullPage(true));
+        }
+    }
+
+    static void replacement(BrowserTest h) throws Exception {
+        String name = "ChangeMail" + id().substring(0, 6),
+                oldEmail = name.toLowerCase() + "@old.invalid",
+                newEmail = name.toLowerCase() + "@new.invalid";
+        var properties = ((ConfigurableEnvironment) h.environment).getPropertySources();
+        properties.addFirst(
+                new MapPropertySource(
+                        "replacement-proof",
+                        map(
+                                "DELIVERY_ENABLED",
+                                true,
+                                "PUBLIC_BASE_URL",
+                                "https://example.invalid")));
+        try {
+            try (var db = h.store.open()) {
+                Service.createAccount(
+                        db,
+                        map("name", name, "role", "reader", "password", WorkflowSupport.PASSWORD));
+                db.update(
+                        "UPDATE os_user SET email=?,email_verified=1 WHERE name=?", oldEmail, name);
+                db.connection.commit();
+            }
+            try (var p = Playwright.create();
+                    var browser = p.chromium().launch();
+                    var context = browser.newContext()) {
+                var page = context.newPage();
+                h.login(page, name);
+                page.navigate(h.base() + "/account/email");
+                page.getByLabel("Recovery email address").fill(newEmail);
+                page.getByLabel("Current password").fill(WorkflowSupport.PASSWORD);
+                page.getByRole(
+                                AriaRole.BUTTON,
+                                new Page.GetByRoleOptions().setName("Send verification email"))
+                        .click();
+                assertThat(page.getByRole(AriaRole.STATUS))
+                        .containsText("Verification message queued");
+                var links = new LinkedHashMap<String, String>();
+                try (var db = h.store.open()) {
+                    for (var row :
+                            db.all(
+                                    "SELECT envelope FROM os_outbox WHERE kind='email.enrollment'"
+                                        + " AND envelope<>''")) {
+                        var payload =
+                                Outbox.decrypt(h.store.secret, row.get("envelope").toString());
+                        if (Set.of(oldEmail, newEmail).contains(payload.get("email")))
+                            links.put(
+                                    payload.get("email").toString(),
+                                    payload.get("path").toString());
+                    }
+                }
+                assertEquals(2, links.size());
+                page.navigate(h.base() + links.get(newEmail));
+                page.getByRole(
+                                AriaRole.BUTTON,
+                                new Page.GetByRoleOptions().setName("Verify email address"))
+                        .click();
+                h.login(page, name);
+                page.navigate(h.base() + "/account/email");
+                assertThat(page.getByText("Registered address: " + oldEmail)).isVisible();
+                page.navigate(h.base() + links.get(oldEmail));
+                page.setViewportSize(390, 844);
+                page.getByRole(
+                                AriaRole.BUTTON,
+                                new Page.GetByRoleOptions().setName("Dark mode").setExact(true))
+                        .click();
+                ReleaseBrowserAcceptance.accessible(page);
+                page.getByRole(
+                                AriaRole.BUTTON,
+                                new Page.GetByRoleOptions().setName("Verify email address"))
+                        .click();
+                h.login(page, name);
+                page.navigate(h.base() + "/account/email");
+                assertThat(page.getByText("Registered address: " + newEmail)).isVisible();
+                ReleaseBrowserAcceptance.accessible(page);
+            }
+        } finally {
+            properties.remove("replacement-proof");
+        }
+    }
+}

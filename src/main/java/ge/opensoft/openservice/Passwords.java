@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.generators.SCrypt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.text.Normalizer;
 import java.util.*;
 
 import javax.crypto.SecretKeyFactory;
@@ -18,11 +19,27 @@ public final class Passwords {
 
     /** New credentials only: existing hashes retain their original authentication semantics. */
     static String requireNewPassword(Object candidate) {
-        if (!(candidate instanceof String password)
-                || password.codePointCount(0, password.length()) < 15
+        if (!(candidate instanceof String raw))
+            throw new Failure(400, "Password must contain 15–1024 characters");
+        String password = normalize(raw);
+        if (password.codePointCount(0, password.length()) < 15
                 || password.codePointCount(0, password.length()) > 1024)
             throw new Failure(400, "Password must contain 15–1024 characters");
         return password;
+    }
+
+    static String normalize(String password) {
+        return Normalizer.normalize(password, Normalizer.Form.NFC);
+    }
+
+    static boolean withinLimit(String password) {
+        String normalized = normalize(password);
+        return normalized.codePointCount(0, normalized.length()) <= 1024;
+    }
+
+    static boolean requireLength(String encoded, String password) {
+        String counted = encoded.startsWith("nfc$") ? normalize(password) : password;
+        return counted.codePointCount(0, counted.length()) <= 1024;
     }
 
     public static String token() {
@@ -40,10 +57,10 @@ public final class Passwords {
 
     public static String hash(String password) throws GeneralSecurityException {
         String salt = token();
-        return "pbkdf2:sha256:600000$"
+        return "nfc$pbkdf2:sha256:600000$"
                 + salt
                 + "$"
-                + HexFormat.of().formatHex(derive(password, salt, 600000));
+                + HexFormat.of().formatHex(derive(normalize(password), salt, 600000));
     }
 
     private static byte[] derive(String password, String salt, int iterations)
@@ -65,6 +82,10 @@ public final class Passwords {
 
     public static boolean matches(String encoded, String password) throws GeneralSecurityException {
         try {
+            if (encoded.startsWith("nfc$")) {
+                encoded = encoded.substring(4);
+                password = normalize(password);
+            }
             String[] parts = encoded.split("\\$", -1), method = parts[0].split(":");
             if (parts.length != 3) return false;
             byte[] actual;

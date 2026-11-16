@@ -13,7 +13,7 @@ final class Authentication {
     static void requireCurrent(Store.Db db, Map<String, Object> user) throws java.sql.SQLException {
         if (db.one(
                         "SELECT user_id FROM os_user WHERE user_id=? AND active=1 AND"
-                            + " auth_revision=?",
+                                + " auth_revision=?",
                         user.get("user_id"),
                         user.get("auth_revision"))
                 == null) throw new Failure(401, "Account access changed; sign in again");
@@ -37,7 +37,8 @@ final class Authentication {
                         ? null
                         : db.one("SELECT * FROM os_user WHERE name=? AND active=1", name);
         boolean valid =
-                password.codePointCount(0, password.length()) <= 1024
+                Passwords.requireLength(
+                                user == null ? DUMMY : user.get("password").toString(), password)
                         && Passwords.matches(
                                 user == null ? DUMMY : user.get("password").toString(), password);
         if (user != null && mechanism.equals("browser") && AccessMode.apiOnly(user)) valid = false;

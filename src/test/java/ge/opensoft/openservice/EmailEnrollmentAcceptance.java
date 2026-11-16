@@ -51,7 +51,9 @@ final class EmailEnrollmentAcceptance {
         assertEquals(401, h.get(API, null).statusCode());
         assertEquals(405, h.json("PUT", API, map(), auth("EmailLocal")).statusCode());
         assertEquals(
-                405, h.protectedJson("DELETE", "/account/email", map(), auth("EmailLocal")).statusCode());
+                405,
+                h.protectedJson("DELETE", "/account/email", map(), auth("EmailLocal"))
+                        .statusCode());
         assertEquals(400, h.get(API + "?other=x", auth("EmailLocal")).statusCode());
         assertEquals(
                 503,
@@ -95,7 +97,7 @@ final class EmailEnrollmentAcceptance {
                         0L,
                         db.count(
                                 "SELECT COUNT(*) FROM os_security_event WHERE"
-                                    + " action='account.email_enrollment_requested'"));
+                                        + " action='account.email_enrollment_requested'"));
                 db.update("DELETE FROM os_outbox");
                 db.connection.commit();
             }
@@ -175,9 +177,12 @@ final class EmailEnrollmentAcceptance {
             assertEquals(true, status.get("verified"));
             assertNull(status.get("pending"));
             assertEquals(
-                    409,
+                    202,
                     h.json("POST", API, payload("new@example.invalid"), auth("EmailLocal"))
                             .statusCode());
+            assertEquals(200, h.json("DELETE", API, map(), auth("EmailLocal")).statusCode());
+            assertTrue(worker.runOne(System.currentTimeMillis() + 100));
+            assertTrue(worker.runOne(System.currentTimeMillis() + 100));
             assertEquals(
                     409,
                     h.json("POST", API, payload("LOCAL@example.invalid"), auth("EmailOther"))
@@ -250,7 +255,7 @@ final class EmailEnrollmentAcceptance {
                             .statusCode());
             try (var db = h.store.open()) {
                 assertEquals(
-                        1L,
+                        2L,
                         db.count(
                                 "SELECT COUNT(*) FROM os_security_event WHERE"
                                         + " action='account.email_enrollment_cancelled'"));

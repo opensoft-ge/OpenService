@@ -1,5 +1,7 @@
 # API scope — Java foundation 0.2
 
+New native operation endpoints, input shapes and authorization boundaries are specified in [platform expansion](platform-expansion-2026-11-16.md#http-contracts).
+
 Use JSON and authenticated Basic requests, or a logged-in session with `X-CSRF-Token` for writes. Browser-originated Basic requests also require CSRF; see the browser-write contract below. Table names are listed at `GET /api/openservice/schema`. Administrator can create/delete/update; agent can create/update; reader can read subject to record visibility and field permissions. Requesters are restricted to their own requests. Accounts share one instance; this is not tenant isolation.
 
 | Route | Behavior |
@@ -117,7 +119,7 @@ Inactive accounts cannot authenticate through login, existing browser sessions o
 
 ## Account security events
 
-Administrator-only GET `/api/openservice/security-events` returns `{"result":[...],"next_before":"..."}` containing at most 100 rows ordered by descending database sequence allocation. Fields: `event_id`, `occurred_at` (UTC), `actor_id`, `actor_name`, `target_id`, `target_name`, `action`, `detail`. Cursor/download arguments are described below; event mutation methods are unavailable. Supported successful events include `account.created`, `account.state_changed`, `account.role_changed`, `account.password_changed` and `account.sessions_revoked`. Only state/role events carry before/after values; creation carries the role. No password or session secret is stored. The administrator Security events page renders the same window. Older events can be browsed/downloaded by cursor; authentication attempts have a separate journal. Tamper-resistant archival remains open.
+Administrator or independently granted audit-viewer GET `/api/openservice/security-events` returns `{"result":[...],"next_before":"..."}` containing at most 100 rows ordered by descending database sequence allocation. Fields: `event_id`, `occurred_at` (UTC), `actor_id`, `actor_name`, `target_id`, `target_name`, `action`, `detail`. Cursor/download arguments are described below; event mutation methods are unavailable. Supported successful events include `account.created`, `account.state_changed`, `account.role_changed`, `account.password_changed` and `account.sessions_revoked`. Only state/role events carry before/after values; creation carries the role. No password or session secret is stored. The administrator Security events page renders the same window. Older events can be browsed/downloaded by cursor; authentication attempts have a separate journal. Tamper-resistant archival remains open.
 
 ## Browser-session lifetime
 
@@ -151,7 +153,7 @@ Browser `/login` and parsed Basic credentials share five failed attempts per cas
 
 ## Authentication event journal
 
-Administrator-only GET `/api/openservice/authentication-events` returns `result` in pages of up to 100 password-verification events; `/admin/authentication-events` provides the same view. Cursor/download arguments are described below. Fields are `event_id`, `occurred_at`, `user_id`, `user_name`, `identity_hash`, `mechanism` (`browser`/`basic`/`email-enroll`/`password-change`/`recovery-issue`) and `outcome` (`succeeded`/`failed`/`limited`). Unknown names have empty user fields and only a SHA-256 username fingerprint. The newest 10,000 events are retained. Events commit before business routing and persist even if authentication or the subsequent business request fails. Session reuse, malformed Basic headers and invalid CSRF are outside this journal. Email-enrollment, password-change and administrator-assisted recovery confirmations are recorded before business mutation. Credentials, cookies and tokens are never fields; no event modification/deletion API exists.
+Administrator or independently granted audit-viewer GET `/api/openservice/authentication-events` returns `result` in pages of up to 100 password-verification events; `/admin/authentication-events` provides the same view. Cursor/download arguments are described below. Fields are `event_id`, `occurred_at`, `user_id`, `user_name`, `identity_hash`, `mechanism` (`browser`/`basic`/`email-enroll`/`password-change`/`recovery-issue`) and `outcome` (`succeeded`/`failed`/`limited`). Unknown names have empty user fields and only a SHA-256 username fingerprint. The newest 10,000 events are retained. Events commit before business routing and persist even if authentication or the subsequent business request fails. Session reuse, malformed Basic headers and invalid CSRF are outside this journal. Email-enrollment, password-change and administrator-assisted recovery confirmations are recorded before business mutation. Credentials, cookies and tokens are never fields; no event modification/deletion API exists.
 
 ## Administrator account directory
 

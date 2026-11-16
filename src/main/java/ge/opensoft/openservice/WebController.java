@@ -153,7 +153,11 @@ public class WebController {
                 throw new Failure(403, "This account permits API access only");
             if (!publicPath
                     && PasswordReset.required(user)
-                    && !Set.of("/password-required", "/api/openservice/me/password", "/api/openservice/me/csrf", "/logout")
+                    && !Set.of(
+                                    "/password-required",
+                                    "/api/openservice/me/password",
+                                    "/api/openservice/me/csrf",
+                                    "/logout")
                             .contains(path)) {
                 if (path.startsWith("/api/"))
                     throw new Failure(
@@ -181,6 +185,8 @@ public class WebController {
                                         "/account/password",
                                         "/account/email",
                                         "/api/openservice/me/email",
+                                        "/api/openservice/me/notifications",
+                                        "/account/notifications",
                                         "/api/openservice/me/password",
                                         "/api/openservice/me/sessions/revoke")
                                 .contains(path)
@@ -282,6 +288,83 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if (path.equals("/admin/operations")) {
+            method(method, "GET", "POST");
+            c.admin();
+            c.noQuery();
+            String actor = c.user.get("user_id").toString();
+            if (method.equals("POST")) {
+                Operations.form(store, c.db, actor, c.http.getParameterMap());
+                return redirect("/admin/operations");
+            }
+            return view(c, "operations", Operations.dashboard(store, c.db, actor));
+        }
+        if (path.equals("/account/notifications")
+                || path.equals("/api/openservice/me/notifications")) {
+            method(method, "GET", "POST");
+            c.noQuery();
+            String actor = c.user.get("user_id").toString();
+            if (method.equals("POST"))
+                Notifications.update(
+                        c.db,
+                        actor,
+                        path.startsWith("/api/")
+                                ? body(c)
+                                : c.parameter("operation", "").equals("preference")
+                                        ? map("enabled", c.parameter("enabled", "").equals("true"))
+                                        : map("acknowledge", c.parameter("notice_id", "")));
+            var rows = Notifications.list(c.db, actor);
+            return path.startsWith("/api/")
+                    ? json(map("result", rows), 200)
+                    : view(
+                            c,
+                            "notifications",
+                            map(
+                                    "table",
+                                    "notifications",
+                                    "notices",
+                                    rows,
+                                    "enabled",
+                                    ((Number)
+                                                            c.db.one(
+                                                                            "SELECT notifications"
+                                                                                + " FROM os_user"
+                                                                                + " WHERE"
+                                                                                + " user_id=?",
+                                                                            actor)
+                                                                    .get("notifications"))
+                                                    .intValue()
+                                            == 1));
+        }
+        if (path.equals("/knowledge") || path.equals("/api/openservice/knowledge")) {
+            method(method, "GET");
+            c.noQuery();
+            var rows = PublishedKnowledge.list(c.db);
+            return path.startsWith("/api/")
+                    ? json(map("result", rows), 200)
+                    : view(c, "knowledge", map("table", "knowledge", "articles", rows));
+        }
+        Matcher platform =
+                Pattern.compile(
+                                "/api/openservice/operations/(jobs|connectors|calendars|clocks|reports|knowledge|dependencies|events|references|qualification|provisioning|audit-access|audit-checkpoint|password-policy|assist)(?:/([a-z0-9_-]{1,80}))?")
+                        .matcher(path);
+        if (platform.matches()) {
+            method(method, "GET", "POST", "DELETE");
+            c.noQuery();
+            String actor = c.user.get("user_id").toString();
+            return json(
+                    map(
+                            "result",
+                            Operations.execute(
+                                    store,
+                                    c.db,
+                                    actor,
+                                    platform.group(1),
+                                    Objects.toString(platform.group(2), ""),
+                                    method,
+                                    method.equals("GET") ? map() : body(c))),
+                    200);
+        }
         if (path.equals("/") && c.role().equals("requester")) return redirect("/requests");
         if (Set.of("/requests", "/api/openservice/requests").contains(path)) {
             method(method, "GET", "POST");
@@ -626,7 +709,12 @@ public class WebController {
                         "auth_revision", ((Number) user.get("auth_revision")).longValue());
                 long issued = System.currentTimeMillis();
                 BrowserSessions.register(c.db, user, c.session.getId(), issued);
-                SessionLimit.enforce(c.db, user, c.session.getId(), AccountSessionLimit.effective(c.db, user.get("user_id").toString(), store.maxBrowserSessions));
+                SessionLimit.enforce(
+                        c.db,
+                        user,
+                        c.session.getId(),
+                        AccountSessionLimit.effective(
+                                c.db, user.get("user_id").toString(), store.maxBrowserSessions));
                 c.session.setAttribute("authenticated_at", issued);
                 c.session.setAttribute("csrf", csrf());
                 return redirect(PasswordReset.required(user) ? "/password-required" : "/");
@@ -669,128 +757,349 @@ public class WebController {
                     map("csrf", c.session.getAttribute("csrf"), "error", error),
                     HttpStatus.valueOf(status));
         }
-        Matcher permissionComparison = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permission-comparison").matcher(path);
+        Matcher permissionComparison =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permission-comparison")
+                        .matcher(path);
         if (permissionComparison.matches()) {
-            method(method,"GET"); c.admin(); boolean api=path.startsWith("/api/");String target=permissionComparison.group(1);var args=queryArguments(c);Map<String,Object> comparison=map();
-            if(api || !args.isEmpty()) comparison=PermissionComparison.inspect(c.db,c.user.get("user_id").toString(),target,args);
+            method(method, "GET");
+            c.admin();
+            boolean api = path.startsWith("/api/");
+            String target=permissionComparison.group(1);var args=queryArguments(c);Map<String,Object> comparison=map();
+            if (api || !args.isEmpty())
+                comparison =
+                        PermissionComparison.inspect(
+                                c.db, c.user.get("user_id").toString(), target, args);
             if(api)return json(map("result",comparison),200);
-            return view(c,"permission-comparison",map("table","accounts","account",Service.account(c.db,target),"comparison",comparison,"selectedTable",args.getOrDefault("table",""),"selectedRecord",args.getOrDefault("record_id",""),"comparisonName",args.getOrDefault("with","")));
+            return view(
+                    c,
+                    "permission-comparison",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            Service.account(c.db, target),
+                            "comparison",
+                            comparison,
+                            "selectedTable",
+                            args.getOrDefault("table", ""),
+                            "selectedRecord",
+                            args.getOrDefault("record_id", ""),
+                            "comparisonName",
+                            args.getOrDefault("with", "")));
         }
-        Matcher accountPermissions = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permissions").matcher(path);
+        Matcher accountPermissions =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permissions")
+                        .matcher(path);
         if (accountPermissions.matches()) {
             method(method, "GET"); c.admin(); c.uniqueQuery();
             boolean api = path.startsWith("/api/");
             String target = accountPermissions.group(1);
             var args = queryArguments(c);
             Map<String,Object> inspection = map();
-            if (api || !args.isEmpty()) inspection = AccountPermissions.inspect(c.db, c.user.get("user_id").toString(), target, args);
+            if (api || !args.isEmpty())
+                inspection =
+                        AccountPermissions.inspect(
+                                c.db, c.user.get("user_id").toString(), target, args);
             if (api) return json(map("result", inspection), 200);
-            return view(c, "account-permissions", map("table", "accounts", "account", Service.account(c.db, target),
-                    "inspection", inspection, "selectedTable", args.getOrDefault("table", ""), "selectedRecord", args.getOrDefault("record_id", "")));
+            return view(
+                    c,
+                    "account-permissions",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            Service.account(c.db, target),
+                            "inspection",
+                            inspection,
+                            "selectedTable",
+                            args.getOrDefault("table", ""),
+                            "selectedRecord",
+                            args.getOrDefault("record_id", "")));
         }
-        Matcher apiKeyLabel = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/label").matcher(path);
+        Matcher apiKeyLabel =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/label")
+                        .matcher(path);
         if (apiKeyLabel.matches()) {
             method(method,"POST"); c.admin(); c.noQuery(); boolean api=path.startsWith("/api/");
-            var result=ApiKeyLabels.rename(c.db,c.user.get("user_id").toString(),apiKeyLabel.group(1),api?body(c):map("key_id",c.parameter("key_id",""),"label",c.parameter("label","")));
-            return api?json(map("result",result),200):redirect("/admin/accounts/"+apiKeyLabel.group(1)+"/api-keys");
+            var result =
+                    ApiKeyLabels.rename(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            apiKeyLabel.group(1),
+                            api
+                                    ? body(c)
+                                    : map(
+                                            "key_id",
+                                            c.parameter("key_id", ""),
+                                            "label",
+                                            c.parameter("label", "")));
+            return api
+                    ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + apiKeyLabel.group(1) + "/api-keys");
         }
-        Matcher apiKeyReadOnly = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/read-only").matcher(path);
+        Matcher apiKeyReadOnly =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/read-only")
+                        .matcher(path);
         if (apiKeyReadOnly.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             boolean api = path.startsWith("/api/");
-            var result = ApiKeyReadOnly.reduce(c.db, c.user.get("user_id").toString(), apiKeyReadOnly.group(1),
-                    api ? body(c) : map("key_id", c.parameter("key_id", ""), "reason", c.parameter("reason", "")));
-            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + apiKeyReadOnly.group(1) + "/api-keys");
+            var result =
+                    ApiKeyReadOnly.reduce(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            apiKeyReadOnly.group(1),
+                            api
+                                    ? body(c)
+                                    : map(
+                                            "key_id",
+                                            c.parameter("key_id", ""),
+                                            "reason",
+                                            c.parameter("reason", "")));
+            return api
+                    ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + apiKeyReadOnly.group(1) + "/api-keys");
         }
-        Matcher apiKeyExpiry = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/expiry").matcher(path);
+        Matcher apiKeyExpiry =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/expiry")
+                        .matcher(path);
         if (apiKeyExpiry.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             boolean api = path.startsWith("/api/");
-            var result = ApiKeyExpiry.shorten(c.db, c.user.get("user_id").toString(), apiKeyExpiry.group(1),
-                    api ? body(c) : map("key_id", c.parameter("key_id", ""), "hours", ApiKeyExpiry.hours(c.parameter("hours", ""))));
-            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + apiKeyExpiry.group(1) + "/api-keys");
+            var result =
+                    ApiKeyExpiry.shorten(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            apiKeyExpiry.group(1),
+                            api
+                                    ? body(c)
+                                    : map(
+                                            "key_id",
+                                            c.parameter("key_id", ""),
+                                            "hours",
+                                            ApiKeyExpiry.hours(c.parameter("hours", ""))));
+            return api
+                    ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + apiKeyExpiry.group(1) + "/api-keys");
         }
-        Matcher apiKeyCleanup = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/cleanup").matcher(path);
+        Matcher apiKeyCleanup =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/cleanup")
+                        .matcher(path);
         if (apiKeyCleanup.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             boolean api = path.startsWith("/api/");
-            var result = ApiKeyCleanup.expired(c.db, c.user.get("user_id").toString(), apiKeyCleanup.group(1),
-                    api ? body(c) : map("reason", c.parameter("reason", "")));
-            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + apiKeyCleanup.group(1) + "/api-keys");
+            var result =
+                    ApiKeyCleanup.expired(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            apiKeyCleanup.group(1),
+                            api ? body(c) : map("reason", c.parameter("reason", "")));
+            return api
+                    ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + apiKeyCleanup.group(1) + "/api-keys");
         }
-        Matcher apiKeyWrite = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/write").matcher(path);
+        Matcher apiKeyWrite =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/write")
+                        .matcher(path);
         if (apiKeyWrite.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             String target = apiKeyWrite.group(1), actor = c.user.get("user_id").toString();
             boolean api = path.startsWith("/api/");
-            var issued = ApiKeyWrites.issue(c.db, actor, target,
-                    api ? body(c) : map("label", c.parameter("label", ""), "table", c.parameter("table", ""), "days", ApiKeys.days(c.parameter("days", ""))));
+            var issued =
+                    ApiKeyWrites.issue(
+                            c.db,
+                            actor,
+                            target,
+                            api
+                                    ? body(c)
+                                    : map(
+                                            "label",
+                                            c.parameter("label", ""),
+                                            "table",
+                                            c.parameter("table", ""),
+                                            "days",
+                                            ApiKeys.days(c.parameter("days", ""))));
             if (api) return json(map("result", issued), 201);
-            return view(c, "api-keys", map("table", "accounts", "account", Service.account(c.db, target),
-                    "keys", ApiKeys.list(c.db, actor, target), "issued", issued));
+            return view(
+                    c,
+                    "api-keys",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            Service.account(c.db, target),
+                            "keys",
+                            ApiKeys.list(c.db, actor, target),
+                            "issued",
+                            issued));
         }
-        Matcher apiKeyOnly = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/key-only").matcher(path);
+        Matcher apiKeyOnly =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/key-only")
+                        .matcher(path);
         if (apiKeyOnly.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             String target = apiKeyOnly.group(1), actor = c.user.get("user_id").toString();
             boolean api = path.startsWith("/api/");
-            var issued = ApiKeyOnly.replace(c.db, actor, target,
-                    api ? body(c) : map("label", c.parameter("label", ""), "table", c.parameter("table", ""), "days", ApiKeys.days(c.parameter("days", ""))));
+            var issued =
+                    ApiKeyOnly.replace(
+                            c.db,
+                            actor,
+                            target,
+                            api
+                                    ? body(c)
+                                    : map(
+                                            "label",
+                                            c.parameter("label", ""),
+                                            "table",
+                                            c.parameter("table", ""),
+                                            "days",
+                                            ApiKeys.days(c.parameter("days", ""))));
             if (api) return json(map("result", issued), 201);
-            return view(c, "api-keys", map("table", "accounts", "account", Service.account(c.db, target),
-                    "keys", ApiKeys.list(c.db, actor, target), "issued", issued));
+            return view(
+                    c,
+                    "api-keys",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            Service.account(c.db, target),
+                            "keys",
+                            ApiKeys.list(c.db, actor, target),
+                            "issued",
+                            issued));
         }
-        Matcher apiKeysRevoke = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/revoke").matcher(path);
+        Matcher apiKeysRevoke =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/revoke")
+                        .matcher(path);
         if (apiKeysRevoke.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             boolean api = path.startsWith("/api/");
-            var result = ApiKeyRevocation.all(c.db, c.user.get("user_id").toString(), apiKeysRevoke.group(1),
-                    api ? body(c) : map("reason", c.parameter("reason", "")));
-            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + apiKeysRevoke.group(1) + "/api-keys");
+            var result =
+                    ApiKeyRevocation.all(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            apiKeysRevoke.group(1),
+                            api ? body(c) : map("reason", c.parameter("reason", "")));
+            return api
+                    ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + apiKeysRevoke.group(1) + "/api-keys");
         }
-        Matcher apiKeyState = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/([0-9a-f]{32})/state").matcher(path);
+        Matcher apiKeyState =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/([0-9a-f]{32})/state")
+                        .matcher(path);
         if (apiKeyState.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             boolean api = path.startsWith("/api/");
-            var result = ApiKeyState.change(c.db, c.user.get("user_id").toString(), apiKeyState.group(1), apiKeyState.group(2),
-                    api ? body(c) : map("enabled", ApiKeyState.form(c.parameter("enabled", ""))));
-            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + apiKeyState.group(1) + "/api-keys");
+            var result =
+                    ApiKeyState.change(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            apiKeyState.group(1),
+                            apiKeyState.group(2),
+                            api
+                                    ? body(c)
+                                    : map("enabled", ApiKeyState.form(c.parameter("enabled", ""))));
+            return api
+                    ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + apiKeyState.group(1) + "/api-keys");
         }
-        Matcher apiKeyRotate = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/([0-9a-f]{32})/rotate").matcher(path);
+        Matcher apiKeyRotate =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/([0-9a-f]{32})/rotate")
+                        .matcher(path);
         if (apiKeyRotate.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
             String target = apiKeyRotate.group(1), actor = c.user.get("user_id").toString();
             var issued = ApiKeyRotation.rotate(c.db, actor, target, apiKeyRotate.group(2));
             if (path.startsWith("/api/")) return json(map("result", issued), 200);
-            return view(c, "api-keys", map("table", "accounts", "account", Service.account(c.db, target),
-                    "keys", ApiKeys.list(c.db, actor, target), "issued", issued));
+            return view(
+                    c,
+                    "api-keys",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            Service.account(c.db, target),
+                            "keys",
+                            ApiKeys.list(c.db, actor, target),
+                            "issued",
+                            issued));
         }
-        Matcher apiKeyRevoke = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/([0-9a-f]{32})/revoke").matcher(path);
+        Matcher apiKeyRevoke =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys/([0-9a-f]{32})/revoke")
+                        .matcher(path);
         if (apiKeyRevoke.matches()) {
             method(method, "POST"); c.admin(); c.noQuery();
-            var result = ApiKeys.revoke(c.db, c.user.get("user_id").toString(), apiKeyRevoke.group(1), apiKeyRevoke.group(2));
+            var result =
+                    ApiKeys.revoke(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            apiKeyRevoke.group(1),
+                            apiKeyRevoke.group(2));
             return path.startsWith("/api/") ? json(map("result", result), 200)
                     : redirect("/admin/accounts/" + apiKeyRevoke.group(1) + "/api-keys");
         }
-        Matcher apiKeys = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys").matcher(path);
+        Matcher apiKeys =
+                Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/api-keys")
+                        .matcher(path);
         if (apiKeys.matches()) {
             method(method, "GET", "POST"); c.admin(); c.noQuery();
             String target = apiKeys.group(1), actor = c.user.get("user_id").toString();
             boolean api = path.startsWith("/api/");
             Map<String, Object> issued = map();
-            if (method.equals("POST")) issued = ApiKeys.issue(c.db, actor, target,
-                    api ? body(c) : map("label", c.parameter("label", ""), "table", c.parameter("table", ""), "days", ApiKeys.days(c.parameter("days", ""))));
-            if (api) return json(map("result", method.equals("POST") ? issued : ApiKeys.list(c.db, actor, target)), method.equals("POST") ? 201 : 200);
-            return view(c, "api-keys", map("table", "accounts", "account", Service.account(c.db, target),
-                    "keys", ApiKeys.list(c.db, actor, target), "issued", issued));
+            if (method.equals("POST"))
+                issued =
+                        ApiKeys.issue(
+                                c.db,
+                                actor,
+                                target,
+                                api
+                                        ? body(c)
+                                        : map(
+                                                "label",
+                                                c.parameter("label", ""),
+                                                "table",
+                                                c.parameter("table", ""),
+                                                "days",
+                                                ApiKeys.days(c.parameter("days", ""))));
+            if (api)
+                return json(
+                        map(
+                                "result",
+                                method.equals("POST") ? issued : ApiKeys.list(c.db, actor, target)),
+                        method.equals("POST") ? 201 : 200);
+            return view(
+                    c,
+                    "api-keys",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            Service.account(c.db, target),
+                            "keys",
+                            ApiKeys.list(c.db, actor, target),
+                            "issued",
+                            issued));
         }
         if (path.equals("/api/openservice/me/csrf")) {
             method(method, "GET");
             c.noQuery();
             return json(map("result", map("csrf", c.session.getAttribute("csrf"))), 200);
         }
-        Matcher accountSessionLimit = Pattern.compile(
-                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/session-limit").matcher(path);
+        Matcher accountSessionLimit =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/session-limit")
+                        .matcher(path);
         if (accountSessionLimit.matches()) {
             boolean api = path.startsWith("/api/");
             method(method, api ? new String[]{"GET", "POST"} : new String[]{"POST"});
@@ -798,13 +1107,31 @@ public class WebController {
             String target = accountSessionLimit.group(1);
             String actor = c.user.get("user_id").toString();
             Service.requireAccountAdministrator(c.db, actor);
-            if (method.equals("GET")) return json(map("result", AccountSessionLimit.state(c.db, target, store.maxBrowserSessions)), 200);
-            var result = AccountSessionLimit.change(c.db, actor, target,
-                    api ? body(c) : map("maximum", AccountSessionLimit.form(c.parameter("maximum", ""))), store.maxBrowserSessions);
-            return api ? json(map("result", result), 200) : redirect("/admin/accounts/" + target + "/sessions");
+            if (method.equals("GET"))
+                return json(
+                        map(
+                                "result",
+                                AccountSessionLimit.state(c.db, target, store.maxBrowserSessions)),
+                        200);
+            var result =
+                    AccountSessionLimit.change(
+                            c.db,
+                            actor,
+                            target,
+                            api
+                                    ? body(c)
+                                    : map(
+                                            "maximum",
+                                            AccountSessionLimit.form(c.parameter("maximum", ""))),
+                            store.maxBrowserSessions);
+            return api
+                    ? json(map("result", result), 200)
+                    : redirect("/admin/accounts/" + target + "/sessions");
         }
-        Matcher adminAllSessions = Pattern.compile(
-                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/revoke").matcher(path);
+        Matcher adminAllSessions =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/revoke")
+                        .matcher(path);
         if (adminAllSessions.matches()) {
             method(method, "POST");
             c.admin();
@@ -820,7 +1147,8 @@ public class WebController {
                     : redirect(current ? "/login" : "/admin/accounts/" + target + "/sessions");
         }
         Matcher adminSessionRevoke =
-                Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/([0-9a-f]{32})/revoke")
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/sessions/([0-9a-f]{32})/revoke")
                         .matcher(path);
         if (adminSessionRevoke.matches()) {
             method(method, "POST");
@@ -861,7 +1189,11 @@ public class WebController {
                                     "account", inventory.get("account"),
                                     "sessions", inventory.get("result"),
                                     "truncated", inventory.get("truncated"),
-                                    "sessionPolicy", AccountSessionLimit.state(c.db, adminSessions.group(1), store.maxBrowserSessions),
+                                    "sessionPolicy",
+                                            AccountSessionLimit.state(
+                                                    c.db,
+                                                    adminSessions.group(1),
+                                                    store.maxBrowserSessions),
                                     "deploymentLimit", store.maxBrowserSessions));
         }
         Matcher basicAccess =
@@ -999,18 +1331,50 @@ public class WebController {
                                     "nextBefore",
                                     result.get("next_before")));
         }
-        Matcher accountSecurity = Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/security-events").matcher(path);
+        Matcher accountSecurity =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/security-events")
+                        .matcher(path);
         if (accountSecurity.matches()) {
             method(method,"GET"); c.admin();
-            var journal = AccountSecurityEvents.page(c.db,c.user.get("user_id").toString(),accountSecurity.group(1),queryArguments(c));
+            var journal =
+                    AccountSecurityEvents.page(
+                            c.db,
+                            c.user.get("user_id").toString(),
+                            accountSecurity.group(1),
+                            queryArguments(c));
             boolean download = (Boolean)journal.get("download");
             if(download) disposition(c,"account-security-events.json");
-            if(path.startsWith("/api/") || download) return json(map("account",journal.get("account"),"result",journal.get("result"),"next_before",journal.get("next_before")),200);
+            if (path.startsWith("/api/") || download)
+                return json(
+                        map(
+                                "account",
+                                journal.get("account"),
+                                "result",
+                                journal.get("result"),
+                                "next_before",
+                                journal.get("next_before")),
+                        200);
             String before = journal.get("before").toString();
-            return view(c,"account-security-events",map("table","accounts","account",journal.get("account"),"events",journal.get("result"),"nextBefore",journal.get("next_before"),"downloadQuery",before.isEmpty()?"download=true":"download=true&before="+before));
+            return view(
+                    c,
+                    "account-security-events",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            journal.get("account"),
+                            "events",
+                            journal.get("result"),
+                            "nextBefore",
+                            journal.get("next_before"),
+                            "downloadQuery",
+                            before.isEmpty() ? "download=true" : "download=true&before=" + before));
         }
-        Matcher accountAuthentication = Pattern.compile(
-                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/authentication-events").matcher(path);
+        Matcher accountAuthentication =
+                Pattern.compile(
+                                "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/authentication-events")
+                        .matcher(path);
         if (accountAuthentication.matches()) {
             method(method, "GET");
             c.admin();
@@ -1022,10 +1386,22 @@ public class WebController {
                     "account", journal.get("account"), "result", journal.get("result"),
                     "next_before", journal.get("next_before")), 200);
             String before = journal.get("before").toString();
-            return view(c, "account-authentication", map("table", "accounts",
-                    "account", journal.get("account"), "events", journal.get("result"),
-                    "nextBefore", journal.get("next_before"), "methods", AuthenticationEvents.METHODS,
-                    "downloadQuery", before.isEmpty() ? "download=true" : "download=true&before=" + before));
+            return view(
+                    c,
+                    "account-authentication",
+                    map(
+                            "table",
+                            "accounts",
+                            "account",
+                            journal.get("account"),
+                            "events",
+                            journal.get("result"),
+                            "nextBefore",
+                            journal.get("next_before"),
+                            "methods",
+                            AuthenticationEvents.METHODS,
+                            "downloadQuery",
+                            before.isEmpty() ? "download=true" : "download=true&before=" + before));
         }
         if (Set.of("/account/authentication-events", "/api/openservice/me/authentication-events")
                 .contains(path)) {
@@ -1095,7 +1471,10 @@ public class WebController {
                                     "truncated",
                                     sessions.get("truncated"),
                                     "maximumSessions",
-                                    AccountSessionLimit.effective(c.db, c.user.get("user_id").toString(), store.maxBrowserSessions)));
+                                    AccountSessionLimit.effective(
+                                            c.db,
+                                            c.user.get("user_id").toString(),
+                                            store.maxBrowserSessions)));
         }
         if (path.equals("/account")) {
             method(method, "GET");
@@ -1407,9 +1786,12 @@ public class WebController {
                                     c.role())),
                     200);
         }
-        if (path.equals("/admin/invitation-directory") || path.equals("/api/openservice/invitation-directory")) {
+        if (path.equals("/admin/invitation-directory")
+                || path.equals("/api/openservice/invitation-directory")) {
             method(method,"GET"); c.admin(); c.uniqueQuery();
-            var result = InvitationDirectory.list(c.db,c.user.get("user_id").toString(),queryArguments(c));
+            var result =
+                    InvitationDirectory.list(
+                            c.db, c.user.get("user_id").toString(), queryArguments(c));
             if(path.startsWith("/api/")) return json(map("result",result),200);
             result.put("table","invitations"); result.put("roles",Service.ROLES);
             return view(c,"invitation-directory",result);
@@ -1451,7 +1833,7 @@ public class WebController {
                         "/api/openservice/security-events")
                 .contains(path)) {
             method(method, "GET");
-            c.admin();
+            AuditGovernance.requireViewer(c.db,c.user.get("user_id").toString());
             boolean authentication = path.endsWith("authentication-events");
             var journal =
                     authentication
@@ -1785,7 +2167,7 @@ public class WebController {
         }
         Matcher approval =
                 Pattern.compile(
-                                "/(api/openservice/records|record)/([^/]+)/([0-9a-f]{32})/approvals(?:/([0-9a-f]{32})/(decision|withdraw))?")
+                                "/(api/openservice/records|record)/([^/]+)/([0-9a-f]{32})/approvals(?:/([0-9a-f]{32})/(decision|withdraw|delegate))?")
                         .matcher(path);
         if (approval.matches()) return approvals(c, approval, method);
         Matcher detail =
@@ -1900,6 +2282,7 @@ public class WebController {
         boolean api = route.group(1).startsWith("api/");
         String table = route.group(2), id = route.group(3), decision = route.group(4);
         boolean withdraw = "withdraw".equals(route.group(5));
+        boolean delegate = "delegate".equals(route.group(5));
         method(method, decision == null ? new String[] {"GET", "POST"} : new String[] {"POST"});
         c.uniqueQuery();
         String location = "/record/" + table + "/" + id + "/approvals";
@@ -1907,6 +2290,7 @@ public class WebController {
             c.noQuery();
             Object payload;
             if (api) payload = body(c);
+            else if (delegate) payload=map("approver",c.parameter("approver",""));
             else if (withdraw) {
                 if (!Set.of("csrf", "withdrawal_reason").containsAll(c.arguments().keySet()))
                     throw new Failure(400, "Provide only a withdrawal reason");
@@ -1937,6 +2321,7 @@ public class WebController {
             var result =
                     decision == null
                             ? Approvals.request(c.db, table, id, c.user, payload)
+                            : delegate ? Approvals.delegate(c.db,table,id,decision,c.user,payload)
                             : withdraw
                                     ? Approvals.withdraw(c.db, table, id, decision, c.user, payload)
                                     : Approvals.decide(c.db, table, id, decision, c.user, payload);
@@ -2570,7 +2955,13 @@ public class WebController {
                         "counts",
                         counts,
                         "user",
-                        map("name", c.name(), "role", c.role()),
+                        map(
+                                "name",
+                                c.name(),
+                                "role",
+                                c.role(),
+                                "audit_viewer",
+                                ((Number) c.user.get("audit_viewer")).intValue() == 1),
                         "csrf",
                         c.session.getAttribute("csrf"),
                         "flash",
