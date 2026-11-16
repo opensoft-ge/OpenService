@@ -543,3 +543,5 @@ Discovery follow-up, 2026-11-16: [Brazil signature status](https://www.serviceno
 **OS-D20-15 implemented**: Workstream 8, PARITY-02: per-record clock inspection respects current record and requester boundaries, returns persisted timing and explicit truncation. Global administration remains restricted. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-16 implemented**: Workstream 5, PARITY-08/10: verify retained audit prefixes after appends and detect count, sequence or hash mismatches. Separate audit-viewer grants remain enforced; external protected retention is still required. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
+
+**OS-D20-17 implemented**: Workstream 7, PARITY-02: administrator diagnostics explain current review eligibility and revisions using the enforcement rules. No review mutation, automatic approval or transition execution. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).

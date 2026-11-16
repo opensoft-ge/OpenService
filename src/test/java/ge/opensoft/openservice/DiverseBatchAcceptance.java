@@ -490,6 +490,56 @@ final class DiverseBatchAcceptance {
         assertEquals(403,h.get(path+query,auth("DigestViewer")).statusCode());
     }
 
+    static void approvalDiagnostics(WorkflowSupport h) throws Exception {
+        h.account("DiagnosticReviewer","agent");
+        String reviewer;
+        try(var db=h.store.open()) { reviewer=RecordAccess.owner(db,"DiagnosticReviewer"); }
+        h.account("DiagnosticReader","reader");
+        String record=h.add("incident").get("sys_id").toString();
+        String reviews="/api/openservice/records/incident/"+record+"/approvals";
+        String approval=ApprovalAcceptance.create(h,reviews,"DiagnosticReviewer","admin");
+        String resource="approval-diagnostics/"+approval,path=ROOT+resource;
+        assertEquals(401,h.get(path,null).statusCode());
+        assertEquals(403,h.get(path,auth("DiagnosticReader")).statusCode());
+        assertEquals(404,h.get(ROOT+"approval-diagnostics/"+id(),auth("admin")).statusCode());
+        assertEquals("awaiting_decision",result(h,resource).get("reason"));
+        assertEquals(405,h.json("POST",path,map(),auth("admin")).statusCode());
+        assertEquals(200,h.json("POST",reviews+"/"+approval+"/decision",map("decision","approved","comment","Reviewed"),auth("DiagnosticReviewer")).statusCode());
+        assertEquals("qualifying",result(h,resource).get("reason"));
+        assertEquals(true,result(h,resource).get("qualifies_for_actor"));
+        Map<String,Object> user;
+        String actor;
+        try(var db=h.store.open()) {
+            user=db.one("SELECT * FROM os_user WHERE user_id=?",reviewer);
+            actor=RecordAccess.owner(db,"admin");
+            db.viewerId=actor;db.viewerRole="admin";
+            assertTrue(ApprovalGate.qualifying(db,Service.record(db,"incident",record),Service.schema(db,"incident"),"2").contains(approval));
+        }
+        for(String change : List.of("active=0","password_reset_required=1","role='reader'","auth_revision=auth_revision+1")) {
+            fixtureUpdate(h,"UPDATE os_user SET "+change+" WHERE user_id=?",reviewer);
+            assertEquals(change.startsWith("auth_revision")?"reviewer_credentials_changed":"reviewer_unavailable",result(h,resource).get("reason"));
+            fixtureUpdate(h,"UPDATE os_user SET active=1,password_reset_required=0,role='agent',auth_revision=? WHERE user_id=?",user.get("auth_revision"),reviewer);
+        }
+        fixtureUpdate(h,"UPDATE os_approval SET approver_id=? WHERE approval_id=?",id(),approval);
+        assertEquals("reviewer_unavailable",result(h,resource).get("reason"));
+        fixtureUpdate(h,"UPDATE os_approval SET approver_id=? WHERE approval_id=?",reviewer,approval);
+        fixtureUpdate(h,"INSERT INTO os_record_access(record_id,visibility,owner_id,group_id) VALUES(?,'private',?,'')",record,actor);
+        assertEquals("reviewer_permission_changed",result(h,resource).get("reason"));
+        fixtureUpdate(h,"DELETE FROM os_record_access WHERE record_id=?",record);
+        fixtureUpdate(h,"UPDATE os_approval SET approver_id=?,decision_revision=(SELECT auth_revision FROM os_user WHERE user_id=?) WHERE approval_id=?",actor,actor,approval);
+        assertEquals("same_as_actor",result(h,resource).get("reason"));
+        fixtureUpdate(h,"UPDATE os_approval SET status='rejected' WHERE approval_id=?",approval);
+        assertEquals("review_closed",result(h,resource).get("reason"));
+        fixtureUpdate(h,"UPDATE os_approval SET record_revision=record_revision+1 WHERE approval_id=?",approval);
+        assertEquals("proposal_changed",result(h,resource).get("reason"));
+        fixtureUpdate(h,"DELETE FROM os_record WHERE sys_id=?",record);
+        assertEquals(404,h.get(path,auth("admin")).statusCode());
+    }
+
+    static void fixtureUpdate(WorkflowSupport h,String sql,Object... values) throws Exception {
+        try(var db=h.store.open()) { db.update(sql,values);db.connection.commit(); }
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

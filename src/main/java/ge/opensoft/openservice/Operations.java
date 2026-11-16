@@ -120,6 +120,7 @@ final class Operations {
                                         + " 100");
                 case "qualification" -> qualification(store, db);
                 case "preflight" -> DeploymentPreflight.inspect(store, db);
+                case "approval-diagnostics" -> ApprovalDiagnostics.inspect(db,actor,id);
                 case "password-policy" -> PasswordPolicies.status(db);
                 default -> throw new Failure(405, "GET is not supported here");
             };
