@@ -135,6 +135,36 @@ final class PlatformBrowserAcceptance {
         }
     }
 
+    static void cancelClocks(BrowserTest h) throws Exception {
+        for (String theme : List.of("light", "dark")) {
+            String record;
+            try (var db = h.store.open()) {
+                String actor = PlatformFoundationTest.bind(db);
+                record = PlatformFoundationTest.record(db, "incident", "Cancel clock " + theme);
+                ServiceClocks.calendar(db, actor, map("name", "cancel-browser", "calendar", PlatformFoundationTest.calendar()));
+                ServiceClocks.start(db, actor, map("table", "incident", "record_id", record, "calendar", "cancel-browser", "minutes", 120), System.currentTimeMillis());
+                db.connection.commit();
+            }
+            try (var p = Playwright.create(); var browser = p.chromium().launch(); var context = browser.newContext()) {
+                var page = context.newPage();
+                page.emulateMedia(new Page.EmulateMediaOptions().setColorScheme(theme.equals("dark") ? com.microsoft.playwright.options.ColorScheme.DARK : com.microsoft.playwright.options.ColorScheme.LIGHT));
+                page.setViewportSize(theme.equals("dark") ? 390 : 1280, 900);
+                h.login(page, "admin");
+                page.navigate(h.base()+"/admin/operations");
+                assertThat(page.locator("html")).hasAttribute("data-theme", theme);
+                var row = page.locator("tr").filter(new Locator.FilterOptions().setHas(page.locator("a[href='/record/incident/"+record+"']")));
+                ReleaseBrowserAcceptance.accessible(page);
+                row.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Cancel clock").setExact(true)).press("Enter");
+                assertThat(row).containsText("cancelled");
+                page.reload();
+                assertThat(row).containsText("cancelled");
+                assertThat(row.locator("button")).hasCount(0);
+                ReleaseBrowserAcceptance.accessible(page);
+                page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/sla-cancel-"+theme+".png")).setFullPage(true));
+            }
+        }
+    }
+
     static void replacement(BrowserTest h) throws Exception {
         String name = "ChangeMail" + id().substring(0, 6),
                 oldEmail = name.toLowerCase() + "@old.invalid",

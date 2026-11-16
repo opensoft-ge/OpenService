@@ -53,6 +53,9 @@ class BrowserTest {
     void platformOperationsWorkInBothThemes() throws Exception { PlatformBrowserAcceptance.run(this); }
 
     @Test
+    void serviceClockCancellationWorksInBothThemes() throws Exception { PlatformBrowserAcceptance.cancelClocks(this); }
+
+    @Test
     void changingRegisteredEmailRequiresBothMailboxProofs() throws Exception { PlatformBrowserAcceptance.replacement(this); }
 
     @Test

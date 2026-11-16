@@ -70,6 +70,9 @@ abstract class WorkflowSupport {
     void publicationHistoryIsPagedAndKeepsDraftsPrivate() throws Exception { DiverseBatchAcceptance.knowledgeHistory(this); }
 
     @Test
+    void cancelledServiceClocksRemainTerminal() throws Exception { DiverseBatchAcceptance.cancelClocks(this); }
+
+    @Test
     void platformOperationsShareRealAuthenticationAndPersistence() throws Exception { PlatformOperationsAcceptance.run(this); }
 
     @Test

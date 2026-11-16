@@ -95,8 +95,8 @@ final class ServiceClocks {
             throws SQLException {
         Service.requireAccountAdministrator(db, actor);
         require(
-                Set.of("pause", "resume", "complete").contains(operation),
-                "Choose pause, resume or complete");
+                Set.of("pause", "resume", "complete", "cancel").contains(operation),
+                "Choose pause, resume, complete or cancel");
         var row = db.one("SELECT * FROM os_sla WHERE sla_id=?", id);
         if (row == null) throw new Failure(404, "Service clock not found");
         require(
@@ -109,7 +109,8 @@ final class ServiceClocks {
                 switch (operation) {
                     case "pause" -> "paused";
                     case "resume" -> "running";
-                    default -> "completed";
+                    case "complete" -> "completed";
+                    default -> "cancelled";
                 };
         db.update(
                 "UPDATE os_sla SET state=?,last_tick=? WHERE sla_id=?",

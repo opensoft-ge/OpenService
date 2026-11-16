@@ -70,4 +70,6 @@ Selected next: current controls only pause/resume/complete. Add cancellation as 
 
 ### 5 — OS-D20-05: maintain a saved report (workstream 14; OS-PARITY-07)
 
+Round 4 result: **implemented**, full clean verification **672 tests**, zero failures/errors/skips; Java **6465/6465 lines, 3373/3373 branches, 363/363 methods**. Whole `ServiceClocks.java`: **75/75 lines, 34/34 branches, 5/5 methods**; browser script counters remain exact. API acceptance passed on SQLite/PostgreSQL; real keyboard cancellation, persistence after reload and axe checks passed in desktop light/mobile dark. Screenshots inspected: readable theme/layout and terminal state; mobile tables retain their existing keyboard-focusable horizontal scroll. QA/QC accumulated review against `7189162`: zero new/reopened/unresolved findings, no repairs. Commit message: `Cancel service clocks without erasing breach evidence`. Round 3 commit: `98183d6`.
+
 Planned. Current API can create/delete definitions, but POST with an ID still creates another report. Allow the owner to update the existing definition and sharing state without changing its ID; reject unauthorized edits and invalid/hidden fields, keep current-viewer execution policy. Historical result storage and report version conflicts remain separate.

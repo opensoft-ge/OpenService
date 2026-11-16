@@ -513,3 +513,5 @@ PARITY-08 / OS-DISC-03: two-account current record-policy comparison implemented
 Diverse batch progress: **OS-D20-01 implemented** (workstream 13, PARITY-05): exact bounded impact traversal; **OS-D20-02 implemented** (workstream 10, PARITY-03): reasoned connector retirement and queued-work denial. [Acceptance, coverage and limits](paired-cycles-diverse20-2026-11-16.md). Parent areas remain partial.
 
 **OS-D20-03 implemented** (workstream 9, PARITY-04): paginated immutable publication history, including retired versions, restricted to administrators and excluding later drafts. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
+
+**OS-D20-04 implemented** (workstream 8, PARITY-02): administrator SLA cancellation through API and Operations, terminal across later ticks/reloads; overdue breach evidence preserved. Automatic cancellation conditions remain missing. [Acceptance and exact coverage](paired-cycles-diverse20-2026-11-16.md).

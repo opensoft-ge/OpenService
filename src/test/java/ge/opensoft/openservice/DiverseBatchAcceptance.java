@@ -79,6 +79,37 @@ final class DiverseBatchAcceptance {
         assertEquals(400, h.json("POST", ROOT + path + "?before=2", map("operation", "retire"), auth("admin")).statusCode());
     }
 
+    static void cancelClocks(WorkflowSupport h) throws Exception {
+        h.account("ClockReader", "reader");
+        String record = h.add("incident").get("sys_id").toString();
+        PlatformOperationsAcceptance.post(h, "calendars", map("name", "cancel-hours", "calendar", PlatformFoundationTest.calendar()));
+        for (String initial : List.of("running", "paused")) {
+            String clock = PlatformOperationsAcceptance.post(h, "clocks", map("table", "incident", "record_id", record, "calendar", "cancel-hours", "minutes", 120)).get("sla_id").toString();
+            if (initial.equals("paused")) PlatformOperationsAcceptance.post(h, "clocks/"+clock, map("operation", "pause"));
+            assertEquals(403, h.json("POST", ROOT+"clocks/"+clock, map("operation", "cancel"), auth("ClockReader")).statusCode());
+            PlatformOperationsAcceptance.post(h, "clocks/"+clock, map("operation", "cancel"));
+            assertEquals(400, h.json("POST", ROOT+"clocks/"+clock, map("operation", "resume"), auth("admin")).statusCode());
+            try (var db = h.store.open()) {
+                var before = db.one("SELECT state,last_tick,remaining_ms FROM os_sla WHERE sla_id=?", clock);
+                assertEquals("cancelled", before.get("state"));
+                ServiceClocks.tick(db, System.currentTimeMillis() + 86400000);
+                assertEquals(before, db.one("SELECT state,last_tick,remaining_ms FROM os_sla WHERE sla_id=?", clock));
+                assertEquals(1, db.count("SELECT COUNT(*) FROM os_security_event WHERE action='sla.cancel' AND CAST(detail AS TEXT) LIKE ?", "%"+clock+"%"));
+            }
+        }
+        String late = PlatformOperationsAcceptance.post(h, "clocks", map("table", "incident", "record_id", record, "calendar", "cancel-hours", "minutes", 120)).get("sla_id").toString();
+        try (var db = h.store.open()) {
+            db.update("UPDATE os_sla SET last_tick=? WHERE sla_id=?", System.currentTimeMillis()-7L*86400000, late);
+            db.connection.commit();
+        }
+        PlatformOperationsAcceptance.post(h, "clocks/"+late, map("operation", "cancel"));
+        try (var db = h.store.open()) {
+            assertEquals("breached", db.one("SELECT state FROM os_sla WHERE sla_id=?", late).get("state"));
+            assertEquals(0, db.count("SELECT COUNT(*) FROM os_security_event WHERE action='sla.cancel' AND CAST(detail AS TEXT) LIKE ?", "%"+late+"%"));
+        }
+        assertEquals(400, h.json("POST", ROOT+"clocks/"+late, map("operation", "cancel"), auth("admin")).statusCode());
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;
