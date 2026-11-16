@@ -61,6 +61,9 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void numericAggregateRangesAreExactAndPermissionAware() throws Exception { DiverseBatchAcceptance.numericRanges(this); }
+
+    @Test
     void approvalRemindersRespectCurrentAuthorityAndPreferences() throws Exception { DiverseBatchAcceptance.reminders(this); }
 
     @Test

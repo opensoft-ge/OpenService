@@ -507,8 +507,10 @@ Diverse batch progress: **OS-D20-01 implemented** (workstream 13, PARITY-05): ex
 
 **OS-D20-04 implemented** (workstream 8, PARITY-02): administrator SLA cancellation through API and Operations, terminal across later ticks/reloads; overdue breach evidence preserved. Automatic cancellation conditions remain missing. [Acceptance and exact coverage](paired-cycles-diverse20-2026-11-16.md).
 
-**OS-D20-05 implemented** (workstream 14, PARITY-07): owners update saved definitions/sharing in place, with current-viewer evaluation and denied foreign edits. Browser report designer, version conflicts and historical metrics remain open. Five rounds span five workstreams; next: scheduled work, approval reminders, integer queries, AI preview and deployment preflight. [Evidence](paired-cycles-diverse20-2026-11-16.md).
+**OS-D20-05 implemented** (workstream 14, PARITY-07): owners update saved definitions/sharing in place, with current-viewer evaluation and denied foreign edits. Browser report designer, version conflicts and historical metrics remain open. Five rounds span five workstreams; next: scheduled work, approval reminders, aggregate ranges, AI preview and deployment preflight. [Evidence](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-06 implemented** (workstream 6, PARITY-02/10): durable one-time job schedules with millisecond precision, deduplication, restart-safe due-time enforcement and bounded 366-day horizon. Recurring schedules, calendar UI and automatic approval escalation remain missing. [Evidence](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-07 implemented** (workstream 7, PARITY-02): administrators deliver deduplicated in-app approval reminders after checking the current reviewer, proposal and preferences. Automatic email reminders/escalation remain open. Next data/API slice is exact aggregate ranges; broader encoded integer comparisons remain deferred for normalization work. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
+
+**OS-D20-08 implemented** (workstream 12, PARITY-01/07): exact decimal aggregate ranges shared by API, saved reports and the Analytics form. Keyboard and mobile dark/light acceptance includes accessible horizontal metrics scrolling. Broader encoded numeric comparisons remain open. [Evidence](paired-cycles-diverse20-2026-11-16.md).

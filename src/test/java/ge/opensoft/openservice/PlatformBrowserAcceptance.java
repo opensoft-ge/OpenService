@@ -135,6 +135,45 @@ final class PlatformBrowserAcceptance {
         }
     }
 
+    static void numericRanges(BrowserTest h) throws Exception {
+        String table="u_browser_range_"+id();
+        try(var db=h.store.open()) {
+            String actor=PlatformFoundationTest.bind(db);
+            Configuration.install(db,ConfigurationAcceptance.bundle(table,ConfigurationAcceptance.definition()),actor,false);
+            for(String amount:List.of("2","10","20"))
+                Service.create(db,table,map("short_description","Amount "+amount,"amount",amount),"admin");
+            db.connection.commit();
+        }
+        for(String theme:List.of("light","dark")) {
+            try(var p=Playwright.create();var browser=p.chromium().launch();var context=browser.newContext()) {
+                var page=context.newPage();
+                page.emulateMedia(new Page.EmulateMediaOptions().setColorScheme(theme.equals("dark")?com.microsoft.playwright.options.ColorScheme.DARK:com.microsoft.playwright.options.ColorScheme.LIGHT));
+                page.setViewportSize(theme.equals("dark")?390:1280,900);
+                h.login(page,"admin");
+                page.navigate(h.base()+"/analytics/"+table+"?field=amount");
+                assertThat(page.locator("html")).hasAttribute("data-theme",theme);
+                page.getByLabel("Minimum value",new Page.GetByLabelOptions().setExact(false)).fill("2");
+                page.getByLabel("Maximum value",new Page.GetByLabelOptions().setExact(false)).fill("10");
+                page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Calculate metrics")).press("Enter");
+                var row=page.locator("tbody tr").first();
+                assertThat(row.locator("td").nth(3)).hasText("12");
+                page.reload();
+                assertThat(page.locator("input[name=minimum]")).hasValue("2");
+                assertThat(page.locator("input[name=maximum]")).hasValue("10");
+                if(theme.equals("dark")) {
+                    page.getByRole(AriaRole.REGION,new Page.GetByRoleOptions().setName("Numeric metrics")).press("ArrowRight");
+                    page.waitForCondition(() -> ((Number)page.locator(".table-scroll").evaluate("element => element.scrollLeft")).doubleValue() > 0);
+                }
+                ReleaseBrowserAcceptance.accessible(page);
+                page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/numeric-range-"+theme+".png")).setFullPage(true));
+                page.locator("input[name=minimum]").fill("");
+                page.locator("input[name=maximum]").fill("");
+                page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Calculate metrics")).press("Enter");
+                assertThat(row.locator("td").nth(3)).hasText("32");
+            }
+        }
+    }
+
     static void cancelClocks(BrowserTest h) throws Exception {
         for (String theme : List.of("light", "dark")) {
             String record;

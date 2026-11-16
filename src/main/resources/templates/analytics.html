@@ -10,8 +10,10 @@
         <div><label for="metric-field">Measure</label><select id="metric-field" name="field"><option th:each="field:${metricFields}" th:value="${field.key}" th:selected="${field.key==metric}" th:text="${field.value}"></option></select></div>
         <div><label for="metric-group">Group by</label><select id="metric-group" name="group_by"><option value="">All matching records</option><option th:each="field:${definition.fields}" th:value="${field.key}" th:selected="${field.key==groupBy}" th:text="${field.value}"></option></select></div>
         <label class="wide">Filter query<input name="q" th:value="${filter}" placeholder="category=service"><small>Use the same encoded field filters as the record API.</small></label>
+        <label>Minimum value<input name="minimum" th:value="${minimum}" inputmode="decimal" maxlength="128"><small>Inclusive; leave blank for no lower bound.</small></label>
+        <label>Maximum value<input name="maximum" th:value="${maximum}" inputmode="decimal" maxlength="128"><small>Inclusive; leave blank for no upper bound.</small></label>
       </div><button class="button primary">Calculate metrics</button></form>
-      <div class="table-scroll"><table><thead><tr><th>Group</th><th>Records</th><th>Values</th><th>Sum</th><th>Minimum</th><th>Maximum</th><th>Average</th></tr></thead>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Numeric metrics"><table><thead><tr><th>Group</th><th>Records</th><th>Values</th><th>Sum</th><th>Minimum</th><th>Maximum</th><th>Average</th></tr></thead>
         <tbody><tr th:each="row:${report.rows}"><td th:text="${groupBy.isEmpty() ? 'All matching records' : (row.group.isEmpty() ? '(empty)' : row.group)}"></td><td th:text="${row.count}"></td><td th:text="${row.value_count}"></td><td th:text="${row.sum}"></td><td th:text="${row.min ?: '—'}"></td><td th:text="${row.max ?: '—'}"></td><td th:text="${row.average ?: '—'}"></td></tr>
         <tr th:if="${report.rows.isEmpty()}"><td colspan="7">No matching records.</td></tr></tbody></table></div>
       <p>Sum, minimum and maximum retain decimal precision. Averages use up to 34 significant digits.</p>

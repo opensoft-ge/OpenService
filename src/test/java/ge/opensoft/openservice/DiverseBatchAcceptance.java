@@ -177,6 +177,63 @@ final class DiverseBatchAcceptance {
         assertEquals("Scheduled reminder", notices.getFirst().get("message"));
     }
 
+    static void numericRanges(WorkflowSupport h) throws Exception {
+        h.account("RangeReader", "reader");
+        String original;
+        try (var db = h.store.open()) {
+            var schema = Service.schema(db, "incident");
+            original = JSON.writeValueAsString(schema);
+            object(schema.get("fields")).put("cost", "Cost");
+            schema.put("field_rules", map("cost", map("type", "decimal")));
+            db.update("UPDATE os_schema SET definition="+db.jsonParameter()+" WHERE name='incident'", JSON.writeValueAsString(schema));
+            db.connection.commit();
+        }
+        try {
+            for(String value : List.of("-10","2","10","9007199254740993.01","9007199254740993.02","","\u2003")) {
+                String id=h.add("incident").get("sys_id").toString();
+                assertEquals(200,h.json("PATCH","/api/now/table/incident/"+id,map("cost",value),auth("admin")).statusCode());
+            }
+            String path="/api/openservice/analytics/incident?field=cost";
+            var expected=Map.of("&minimum=2&maximum=10","2", "&minimum=2","4", "&maximum=-10","1",
+                    "&minimum=9007199254740993.01&maximum=9007199254740993.01","1",
+                    "&minimum=11&maximum=12","0", "","7", "&minimum=&maximum=","7");
+            for(var entry:expected.entrySet()) {
+                var response=h.get(path+entry.getKey(),auth("RangeReader"));
+                assertEquals(200,response.statusCode(),html(response));
+                var totals=objects(object(parsed(response).get("result")).get("rows")).getFirst();
+                assertEquals(entry.getValue(),totals.get("count"),entry.getKey());
+                if(entry.getKey().contains("9007199254740993.01")) assertEquals("9007199254740993.01",totals.get("sum"));
+            }
+            var grouped=h.get(path+"&minimum=2&maximum=10&group_by=state",auth("RangeReader"));
+            assertEquals(200,grouped.statusCode(),html(grouped));
+            assertEquals("12",objects(object(parsed(grouped).get("result")).get("rows")).getFirst().get("sum"));
+            for(String query:List.of("&minimum=bad","&minimum=1e2","&minimum=20&maximum=10","&maximum="+"9".repeat(129)))
+                assertEquals(400,h.get(path+query,auth("admin")).statusCode(),query);
+            var definition=map("name","Ranged totals","table","incident","shared",true,"query",map("field","cost","minimum","2","maximum","10"));
+            String report=PlatformOperationsAcceptance.post(h,"reports",definition).get("report_id").toString();
+            assertEquals("12",objects(result(h,"reports/"+report).get("rows")).getFirst().get("sum"));
+            String hidden=h.tableQuery("cost=10","").getFirst().get("sys_id").toString();
+            try(var db=h.store.open()) {
+                db.update("INSERT INTO os_record_access(record_id,visibility,owner_id,group_id) VALUES(?,'private',?,'')",hidden,RecordAccess.owner(db,"admin"));
+                db.connection.commit();
+            }
+            var restricted=h.get(path+"&minimum=2&maximum=10",auth("RangeReader"));
+            assertEquals("2",objects(object(parsed(restricted).get("result")).get("rows")).getFirst().get("sum"));
+            try(var db=h.store.open()) {
+                var schema=Service.schema(db,"incident");
+                object(TypedFields.rules(schema).get("cost")).put("read_roles",List.of("admin"));
+                db.update("UPDATE os_schema SET definition="+db.jsonParameter()+" WHERE name='incident'",JSON.writeValueAsString(schema));
+                db.connection.commit();
+            }
+            assertEquals(400,h.get(path+"&minimum=2",auth("RangeReader")).statusCode());
+        } finally {
+            try(var db=h.store.open()) {
+                db.update("UPDATE os_schema SET definition="+db.jsonParameter()+" WHERE name='incident'",original);
+                db.connection.commit();
+            }
+        }
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

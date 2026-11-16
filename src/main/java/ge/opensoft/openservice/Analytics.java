@@ -22,12 +22,15 @@ final class Analytics {
     static Map<String, Object> report(Store.Db db, String table, Map<String, String> args)
             throws SQLException {
         require(
-                Set.of("field", "group_by", "q").containsAll(args.keySet()),
+                Set.of("field", "group_by", "q", "minimum", "maximum").containsAll(args.keySet()),
                 "Unsupported analytics parameter");
         String field = args.getOrDefault("field", ""), group = args.getOrDefault("group_by", "");
         require(
                 fields(FieldAccess.schema(db, Service.schema(db, table))).containsKey(field),
                 "Choose a configured integer or decimal field");
+        BigDecimal minimum = bound(args, "minimum"), maximum = bound(args, "maximum");
+        require(minimum == null || maximum == null || minimum.compareTo(maximum) <= 0,
+                "Minimum must not exceed maximum");
         var selection = Service.selection(db, table, args.getOrDefault("q", ""), "");
         require(
                 group.isEmpty() || selection.columns().containsKey(group),
@@ -46,13 +49,30 @@ final class Analytics {
                                         + selection.where(),
                                 selection.values().toArray());
                 var rows = statement.executeQuery()) {
-            while (rows.next())
-                groups.computeIfAbsent(rows.getString(2), ignored -> new Totals())
-                        .add(rows.getString(1));
+            while (rows.next()) {
+                String value = rows.getString(1);
+                if (included(value, minimum, maximum))
+                    groups.computeIfAbsent(rows.getString(2), ignored -> new Totals()).add(value);
+            }
         }
         var result = new ArrayList<Map<String, Object>>();
         groups.forEach((key, totals) -> result.add(totals.result(key)));
         return map("field", field, "group_by", group, "rows", result);
+    }
+
+    static BigDecimal bound(Map<String,String> args, String key) {
+        if (args.getOrDefault(key, "").isBlank()) return null;
+        String value = WorkJobs.text(args.get(key), 128);
+        require(value.matches("-?[0-9]+(?:\\.[0-9]+)?"), "Use a plain decimal range bound");
+        return new BigDecimal(value);
+    }
+
+    static boolean included(String text, BigDecimal minimum, BigDecimal maximum) {
+        if (minimum == null && maximum == null) return true;
+        if (text.isBlank()) return false;
+        BigDecimal value = new BigDecimal(text);
+        return (minimum == null || value.compareTo(minimum) >= 0)
+                && (maximum == null || value.compareTo(maximum) <= 0);
     }
 
     static final class Totals {
