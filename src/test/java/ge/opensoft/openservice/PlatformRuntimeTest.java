@@ -227,7 +227,7 @@ class PlatformRuntimeTest {
                 bind(db);
                 assertEquals(2, db.count("SELECT COUNT(*) FROM os_work WHERE state='succeeded'"));
                 String id = record(db, "incident", "Summary grounded in this record");
-                var request = map("table", "incident", "record_id", id, "allow_external", true);
+                var request = map("table", "incident", "record_id", id, "allow_external", true,"preview_token","pending");
                 bad(() -> ProviderAssist.summarize(store, db, actor, request));
                 env.setProperty("AI_ENABLED", "true");
                 bad(() -> ProviderAssist.summarize(store, db, actor, map()));
@@ -247,6 +247,9 @@ class PlatformRuntimeTest {
                 String beforePreview = captured.get();
                 var preview = ProviderAssist.preview(store, db, actor, map("table","incident","record_id",id));
                 assertEquals(beforePreview, captured.get());
+                assertTrue(preview.containsKey("preview_token"), "Execution must be bound to the reviewed preview");
+                AiConsentAcceptance.run(store,db,actor,id,request,preview,captured);
+                request.put("preview_token",ProviderAssist.preview(store,db,actor,map("table","incident","record_id",id)).get("preview_token"));
                 var draft =
                         object(Operations.execute(store, db, actor, "assist", "", "POST", request));
                 assertEquals(preview.get("content"), object(objects(object(JSON.readValue(captured.get(),Object.class)).get("messages")).getLast()).get("content"));

@@ -34,10 +34,12 @@ final class ProviderAssist {
         require(body.keySet().equals(Set.of("table", "record_id")), "Provide table and record_id");
         String table = WorkJobs.text(body.get("table"), 80), id = WorkJobs.text(body.get("record_id"), 32);
         var selected = grounding(store, db, table, id);
-        return map("record_id", id, "record_revision", selected.get("record_revision"),
+        var result = map("record_id", id, "record_revision", selected.get("record_revision"),
                 "grounding", selected.get("fields"), "content", selected.get("content"),
                 "provider_alias", store.environment.getProperty("AI_CONNECTOR_ALIAS", ""),
                 "model", store.environment.getProperty("AI_MODEL", ""), "external_request_sent", false);
+        result.putAll(AiConsent.issue(store,AiConsent.state(store,db,actor,table,id,selected)));
+        return result;
     }
 
     static Map<String, Object> summarize(Store store, Store.Db db, String actor, Object input)
@@ -47,8 +49,8 @@ final class ProviderAssist {
             throw new Failure(503, "AI assistance is disabled");
         var body = object(input);
         require(
-                body.keySet().equals(Set.of("table", "record_id", "allow_external")),
-                "Provide table, record_id and allow_external");
+                body.keySet().equals(Set.of("table", "record_id", "allow_external", "preview_token")),
+                "Provide table, record_id, allow_external and preview_token");
         require(
                 Boolean.TRUE.equals(body.get("allow_external")),
                 "Explicit consent to send selected record fields is required");
@@ -70,6 +72,7 @@ final class ProviderAssist {
                                         .split(","))
                         .contains(origin),
                 "AI provider origin is no longer allowed");
+        AiConsent.verify(store,body.get("preview_token"),AiConsent.state(store,db,actor,table,id,selected));
         String token =
                 Outbox.decrypt(store.secret, connector.get("envelope").toString())
                         .get("token")

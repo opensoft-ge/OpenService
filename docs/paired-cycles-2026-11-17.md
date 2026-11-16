@@ -42,3 +42,22 @@ Implemented `OS-N17-01` (workstream 9, OS-PARITY-04): literal current-publicatio
 Final verification: 715 tests, zero failures/errors/skips; Java 6782/6782 lines, 3610/3610 branches, 392/392 methods. Touched Java: KnowledgeSearch 11/11 lines, 6/6 branches, 1/1 methods; PublishedKnowledge 51/51, 16/16, 6/6; WebController 2094/2094, 1067/1067, 41/41. Browser-script exact gates passed. Frozen source matched the final report. QA repair: inaccurate empty-search copy; a subsequent complete accumulated-change review against the fixed base found no new/reopened defects and made no repairs. No unresolved finding in this slice. Local commit: `Add searchable published knowledge for requesters` (this entry is included in that commit).
 
 Baseline: `scripts/verify.sh` passed 712 tests without failures/errors/skips in 4m44s; Java 6771/6771 lines, 3604/3604 branches and 391/391 methods; browser scripts retained exact full coverage. Round 1 regression tests failed on both databases against the prior query-rejecting route. Targeted SQLite/PostgreSQL/browser acceptance then passed; desktop light and 390px dark screenshots were inspected. A misleading empty-search message was corrected before final review. Full regression/coverage passed in 4m42s. Existing calendars already support holidays; round 3 will complete their browser management rather than reimplement exclusion arithmetic.
+
+## Round 2 — consent bound to an AI grounding preview
+
+Selected `OS-N17-02`, workstream 15 / OS-PARITY-06. The existing preview displays a snapshot, but summary execution reselects current content and provider configuration with only a boolean consent flag. Bind execution to a ten-minute opaque authenticated preview token covering actor/auth revision, record/revision/content, model, provider revision/origin and egress/field configuration. Recheck current authority before sending; changed, expired or tampered previews must make no provider request. Keep explicit consent and read-only output. No one-time-use, redaction, model-quality or external-provider qualification claim.
+
+Official research retrieved 2026-11-17: [Data Privacy configuration](https://www.servicenow.com/docs/r/platform-security/data-privacy-classic/configure-now-assist-data-privacy.html), Brazil updated 2026-09-10, covers sensitive-data protection before generative AI; [AI-agent access control](https://www.servicenow.com/docs/r/intelligent-experiences/aia-security-implementation.html), Brazil updated 2026-09-01, distinguishes invocation permissions and execution identities. These support the broader privacy/authority roadmap, not this OpenService token protocol. Merge with existing AI redaction and tool-authority gaps; no duplicate completed capability. Next research: service calendars and schedule administration. Alternative candidates remain calendar management and event navigation.
+
+Acceptance: valid preview sends exactly reviewed fields; missing/malformed/tampered/expired tokens, changed content/configuration, cross-actor use and revoked authority fail before external delivery. Synthetic HTTP provider on both databases, API auth regression and complete exact gates. Results: all selected cases pass, including the reproduced connector-recreation repair. The final full run completed in 4m41s.
+
+QA finding R2-1: connector retirement/recreation resets its revision, allowing an old preview if only alias/origin/revision are bound. Both database regressions reproduced a provider call instead of rejection. The consent fingerprint now includes the encrypted credential envelope as well; it is hashed internally and never returned or logged. The first full run passed, but is superseded by the post-repair run.
+
+Final gates: 715 tests, zero failures/errors/skips; whole-project Java 6805/6805 lines, 3618/3618 branches, 395/395 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| AiConsent.java | 20/20 | 8/8 | 3/3 |
+| ProviderAssist.java | 95/95 | 18/18 | 4/4 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Bind AI summary consent to reviewed data and provider authority`. No push.

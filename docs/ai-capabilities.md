@@ -12,7 +12,7 @@ Measure: Time to accurate triage and resolution; citation correctness; accepted 
 
 ## Current delivery status
 
-Partial: the existing implementation provides explicitly enabled administrator summaries and permission-filtered grounding previews. It has no general conversational support experience or autonomous tool/action execution. Content de-identification, revision-bound external-send consent, provider qualification and broader agent evaluations remain open. See the existing OS-PARITY-06, OS-DISC-02 and OS-DISC-AI-CONTAINMENT entries; preserve their unresolved limits.
+Partial: the existing implementation provides explicitly enabled administrator summaries and permission-filtered grounding previews with ten-minute version/configuration-bound summary consent. It has no general conversational support experience or autonomous tool/action execution. Content de-identification, provider qualification and broader agent evaluations remain open. See the existing OS-PARITY-06, OS-DISC-02 and OS-DISC-AI-CONTAINMENT entries; preserve their unresolved limits.
 
 ## Required capabilities
 
