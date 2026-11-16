@@ -1,0 +1,14 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org"><body>
+<form th:fragment="editor(name,definition)" method="post" class="record-form" th:attr="data-calendar=${name.isEmpty() ? 'new' : name}">
+<input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="calendar">
+<label>Calendar name<input name="name" required maxlength="80" th:value="${name}" th:readonly="${!name.isEmpty()}"></label>
+<label>Time zone<input name="zone" required maxlength="80" th:value="${definition.zone}"></label>
+<p>Use a time zone such as Europe/London, Asia/Tbilisi or UTC.</p>
+<label>Work starts<input name="start" type="time" required th:value="${definition.start}"></label>
+<label>Work ends<input name="end" type="time" required th:value="${definition.end}"></label>
+<label>Working weekdays<input name="days" required maxlength="32" th:value="${#strings.listJoin(definition.days,',')}"></label>
+<p>Use comma-separated numbers: Monday is 1, Sunday is 7. Working hours must finish on the same day.</p>
+<label>Excluded holiday dates<textarea name="holidays" maxlength="11000" th:text="${#strings.listJoin(definition.holidays,', ')}"></textarea></label>
+<p>Use dates such as 2026-12-25, separated by commas or whitespace. Dates use this calendar's time zone.</p>
+<button class="button primary" th:text="${name.isEmpty() ? 'Create calendar' : 'Save calendar'}"></button>
+</form></body></html>

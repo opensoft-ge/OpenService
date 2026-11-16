@@ -25,6 +25,9 @@ import java.util.*;
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
     @Test
+    void calendarManagementWorksInBothThemes() throws Exception { CalendarFormsBrowserAcceptance.run(this); }
+
+    @Test
     void knowledgeSearchWorksWithKeyboardInBothThemes() throws Exception { KnowledgeSearchBrowserAcceptance.run(this); }
 
     @DynamicPropertySource

@@ -562,3 +562,7 @@ Discovery **OS-DISC-KNOWLEDGE-COMPARE**, missing P2, maps to OS-PARITY-04: the [
 ### OS-N17-02 — AI preview consent (workstream 15, OS-PARITY-06)
 
 Implemented and verified: summary execution requires an authenticated ten-minute preview token matching current actor authority, record fields/revision and provider configuration. Full evidence, primary sources and remaining privacy/agent limitations are in [round 2](paired-cycles-2026-11-17.md#round-2--consent-bound-to-an-ai-grounding-preview). This does not complete OS-DISC-02 redaction or agent execution authority.
+
+### OS-N17-03 — business calendar administration (workstream 8, OS-PARITY-02)
+
+Implemented and verified: Operations creates/edits validated business hours and excluded holidays through ordinary fields, preserving active-clock snapshots. [Round 3 contract/evidence](paired-cycles-2026-11-17.md#round-3--browser-calendar-administration). `OS-DISC-SCHEDULE-INHERITANCE` is missing P2: reusable parent/child schedules, dependent on cycle-safe composition/versioning; acceptance must reject cycles/conflicts and preserve existing clock semantics. [Brazil source](https://www.servicenow.com/docs/r/platform-administration/time-configuration/c_ParentAndChildSchedules.html), updated 2026-09-10, retrieved 2026-11-17. Graphical, split-shift and inherited schedules remain open. Next research: operational-event correlation/navigation.

@@ -78,3 +78,7 @@ Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic 
 Signed-in users can search `/knowledge` or GET `/api/openservice/knowledge` with `q` (up to 200 characters), `limit` (1–100, default 100) and `offset` (0–1,000,000, default 0). Search matches a literal substring in the current published title/body; `%`, `_` and `!` are literal. ASCII case-insensitive matching works on both supported databases; full Unicode linguistic matching, ranking and attachment search are not provided.
 
 The API retains the `result` article list and adds filtered `total`, normalized `query`, `limit`, `offset`, `previous_offset` and `next_offset` (-1 on the final page). Navigation preserves the search. Results and counts exclude deleted, retired and newly restricted articles; draft edits never replace published snapshots. Pagination is evaluated on each request, not a frozen export, so concurrent publication changes can move entries between pages.
+
+## Business calendar forms
+
+In Operations, create a named calendar or edit its saved fields. Use an IANA time zone (for example Europe/London), same-day start/end, comma-separated weekdays (1 Monday to 7 Sunday), and optional ISO holiday dates separated by commas/whitespace. Validation/auditing is shared with the native calendar API. Existing names are updated; concurrent edits use the most recent save. Existing service clocks retain their snapshotted calendars. The browser does not yet create clocks, compose parent schedules or draw a graphical calendar.

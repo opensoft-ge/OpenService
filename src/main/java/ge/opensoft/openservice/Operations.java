@@ -17,6 +17,7 @@ final class Operations {
                 WorkJobs.list(db, actor),
                 "connectors",
                 db.all("SELECT alias,origin,revision FROM os_connector ORDER BY alias"),
+                "newCalendar",map("zone","UTC","start","09:00","end","17:00","days",List.of(1,2,3,4,5),"holidays",List.of()),
                 "calendars",
                 db.all("SELECT * FROM os_calendar ORDER BY calendar_id"),
                 "clocks",
@@ -201,6 +202,7 @@ final class Operations {
                 });
         String operation = value.getOrDefault("operation", "");
         switch (operation) {
+            case "calendar" -> CalendarForms.save(db,actor,value);
             case "notification" ->
                     WorkJobs.enqueue(
                             store,

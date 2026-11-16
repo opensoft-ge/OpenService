@@ -61,3 +61,22 @@ Final gates: 715 tests, zero failures/errors/skips; whole-project Java 6805/6805
 | ProviderAssist.java | 95/95 | 18/18 | 4/4 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Bind AI summary consent to reviewed data and provider authority`. No push.
+
+## Round 3 — browser calendar administration
+
+Selected `OS-N17-03`, workstream 8 / OS-PARITY-02. Calendar validation, holidays, clock snapshots and API saving already exist, but Operations has no creation/editing forms. Add ordinary labelled fields for a named calendar, IANA time zone, daily start/end, weekdays and excluded dates; list saved calendars with editable definitions. Reuse validation/auditing. Existing clocks retain snapshots. No schedule inheritance, split/overnight shifts or graphical calendar claim. Alternatives remain event navigation and approval reviewer selection.
+
+Evidence retrieved 2026-11-17: [Holidays](https://www.servicenow.com/docs/r/platform-administration/time-configuration/c_Holidays.html) and [parent/child schedules](https://www.servicenow.com/docs/r/platform-administration/time-configuration/c_ParentAndChildSchedules.html), both Brazil updated 2026-09-10. Newly tracked `OS-DISC-SCHEDULE-INHERITANCE`: reusable parent/child holiday schedules, missing P2, dependent on cycle-safe versioned schedule composition. Acceptance must reject cycles/conflicting inclusion types and preserve active-clock schedule semantics. This round only exposes the existing independent-calendar contract. Next research: operational-event correlation/navigation.
+
+Acceptance: create/update through protected forms on both databases; persisted holiday dates and audit; existing clock remains unchanged; invalid dates/zones/hours/days and unauthorized/missing-CSRF requests denied; real keyboard journey, mobile/desktop and both themes. Results: both database and browser acceptance passed, including mobile-visible guidance.
+
+Regression tests failed against the prior unsupported form operation on both databases. During UI inspection, the shared `quiet` class hid required weekday/date guidance on mobile; retained visible instructions and added a mobile visibility assertion. Corrected test assumptions to the existing 302 redirect contract. The initial empty data attribute was omitted by template rendering; a stable form marker now supports the browser journey. Final gates passed; counts below.
+
+Final gates: 718 tests, zero failures/errors/skips; whole-project Java 6816/6816 lines, 3623/3623 branches, 397/397 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| CalendarForms.java | 9/9 | 4/4 | 2/2 |
+| Operations.java | 131/131 | 91/91 | 5/5 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Manage business calendars through the operations browser`. No push.

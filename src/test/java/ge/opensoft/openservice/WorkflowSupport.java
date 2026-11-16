@@ -17,6 +17,11 @@ import java.util.regex.*;
 
 abstract class WorkflowSupport {
     @Test
+    void administratorsManageBusinessCalendarsWithoutChangingActiveClocks() throws Exception {
+        CalendarFormsAcceptance.run(this);
+    }
+
+    @Test
     void requestersSearchOnlyCurrentPublishedKnowledge() throws Exception { KnowledgeSearchAcceptance.run(this); }
 
     static final String PASSWORD = "test-only-password-long";
