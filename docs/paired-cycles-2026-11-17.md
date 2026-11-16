@@ -80,3 +80,22 @@ Final gates: 718 tests, zero failures/errors/skips; whole-project Java 6816/6816
 | Operations.java | 131/131 | 91/91 | 5/5 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Manage business calendars through the operations browser`. No push.
+
+## Round 4 — searchable operational events and browser responses
+
+Selected `OS-N17-04`, workstream 13 / OS-PARITY-05. Retained events and audited response APIs exist, but the API only lists the newest 100 and no browser management journey exists. Add administrator-only literal key/summary search, exact severity/state filters, totals and bounded pagination at `/api/openservice/event-search`, plus `/admin/events` with acknowledgement, resolution and reopening forms backed by existing actions. Keep the old list API unchanged. Offset pages are live; ASCII case-insensitive matching, no ranking or external remediation. Historical events may remain after their configuration item is removed; response execution still requires that item to exist. Alternatives: notification history and eligible reviewer selection.
+
+Evidence: [Brazil Event Management](https://www.servicenow.com/docs/r/it-operations-management/event-management/c_EM.html) and [alert correlation rules](https://www.servicenow.com/docs/r/it-operations-management/event-management/t_EMConfigureAnEventCorrelationRule.html), updated 2026-09-10, retrieved 2026-11-17. Discovery merges primary/secondary root-cause grouping and reopening-triggered rule evaluation into the existing OS-PARITY-05 correlation gap (missing P2). Depends on defined rule semantics, asset identity and scope; acceptance must prove deterministic grouping without claiming inferred causality as verified fact. Existing key deduplication is not this richer grouping. Next research: scoped review delegation and eligibility. These are OpenService native filters/actions, not ServiceNow wire parity.
+
+Acceptance: 100+5 paging, exact filtered totals, literal wildcard characters, malformed/duplicate inputs, anonymous/non-admin denial, CSRF-protected audited actions, keyboard pagination, escaped summaries, empty states and both themes at desktop/mobile widths. Results: database and browser acceptance passed; the full gate passed with counts below.
+
+Both database regressions failed against the missing route, then passed. The browser journey passed after making select labels explicit; desktop-light and mobile-dark screenshots were inspected, with escaped summaries and no horizontal page overflow. No confirmed backend defect found during this round. Final gates passed.
+
+Final gates: 721 tests, zero failures/errors/skips; whole-project Java 6841/6841 lines, 3639/3639 branches, 398/398 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| EventSearch.java | 13/13 | 6/6 | 1/1 |
+| WebController.java | 2106/2106 | 1077/1077 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Search operational events and manage responses in the browser`. No push.

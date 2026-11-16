@@ -288,6 +288,20 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/admin/events") || path.equals("/api/openservice/event-search")) {
+            boolean api=path.startsWith("/api/");
+            method(method,api?new String[]{"GET"}:new String[]{"GET","POST"});
+            c.admin(); c.uniqueQuery();
+            String actor=c.user.get("user_id").toString();
+            if(method.equals("POST")) {
+                c.noQuery();
+                TypedFields.require(Set.of("csrf","key","operation","reason").containsAll(c.arguments().keySet()),"Provide only the event response fields");
+                EventActions.apply(c.db,actor,map("key",c.parameter("key",""),"operation",c.parameter("operation",""),"reason",c.parameter("reason","")));
+                return redirect("/admin/events");
+            }
+            var result=EventSearch.page(c.db,actor,c.arguments());
+            return api?json(result,200):view(c,"events",map("table","events","search",result));
+        }
         if (path.equals("/admin/operations")) {
             method(method, "GET", "POST");
             c.admin();

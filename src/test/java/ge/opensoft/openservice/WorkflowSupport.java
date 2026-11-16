@@ -17,6 +17,9 @@ import java.util.regex.*;
 
 abstract class WorkflowSupport {
     @Test
+    void administratorsSearchAndRespondToOperationalEvents() throws Exception { EventSearchAcceptance.run(this); }
+
+    @Test
     void administratorsManageBusinessCalendarsWithoutChangingActiveClocks() throws Exception {
         CalendarFormsAcceptance.run(this);
     }

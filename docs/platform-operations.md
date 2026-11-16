@@ -82,3 +82,9 @@ The API retains the `result` article list and adds filtered `total`, normalized 
 ## Business calendar forms
 
 In Operations, create a named calendar or edit its saved fields. Use an IANA time zone (for example Europe/London), same-day start/end, comma-separated weekdays (1 Monday to 7 Sunday), and optional ISO holiday dates separated by commas/whitespace. Validation/auditing is shared with the native calendar API. Existing names are updated; concurrent edits use the most recent save. Existing service clocks retain their snapshotted calendars. The browser does not yet create clocks, compose parent schedules or draw a graphical calendar.
+
+## Find and respond to operational events
+
+Operations → Operational events opens `/admin/events`. Administrators can search literal event keys/summaries, filter severity (`all`, `info`, `warning`, `critical`) and state (`all`, `open`, `acknowledged`, `resolved`), then acknowledge/resolve/reopen with a required reason. Browser responses require CSRF, use existing audited state rules and return to the unfiltered list.
+
+GET `/api/openservice/event-search` exposes the same selection with `q` (up to 200 characters, ASCII case-insensitive), `severity`, `state`, `offset` (0–1000000) and `limit` (1–100, default 100). Returns `result`, `total`, echoed filters, offsets and limit; `next_offset=-1` ends paging. Unknown/duplicate/invalid arguments fail 400. Existing `/api/openservice/operations/events` remains unchanged. Offset pages can move with concurrent ingestion. Retained events may outlive their configuration item; response actions still require that item. No automated remediation or root-cause inference is implied.

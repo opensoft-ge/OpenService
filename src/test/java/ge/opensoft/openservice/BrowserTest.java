@@ -25,6 +25,9 @@ import java.util.*;
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
     @Test
+    void operationalEventSearchAndResponsesWorkInBothThemes() throws Exception { EventSearchBrowserAcceptance.run(this); }
+
+    @Test
     void calendarManagementWorksInBothThemes() throws Exception { CalendarFormsBrowserAcceptance.run(this); }
 
     @Test

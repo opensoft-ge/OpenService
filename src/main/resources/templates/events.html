@@ -1,0 +1,23 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main class="platform-page">
+<a class="back-link" href="/admin/operations">Back to operations</a>
+<section class="page-heading"><div><span class="eyebrow">OPERATIONS</span><h1>Operational events</h1><p>Find retained events and record an operator response.</p></div></section>
+<section class="panel"><form class="record-form" method="get" action="/admin/events">
+<label>Search events<input name="q" maxlength="200" th:value="${search.query}"></label>
+<label for="event-severity">Severity</label><select id="event-severity" name="severity"><option th:each="severity:${ {'all','info','warning','critical'} }" th:value="${severity}" th:selected="${severity==search.severity}" th:text="${#strings.capitalize(severity)}"></option></select>
+<label for="event-state">Event state</label><select id="event-state" name="state"><option th:each="state:${ {'all','open','acknowledged','resolved'} }" th:value="${state}" th:selected="${state==search.state}" th:text="${#strings.capitalize(state)}"></option></select>
+<label>Events per page<input type="number" name="limit" min="1" max="100" th:value="${search.limit}"></label>
+<button class="button primary">Find events</button> <a href="/admin/events">Clear filters</a></form></section>
+<section class="panel retention-panel"><h2>Matching events</h2><p th:if="${#lists.isEmpty(search.result)}">No events match these filters.</p>
+<article th:each="event:${search.result}" class="record-form" th:attr="data-event=${event.event_key}">
+<h3 class="account-name" th:text="${event.event_key}"></h3><p class="knowledge-content" th:text="${event.summary}"></p>
+<p><span th:text="${event.severity}"></span> · <span th:text="${event.state}"></span> · <span th:text="${event.occurrences}"></span> occurrences</p>
+<a th:href="@{/record/cmdb_ci/{id}(id=${event.asset_id})}">Open configuration item</a>
+<form method="post" action="/admin/events" class="record-form"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="key" th:value="${event.event_key}">
+<label>Response reason<textarea name="reason" required maxlength="2000"></textarea></label>
+<button th:if="${event.state=='open'}" class="button" name="operation" value="acknowledge">Acknowledge event</button>
+<button th:if="${event.state!='resolved'}" class="button" name="operation" value="resolve">Resolve event</button>
+<button th:if="${event.state!='open'}" class="button" name="operation" value="reopen">Reopen event</button></form></article></section>
+<nav class="pagination" aria-label="Event pages"><span th:text="${search.total+' matching events'}"></span><div>
+<a th:if="${search.offset>0}" th:href="@{/admin/events(q=${search.query},severity=${search.severity},state=${search.state},offset=${search.previous_offset},limit=${search.limit})}">Previous events</a>
+<a th:if="${search.next_offset>=0}" th:href="@{/admin/events(q=${search.query},severity=${search.severity},state=${search.state},offset=${search.next_offset},limit=${search.limit})}">Next events</a></div></nav>
+</main></html>
