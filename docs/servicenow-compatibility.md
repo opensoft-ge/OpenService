@@ -1,5 +1,11 @@
 # ServiceNow compatibility ledger
 
+## Diverse batch checkpoint — 16 November 2026
+
+[OS-D20-01 through OS-D20-20 contracts, allocation, acceptance and exact coverage](paired-cycles-diverse20-2026-11-16.md) extend the native platform engines; an entry is implemented only after its recorded gates pass. Historical entries below retain their original assessment dates. These slices do not establish full ServiceNow conformance or production qualification.
+
+OS-DISC-SIGNED-PROMOTION is **unverified P2/M2**, mapped to OS-PARITY-09/10: current Brazil release notes identify signed application commits, but the underlying technical link could not be retrieved. The [roadmap](roadmap.md#active-diverse-batch--16-november-2026) records dependencies and rejection/atomicity acceptance; no signing implementation is claimed. Knowledge recovery, delayed jobs, SLA cancellation, event acknowledgment and alias retirement merge into their existing parity dimensions.
+
 Current checkpoint, 16 November 2026: the coordinated [platform expansion](platform-expansion-2026-11-16.md) extends the earlier 20-cycle batch with durable business jobs, identity synchronization, account lifecycle controls, SLA calendars, knowledge publishing, dependencies/events, saved reports and governed provider assistance. These are bounded local contracts; parent parity areas remain partial and M1–M3 remain unmet. Earlier checkpoints are historical.
 
 ## OS-EXP-01 through OS-EXP-16 — coordinated platform expansion

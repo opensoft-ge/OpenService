@@ -1,5 +1,11 @@
 # OpenService adoption roadmap and build order
 
+## Active diverse batch — 16 November 2026
+
+The [20-round allocation and evidence report](paired-cycles-diverse20-2026-11-16.md) starts at `7189162`, covers all 16 workstreams in planning, and prioritizes underrepresented business/operational journeys. Planned work is not implemented until the individual report entry records passing acceptance, exact coverage and its local commit. M1–M3 remain unmet.
+
+Discovery checkpoint: current Brazil release notes, knowledge version recovery, schedules, SLA cancellation, operational alert acknowledgment and connector aliases were reviewed on 16 November. Merge these into existing OS-PARITY-02/03/04/05 items rather than duplicating parent features. **OS-DISC-SIGNED-PROMOTION — unverified, P2/M2, OS-PARITY-09/10:** release notes describe signatures on application commits; the linked technical page was inaccessible. Local configuration packages have validation but no verified signed-artifact trust policy. Depends on trusted signing keys, revocation and canonical package verification; acceptance must reject altered/untrusted packages without partial promotion. Research source and limitations are in the batch report. Next rotation: signing details, attachment governance and federation.
+
 Current checkpoint, 16 November 2026: the coordinated [platform expansion](platform-expansion-2026-11-16.md) extends the earlier 20-cycle batch with durable business jobs, identity synchronization, account lifecycle controls, SLA calendars, knowledge publishing, dependencies/events, saved reports and governed provider assistance. These are bounded local contracts; parent parity areas remain partial and M1–M3 remain unmet. Earlier checkpoints are historical.
 
 Initial assessment: 13 November 2026 at `9e636aa`, refreshed through platform cycle 20 and the reusable configuration, analytics and recovery tranches using implementation, test and container evidence. This is the implementation priority document for future OpenService work. The [compatibility ledger](servicenow-compatibility.md) describes supported behavior; this roadmap determines what to build next.

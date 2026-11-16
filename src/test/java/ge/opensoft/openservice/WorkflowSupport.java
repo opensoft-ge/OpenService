@@ -61,6 +61,9 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void impactTraversalEnforcesAnExactVisibleBound() throws Exception { DiverseBatchAcceptance.impact(this); }
+
+    @Test
     void platformOperationsShareRealAuthenticationAndPersistence() throws Exception { PlatformOperationsAcceptance.run(this); }
 
     @Test

@@ -54,7 +54,7 @@ final class AssetOperations {
         var pending = new ArrayDeque<String>();
         pending.add(id);
         var result = new ArrayList<Map<String, Object>>();
-        while (!pending.isEmpty() && seen.size() <= 100) {
+        while (!pending.isEmpty()) {
             String next = pending.removeFirst();
             var params = new ArrayList<Object>();
             params.add(next);
@@ -65,16 +65,18 @@ final class AssetOperations {
                                 + " r.sys_id=d.dependent AND r.\"table\"='cmdb_ci' WHERE"
                                 + " d.dependency=? AND "
                                     + access
-                                    + " ORDER BY r.seq LIMIT 101",
+                                    + " ORDER BY r.seq LIMIT 102",
                             params.toArray())) {
                 String target = row.get("sys_id").toString();
                 if (seen.add(target)) {
+                    if (result.size() == 100)
+                        return map("source", id, "impacted", result, "truncated", true);
                     result.add(FieldAccess.serialize(db, row));
                     pending.add(target);
                 }
             }
         }
-        return map("source", id, "impacted", result, "truncated", !pending.isEmpty());
+        return map("source", id, "impacted", result, "truncated", false);
     }
 
     static Map<String, Object> event(Store.Db db, String actor, Object input, long now)
