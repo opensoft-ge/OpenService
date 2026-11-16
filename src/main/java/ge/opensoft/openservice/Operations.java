@@ -123,6 +123,8 @@ final class Operations {
                 return ApprovalReminders.send(db, actor, id, body);
             case "assist":
                 return ProviderAssist.summarize(store, db, actor, body);
+            case "assist-preview":
+                return ProviderAssist.preview(store, db, actor, body);
             case "password-policy":
                 PasswordPolicies.replace(db, actor, body);
                 break;

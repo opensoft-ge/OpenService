@@ -13,6 +13,33 @@ import java.util.*;
 final class ProviderAssist {
     private ProviderAssist() {}
 
+    static Map<String, Object> grounding(Store store, Store.Db db, String table, String id)
+            throws Exception {
+        var record = Service.record(db, table, id);
+        var visible = FieldAccess.serialize(db, record);
+        var fields = new LinkedHashMap<String, Object>();
+        for (String field : store.environment
+                .getProperty("AI_ALLOWED_FIELDS", "short_description,description").split(","))
+            if (visible.containsKey(field)) fields.put(field, visible.get(field));
+        String content = JSON.writeValueAsString(fields);
+        require(!fields.isEmpty() && content.length() <= 16000,
+                "No eligible grounding or selected content exceeds the limit");
+        return map("record_revision", record.get("revision"), "fields", fields, "content", content);
+    }
+
+    static Map<String, Object> preview(Store store, Store.Db db, String actor, Object input)
+            throws Exception {
+        Service.requireAccountAdministrator(db, actor);
+        var body = object(input);
+        require(body.keySet().equals(Set.of("table", "record_id")), "Provide table and record_id");
+        String table = WorkJobs.text(body.get("table"), 80), id = WorkJobs.text(body.get("record_id"), 32);
+        var selected = grounding(store, db, table, id);
+        return map("record_id", id, "record_revision", selected.get("record_revision"),
+                "grounding", selected.get("fields"), "content", selected.get("content"),
+                "provider_alias", store.environment.getProperty("AI_CONNECTOR_ALIAS", ""),
+                "model", store.environment.getProperty("AI_MODEL", ""), "external_request_sent", false);
+    }
+
     static Map<String, Object> summarize(Store store, Store.Db db, String actor, Object input)
             throws Exception {
         Service.requireAccountAdministrator(db, actor);
@@ -27,18 +54,9 @@ final class ProviderAssist {
                 "Explicit consent to send selected record fields is required");
         String table = WorkJobs.text(body.get("table"), 80),
                 id = WorkJobs.text(body.get("record_id"), 32);
-        var record = Service.record(db, table, id);
-        var visible = FieldAccess.serialize(db, record);
-        var grounding = new LinkedHashMap<String, Object>();
-        for (String field :
-                store.environment
-                        .getProperty("AI_ALLOWED_FIELDS", "short_description,description")
-                        .split(","))
-            if (visible.containsKey(field)) grounding.put(field, visible.get(field));
-        String content = JSON.writeValueAsString(grounding);
-        require(
-                !grounding.isEmpty() && content.length() <= 16000,
-                "No eligible grounding or selected content exceeds the limit");
+        var selected = grounding(store, db, table, id);
+        var grounding = object(selected.get("fields"));
+        String content = selected.get("content").toString();
         String alias = store.environment.getProperty("AI_CONNECTOR_ALIAS", ""),
                 model = store.environment.getProperty("AI_MODEL", "");
         require(!model.isBlank(), "An AI model must be configured");
@@ -85,7 +103,7 @@ final class ProviderAssist {
                         "record_id",
                         id,
                         "revision",
-                        record.get("revision"),
+                        selected.get("record_revision"),
                         "provider_alias",
                         alias,
                         "fields",
@@ -96,7 +114,7 @@ final class ProviderAssist {
                 "record_id",
                 id,
                 "record_revision",
-                record.get("revision"),
+                selected.get("record_revision"),
                 "fields",
                 new ArrayList<>(grounding.keySet()),
                 "requires_review",

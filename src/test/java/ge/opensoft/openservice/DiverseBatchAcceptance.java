@@ -234,6 +234,28 @@ final class DiverseBatchAcceptance {
         }
     }
 
+    static void aiPreview(WorkflowSupport h) throws Exception {
+        h.account("PreviewReader","reader");
+        String record = h.add("incident").get("sys_id").toString();
+        var request = map("table","incident","record_id",record);
+        assertEquals(401,h.json("POST",ROOT+"assist-preview",request,null).statusCode());
+        assertEquals(403,h.json("POST",ROOT+"assist-preview",request,auth("PreviewReader")).statusCode());
+        assertEquals(400,h.json("POST",ROOT+"assist-preview",map(),auth("admin")).statusCode());
+        assertEquals(404,h.json("POST",ROOT+"assist-preview",map("table","incident","record_id",id()),auth("admin")).statusCode());
+        var preview = PlatformOperationsAcceptance.post(h,"assist-preview",request);
+        assertEquals(false,preview.get("external_request_sent"));
+        assertEquals(record,preview.get("record_id"));
+        var fields = object(preview.get("grounding"));
+        assertTrue(fields.containsKey("short_description"));
+        assertFalse(fields.containsKey("assigned_to"));
+        assertFalse(fields.containsKey("number"));
+        assertEquals(JSON.writeValueAsString(fields),preview.get("content"));
+        assertEquals(503,h.json("POST",ROOT+"assist",map("table","incident","record_id",record,"allow_external",true),auth("admin")).statusCode());
+        try(var db = h.store.open()) {
+            assertEquals(0,db.count("SELECT COUNT(*) FROM os_security_event WHERE action='ai.summary_generated'"));
+        }
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

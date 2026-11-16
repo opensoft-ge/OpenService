@@ -244,8 +244,12 @@ class PlatformRuntimeTest {
                 env.setProperty("AI_ALLOWED_FIELDS", "not_present");
                 bad(() -> ProviderAssist.summarize(store, db, actor, request));
                 env.setProperty("AI_ALLOWED_FIELDS", "short_description,not_present");
+                String beforePreview = captured.get();
+                var preview = ProviderAssist.preview(store, db, actor, map("table","incident","record_id",id));
+                assertEquals(beforePreview, captured.get());
                 var draft =
                         object(Operations.execute(store, db, actor, "assist", "", "POST", request));
+                assertEquals(preview.get("content"), object(objects(object(JSON.readValue(captured.get(),Object.class)).get("messages")).getLast()).get("content"));
                 assertEquals("Grounded draft", draft.get("draft"));
                 assertEquals(true, draft.get("requires_review"));
                 assertEquals(0, draft.get("actions_executed"));
