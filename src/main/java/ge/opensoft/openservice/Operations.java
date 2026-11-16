@@ -156,6 +156,8 @@ final class Operations {
                         System.currentTimeMillis());
                 break;
             case "knowledge":
+                if ("restore".equals(body.get("operation")))
+                    return PublishedKnowledge.restore(db, actor, id, body);
                 require(body.keySet().equals(Set.of("operation")), "Provide operation");
                 if ("publish".equals(body.get("operation")))
                     return PublishedKnowledge.publish(db, actor, id);

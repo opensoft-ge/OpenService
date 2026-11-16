@@ -291,6 +291,41 @@ final class DiverseBatchAcceptance {
         }
     }
 
+    static void restoreKnowledge(WorkflowSupport h) throws Exception {
+        h.account("RestoreRequester","requester");
+        String id=h.add("kb_knowledge").get("sys_id").toString(),path="/api/now/table/kb_knowledge/"+id,resource="knowledge/"+id;
+        assertEquals(200,h.json("PATCH",path,map("text","Original public content"),auth("admin")).statusCode());
+        PlatformOperationsAcceptance.post(h,resource,map("operation","publish"));
+        assertEquals(200,h.json("PATCH",path,map("text","Second publication"),auth("admin")).statusCode());
+        PlatformOperationsAcceptance.post(h,resource,map("operation","publish"));
+        PlatformOperationsAcceptance.post(h,resource,map("operation","retire"));
+        assertEquals(200,h.json("PATCH",path,map("text","PRIVATE DRAFT"),auth("admin")).statusCode());
+        var command=map("operation","restore","version",1);
+        assertEquals(403,h.json("POST",ROOT+resource,command,auth("RestoreRequester")).statusCode());
+        for(var bad : List.of(map("operation","restore"),map("operation","restore","version","1"),map("operation","restore","version",0)))
+            assertEquals(400,h.json("POST",ROOT+resource,bad,auth("admin")).statusCode());
+        assertEquals(404,h.json("POST",ROOT+resource,map("operation","restore","version",999),auth("admin")).statusCode());
+        try(var db=h.store.open()) {
+            db.update("INSERT INTO os_record_access(record_id,visibility,owner_id,group_id) VALUES(?,'private',?,'')",id,RecordAccess.owner(db,"admin"));
+            db.connection.commit();
+        }
+        assertEquals(400,h.json("POST",ROOT+resource,command,auth("admin")).statusCode());
+        try(var db=h.store.open()) { db.update("DELETE FROM os_record_access WHERE record_id=?",id); db.connection.commit(); }
+        assertEquals(3,PlatformOperationsAcceptance.post(h,resource,command).get("version"));
+        var published=objects(parsed(h.get("/api/openservice/knowledge",auth("RestoreRequester"))).get("result"));
+        assertEquals("Original public content",published.getFirst().get("content"));
+        assertFalse(published.toString().contains("PRIVATE DRAFT"));
+        try(var db=h.store.open()) {
+            assertEquals("PRIVATE DRAFT",object(db.one("SELECT data FROM os_record WHERE sys_id=?",id).get("data")).get("text"));
+            assertEquals(2,db.count("SELECT COUNT(*) FROM os_publication WHERE article_id=? AND retired=1",id));
+            assertEquals(1,db.count("SELECT COUNT(*) FROM os_event WHERE record_id=? AND action='knowledge.restored'",id));
+            db.update("INSERT INTO os_publication(article_id,version,title,content,published_at) VALUES(?,?,?,?,?)",id,Integer.MAX_VALUE,"Limit","Limit",now());
+            db.connection.commit();
+        }
+        assertEquals(400,h.json("POST",ROOT+resource,command,auth("admin")).statusCode());
+        assertEquals(400,h.json("POST",ROOT+resource,map("operation","publish"),auth("admin")).statusCode());
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

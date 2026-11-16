@@ -19,13 +19,7 @@ final class PublishedKnowledge {
         var data = object(FieldAccess.serialize(db, item));
         String title = WorkJobs.text(data.get("short_description"), 1000),
                 content = WorkJobs.text(data.get("text"), 100000);
-        int version =
-                (int)
-                                db.count(
-                                        "SELECT COALESCE(MAX(version),0) FROM os_publication WHERE"
-                                            + " article_id=?",
-                                        id)
-                        + 1;
+        int version = nextVersion(db, id);
         db.update(
                 "INSERT INTO os_publication(article_id,version,title,content,published_at)"
                     + " VALUES(?,?,?,?,?)",
@@ -41,6 +35,32 @@ final class PublishedKnowledge {
                 "knowledge.published",
                 map("version", version));
         return map("article_id", id, "version", version);
+    }
+
+    static int nextVersion(Store.Db db, String id) throws SQLException {
+        long latest = db.count("SELECT COALESCE(MAX(version),0) FROM os_publication WHERE article_id=?", id);
+        require(latest < Integer.MAX_VALUE, "Publication version limit reached");
+        return (int)latest + 1;
+    }
+
+    static Map<String,Object> restore(Store.Db db, String actor, String id, Object input) throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        var item = Service.record(db,"kb_knowledge",id);
+        require(RecordAccess.status(db,id).get("visibility").equals("workspace"),
+                "Private or group articles cannot be published to all requesters");
+        var body = object(input);
+        require(body.keySet().equals(Set.of("operation","version")),"Provide operation and version");
+        require(body.get("version") instanceof Integer,"Version must be an integer");
+        int source = (Integer)body.get("version");
+        require(source>0,"Version must be positive");
+        var previous = db.one("SELECT title,content FROM os_publication WHERE article_id=? AND version=?",id,source);
+        if(previous==null) throw new Failure(404,"Publication version not found");
+        int version=nextVersion(db,id);
+        db.update("INSERT INTO os_publication(article_id,version,title,content,published_at) VALUES(?,?,?,?,?)",
+                id,version,previous.get("title"),previous.get("content"),now());
+        Service.audit(db,item,Service.account(db,actor).get("name").toString(),"knowledge.restored",
+                map("source_version",source,"version",version));
+        return map("article_id",id,"version",version,"source_version",source);
     }
 
     static void retire(Store.Db db, String actor, String id) throws SQLException {
