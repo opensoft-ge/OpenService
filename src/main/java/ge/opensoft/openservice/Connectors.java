@@ -49,6 +49,17 @@ final class Connectors {
         return db.one("SELECT alias,origin,revision FROM os_connector WHERE alias=?", alias);
     }
 
+    static void retire(Store.Db db, String actor, String alias, Object input) throws Exception {
+        Service.requireAccountAdministrator(db, actor);
+        var body = object(input);
+        require(body.keySet().equals(Set.of("reason")), "Provide a retirement reason");
+        WorkJobs.text(alias, 80);
+        String reason = WorkJobs.text(body.get("reason"), 2000);
+        if (db.update("DELETE FROM os_connector WHERE alias=?", alias) != 1)
+            throw new Failure(404, "Connector alias not found");
+        SecurityEvents.record(db, actor, actor, "connector.retired", map("alias", alias, "reason", reason));
+    }
+
     static Map<String, Object> read(Store store, Store.Db db, Object input) throws Exception {
         var body = object(input);
         require(body.keySet().equals(Set.of("alias", "path")), "Provide alias and path");

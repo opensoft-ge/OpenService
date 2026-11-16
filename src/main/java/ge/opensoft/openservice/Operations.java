@@ -93,6 +93,10 @@ final class Operations {
                     .rows();
         }
         Service.requireAccountAdministrator(db, actor);
+        if (resource.equals("connectors") && method.equals("DELETE")) {
+            Connectors.retire(db, actor, id, input);
+            return map("removed", true);
+        }
         if (method.equals("GET"))
             return switch (resource) {
                 case "jobs" -> WorkJobs.list(db, actor);

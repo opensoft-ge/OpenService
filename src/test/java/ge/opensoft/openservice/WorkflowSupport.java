@@ -64,6 +64,9 @@ abstract class WorkflowSupport {
     void impactTraversalEnforcesAnExactVisibleBound() throws Exception { DiverseBatchAcceptance.impact(this); }
 
     @Test
+    void retiredConnectorsCannotExecuteQueuedWork() throws Exception { DiverseBatchAcceptance.retireConnector(this); }
+
+    @Test
     void platformOperationsShareRealAuthenticationAndPersistence() throws Exception { PlatformOperationsAcceptance.run(this); }
 
     @Test
