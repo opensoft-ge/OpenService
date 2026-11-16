@@ -350,7 +350,9 @@ public class WebController {
                         .matcher(path);
         if (platform.matches()) {
             method(method, "GET", "POST", "DELETE");
-            if (!platform.group(1).equals("knowledge") || !method.equals("GET")) c.noQuery();
+            boolean historyQuery=platform.group(1).equals("knowledge") && method.equals("GET");
+            boolean clockQuery=platform.group(1).equals("clocks") && platform.group(2)!=null && method.equals("GET");
+            if(!historyQuery && !clockQuery) c.noQuery();
             String actor = c.user.get("user_id").toString();
             return json(
                     map(

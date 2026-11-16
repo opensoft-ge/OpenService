@@ -413,6 +413,49 @@ final class DiverseBatchAcceptance {
         }
     }
 
+    static void recordClocks(WorkflowSupport h) throws Exception {
+        h.account("ClockViewer","reader");
+        String record=h.add("incident").get("sys_id").toString();
+        String resource="clocks/"+record+"?table=incident",path=ROOT+resource;
+        assertEquals(401,h.get(path,null).statusCode());
+        assertEquals(400,h.get(ROOT+"clocks/"+record,auth("admin")).statusCode());
+        assertEquals(400,h.get(path+"&extra=1",auth("admin")).statusCode());
+        assertEquals(400,h.get(path+"&table=problem",auth("admin")).statusCode());
+        assertEquals(400,h.get(ROOT+"clocks?table=incident",auth("admin")).statusCode());
+        assertEquals(404,h.get(ROOT+"clocks/"+id()+"?table=incident",auth("admin")).statusCode());
+        assertTrue(objects(result(h,resource).get("clocks")).isEmpty());
+        PlatformOperationsAcceptance.post(h,"calendars",map("name","inspection","calendar",PlatformFoundationTest.calendar()));
+        String first=PlatformOperationsAcceptance.post(h,"clocks",map("table","incident","record_id",record,"calendar","inspection","minutes",120)).get("sla_id").toString();
+        var visible=object(parsed(h.get(path,auth("ClockViewer"))).get("result"));
+        assertEquals(false,visible.get("truncated"));
+        assertEquals(first,objects(visible.get("clocks")).getFirst().get("sla_id"));
+        assertFalse(visible.toString().contains("owner_id"));
+        assertEquals(403,h.get(ROOT+"clocks",auth("ClockViewer")).statusCode());
+        try(var db=h.store.open()) {
+            for(int i=0;i<100;i++) db.update("INSERT INTO os_sla(sla_id,table_name,record_id,definition,remaining_ms,last_tick,state,owner_id) SELECT ? ,table_name,record_id,definition,remaining_ms,last_tick,state,owner_id FROM os_sla WHERE sla_id=?",id(),first);
+            db.connection.commit();
+        }
+        var limited=object(parsed(h.get(path,auth("ClockViewer"))).get("result"));
+        assertEquals(100,objects(limited.get("clocks")).size());
+        assertEquals(true,limited.get("truncated"));
+        try(var db=h.store.open()) {
+            db.update("INSERT INTO os_record_access(record_id,visibility,owner_id,group_id) VALUES(?,'private',?,'')",record,RecordAccess.owner(db,"admin"));
+            db.connection.commit();
+        }
+        assertEquals(404,h.get(path,auth("ClockViewer")).statusCode());
+        assertEquals(200,h.get(path,auth("admin")).statusCode());
+        h.account("OwnClockRequester","requester");
+        h.account("OtherClockRequester","requester");
+        var request=h.json("POST","/api/openservice/requests",map("short_description","Own clock"),auth("OwnClockRequester"));
+        assertEquals(201,request.statusCode(),html(request));
+        String requestId=object(parsed(request).get("result")).get("sys_id").toString();
+        PlatformOperationsAcceptance.post(h,"clocks",map("table","sc_request","record_id",requestId,"calendar","inspection","minutes",120));
+        String requestPath=ROOT+"clocks/"+requestId+"?table=sc_request";
+        assertEquals(200,h.get(requestPath,auth("OwnClockRequester")).statusCode());
+        assertEquals(404,h.get(requestPath,auth("OtherClockRequester")).statusCode());
+        assertEquals(404,h.get(path,auth("OwnClockRequester")).statusCode());
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

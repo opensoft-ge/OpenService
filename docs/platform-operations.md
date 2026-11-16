@@ -61,3 +61,4 @@ These are OpenService contracts, not ServiceNow wire compatibility. Routes below
 
 Numeric reports use `/api/openservice/analytics/{table}` with optional exact `minimum`/`maximum`, also available in Analytics and saved definitions. See [analytics](analytics.md).
 | GET `report-history/{report_id}` | Authenticated viewers inspect their own latest 100 successful executions of a currently visible saved report. Duration and definition digest only; execution still rechecks live data permissions. Deleting the report removes history. |
+| GET `clocks/{record_id}?table={table}` | Any authenticated viewer with current access to that record, including its requester, sees up to 100 clock summaries and `truncated`. Values reflect persisted `last_tick`; GET does not advance a clock. The global list is administrator-only. |

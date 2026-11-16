@@ -83,6 +83,8 @@ final class Operations {
         }
         if (resource.equals("dependencies") && method.equals("GET"))
             return AssetOperations.impact(db, id);
+        if(resource.equals("clocks") && method.equals("GET") && !id.isEmpty())
+            return ServiceClocks.forRecord(db,id,input);
         if (resource.equals("references") && method.equals("GET")) {
             require(!id.isEmpty(), "Specify a table");
             return Service.page(

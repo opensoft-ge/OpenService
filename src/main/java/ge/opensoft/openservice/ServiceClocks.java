@@ -91,6 +91,17 @@ final class ServiceClocks {
         }
     }
 
+    static Map<String,Object> forRecord(Store.Db db,String id,Object input) throws SQLException {
+        var args=object(input);
+        require(args.keySet().equals(Set.of("table")),"Provide only the record table");
+        String table=WorkJobs.text(args.get("table"),80);
+        Service.record(db,table,id);
+        var rows=db.all("SELECT sla_id,state,remaining_ms,last_tick,breached_at FROM os_sla WHERE table_name=? AND record_id=? ORDER BY last_tick DESC,sla_id LIMIT 101",table,id);
+        boolean more=rows.size()>100;
+        if(more) rows.removeLast();
+        return map("table",table,"record_id",id,"clocks",rows,"truncated",more);
+    }
+
     static void control(Store.Db db, String actor, String id, String operation, long now)
             throws SQLException {
         Service.requireAccountAdministrator(db, actor);

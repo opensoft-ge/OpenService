@@ -539,3 +539,5 @@ Discovery follow-up, 2026-11-16: [Brazil signature status](https://www.serviceno
 **OS-D20-13 implemented**: Workstream 6, PARITY-02/03/10: administrator inspection of safe job receipts, with kind-specific metadata and controlled unreadable states. Provider bodies, recipients and encrypted envelopes remain excluded. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-14 implemented**: Workstream 14, PARITY-07: retain 100 successful executions per report/viewer, with definition digest and duration, current report visibility and deletion cleanup. No result caching or cross-user activity exposure. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
+
+**OS-D20-15 implemented**: Workstream 8, PARITY-02: per-record clock inspection respects current record and requester boundaries, returns persisted timing and explicit truncation. Global administration remains restricted. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).

@@ -62,6 +62,9 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void recordClockInspectionUsesLiveRecordPermissions() throws Exception { DiverseBatchAcceptance.recordClocks(this); }
+
+    @Test
     void savedReportHistoryIsBoundedAndIsolatedByViewer() throws Exception { DiverseBatchAcceptance.reportHistory(this); }
 
     @Test
