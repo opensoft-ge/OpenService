@@ -61,6 +61,19 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void deploymentPreflightIsRestrictedAndActionable() throws Exception {
+        account("PreflightReader","reader");
+        String path="/api/openservice/operations/preflight";
+        assertEquals(401,get(path,null).statusCode());
+        assertEquals(403,get(path,auth("PreflightReader")).statusCode());
+        var result=DiverseBatchAcceptance.result(this,"preflight");
+        assertEquals(7,objects(result.get("checks")).size());
+        assertEquals(false,result.get("shared_release_qualified"));
+        assertTrue(((Number)result.get("actions_required")).intValue()>0);
+        assertEquals(405,json("POST",path,map(),auth("admin")).statusCode());
+    }
+
+    @Test
     void aiGroundingCanBeInspectedBeforeExternalConsent() throws Exception { DiverseBatchAcceptance.aiPreview(this); }
 
     @Test

@@ -113,6 +113,7 @@ final class Operations {
                                 "SELECT * FROM os_operational_event ORDER BY last_seen DESC LIMIT"
                                         + " 100");
                 case "qualification" -> qualification(store, db);
+                case "preflight" -> DeploymentPreflight.inspect(store, db);
                 case "password-policy" -> PasswordPolicies.status(db);
                 default -> throw new Failure(405, "GET is not supported here");
             };
