@@ -18,7 +18,7 @@ Stack checked on 2026-11-17: [Spring Boot system requirements](https://docs.spri
 | 4. Permissions | 7 | Usable delegated audit-viewer journey; preserve separation from administration. |
 | 5. Audit/governance | 13 | Portable retained audit evidence and explicit verification limits. |
 | 6. Jobs/notifications | 6, 19 | Search/paginate personal notification history; operators find actionable queued/failed work and recover it. |
-| 7. Workflow/approvals | 5, 17 | Complete delegation management and actionable pending-approval diagnosis/reminder journeys. Reconcile existing delegation before implementation. |
+| 7. Workflow/approvals | 5, 17 | Automatic review-assignment notices and actionable pending-approval diagnosis/reminder journeys. Individual delegation already exists; timed delegation remains open. |
 | 8. SLAs | 3, 15 | Browser management of existing holiday-aware calendars and explainable business-time/deadline previews; preserve persisted clock semantics. |
 | 9. Catalogue/knowledge | 1, 11 | Searchable requester publications and administrator version comparison. |
 | 10. Integrations | None | Existing bounded connector runtime is retained. OAuth/federation needs a complete provider contract; another credential knob has lower value than the selected journeys. |
@@ -99,3 +99,23 @@ Final gates: 721 tests, zero failures/errors/skips; whole-project Java 6841/6841
 | WebController.java | 2106/2106 | 1077/1077 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Search operational events and manage responses in the browser`. No push.
+
+## Round 5 — automatic review-assignment notifications
+
+Replanned before editing: individual delegation and its browser form already exist; date-bounded delegation requires a larger authority model. Select the missing assignment-notification journey instead (`OS-N17-05`, workstream 7 / OS-PARITY-02): after a successful review request or delegation, atomically persist an in-app notice for the newly assigned reviewer, honoring their business-notification preference. Notices contain only the opaque approval reference and navigation guidance, never record fields or the private review reason. Existing notes remain historical; notices do not confer access. A later reassignment back to the same reviewer produces a new unread notice. No SMTP delivery, timed delegation or automatic approval claim. Alternatives: notification history search and audit-viewer browser grants.
+
+Official evidence: [approval notifications](https://www.servicenow.com/docs/r/servicenow-platform/approvals/c_ReceiveNotifications.html) and [granular delegation creation](https://www.servicenow.com/docs/r/employee-service-management/granular-delegation/create-delegation-admin.html), Brazil updated 2026-09-10, retrieved 2026-11-17. Assignment notifications are established vendor behavior; this slice uses OpenService in-app delivery rather than native email semantics. Merge date-bounded/table-conditional delegation and confidential-notification exclusions into the existing delegation gap, missing P1; current record authority must be rechecked and delegation must not grant underlying access. Next research: notification preferences/history.
+
+Acceptance: initial and delegated recipients receive notices only after successful authorized transitions; rejected/duplicate requests have no notice side effects; opt-out is respected; reassignment creates fresh unread evidence; rollback and restart persistence; notification → My approvals → decision browser journey with unchanged access enforcement and both themes. Results: selected acceptance and the full regression/coverage gate passed.
+
+Both database regressions first observed zero assignment notices; targeted acceptance then passed, including preference suppression, reassignment, rejection, rollback and restart. Existing manual-reminder assertions now explicitly distinguish one assignment notice from one deduplicated reminder. The notification → acknowledgement → My approvals → decision browser journey passed; desktop-light/mobile-dark screenshots and accessibility were inspected. Final gates passed.
+
+Rebalance checkpoint 5 (five implemented and verified feature rounds): rounds 1–5 cover workstreams 9, 15, 8, 13 and 7, one each. Round 3 exposed existing calendar semantics; round 5 replaced already-built delegation with missing assignment notices. No QA repair counted as a feature. Continue rounds 6–10 across notifications (6), audit grants (4), saved reports (14), profiles (3) and migration reconciliation (11). Shared deployment, enterprise identity and integration-provider qualification deferrals remain explicit; no concentration exception is needed.
+
+Final gates: 723 tests, zero failures/errors/skips; whole-project Java 6846/6846 lines, 3639/3639 branches, 399/399 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| Approvals.java | 214/214 | 112/112 | 12/12 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Notify reviewers atomically on assignment and delegation`. No push.

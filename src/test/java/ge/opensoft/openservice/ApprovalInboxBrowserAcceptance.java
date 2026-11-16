@@ -50,6 +50,21 @@ final class ApprovalInboxBrowserAcceptance {
                 var context = browser.newContext()) {
             var page = context.newPage();
             h.login(page, name);
+            page.getByRole(AriaRole.LINK,new Page.GetByRoleOptions().setName("Notifications").setExact(true)).click();
+            assertThat(page.locator("article")).hasCount(1);
+            assertThat(page.locator("article")).containsText(approval);
+            assertThat(page.locator("article")).not().containsText("Review safely");
+            ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/approval-assignment-notice-light.png")).setFullPage(true));
+            page.setViewportSize(390,844);
+            page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();
+            ReleaseBrowserAcceptance.accessible(page);
+            page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/approval-assignment-notice-dark.png")).setFullPage(true));
+            page.setViewportSize(1280,720);
+            page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();
+            page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Acknowledge").setExact(true)).click();
+            assertThat(page.getByText("Acknowledged",new Page.GetByTextOptions().setExact(true))).isVisible();
+
             page.getByRole(
                             AriaRole.LINK,
                             new Page.GetByRoleOptions().setName("My approvals").setExact(true))

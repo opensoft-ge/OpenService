@@ -689,7 +689,9 @@ final class DiverseBatchAcceptance {
         assertEquals(map("delivered", true, "duplicate", false), PlatformOperationsAcceptance.post(h, endpoint, map()));
         assertEquals(map("delivered", true, "duplicate", true), PlatformOperationsAcceptance.post(h, endpoint, map()));
         var notices = objects(parsed(h.get("/api/openservice/me/notifications", auth("ReminderReviewer"))).get("result"));
-        assertEquals(1, notices.size());
+        assertEquals(2, notices.size());
+        assertEquals(1,notices.stream().filter(n->n.get("message").toString().startsWith("A review is waiting")).count());
+        assertEquals(1,notices.stream().filter(n->n.get("message").toString().startsWith("A review was assigned")).count());
         assertTrue(notices.getFirst().get("message").toString().contains(approval));
         try (var db = h.store.open()) {
             assertEquals(1, db.count("SELECT COUNT(*) FROM os_event WHERE action='approval.reminded' AND record_id=?", record));

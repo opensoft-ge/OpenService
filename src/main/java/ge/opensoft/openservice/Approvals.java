@@ -191,6 +191,7 @@ final class Approvals {
                 actor.get("name").toString(),
                 "approval.requested",
                 map("approval_id", approval));
+        notifyAssignment(db,approval,reviewer.get("name").toString());
         return publicRow(
                 db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
                 item,
@@ -318,10 +319,16 @@ final class Approvals {
                         row.get("approver_id"),
                         "to",
                         target.get("user_id")));
+        notifyAssignment(db,approval,target.get("name").toString());
         return publicRow(
                 db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
                 item,
                 definition);
+    }
+
+    static void notifyAssignment(Store.Db db,String approval,String reviewer) throws SQLException {
+        Notifications.deliver(db,id(),map("username",reviewer,"message",
+                "A review was assigned to you. Open My approvals for your current reviews. Reference: "+approval),System.currentTimeMillis());
     }
 
     static Map<String, Object> decide(

@@ -2,7 +2,7 @@
 
 A pending review can be delegated by its assigned reviewer or an administrator through the review form or delegate API. The replacement must be active, eligible, able to see the current proposal, different from the requester/current reviewer, and not already reviewing that proposal. The original requester and record revision remain bound; delegation is audited. See [platform expansion](platform-expansion-2026-11-16.md).
 
-OpenService records separate review evidence for a proposed state change and can enforce a configured minimum number of current peer approvals before entering a state. Decisions do not automatically execute actions. Notifications, delegation, mandatory named responses and deadlines remain OS-PARITY-02 follow-ups. This is an original local contract, not a replica of ServiceNow endpoints.
+OpenService records separate review evidence for a proposed state change and can enforce a configured minimum number of current peer approvals before entering a state. Decisions do not automatically execute actions. Automatic in-app assignment notices and individual delegation are implemented. Email/push delivery, timed delegation, mandatory named responses and deadlines remain OS-PARITY-02 follow-ups. This is an original local contract, not a replica of ServiceNow endpoints.
 
 From a record, choose **Record approvals**. An administrator or agent requests review from a different active administrator/agent with access and the required state-entry/field-write authority. The reviewer opens the same page and records approval or rejection; rejection requires a comment. Each request captures record revision and configuration version. Editing either makes the proposal outdated and undecidable; request a review of the new revision. All access is checked again when reading or deciding, including state-field read rules, record visibility and the reviewer's current permissions. Deactivation or required credential replacement blocks the account normally; it never implies approval.
 
@@ -62,3 +62,7 @@ Schema 20 transactionally replaces the old all-status unique constraint with a p
 ## AI product direction
 
 Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.
+
+## Assignment notices
+
+A successful new review request or delegation atomically stores an in-app notice for the newly assigned reviewer when their business notifications are enabled. It contains only the approval reference and guidance to My approvals; record fields, comments and reasons remain behind current permissions. Notices record an assignment that occurred, so an old recipient retains that historical notice after delegation. Returning a review to a previous recipient creates a fresh unread notice. Rejected/duplicate transitions and rolled-back transactions create none. Opting out does not prevent assignment or access to My approvals. No background worker, SMTP delivery or new approval authority is involved. Existing manual reminders remain separate and deduplicated.

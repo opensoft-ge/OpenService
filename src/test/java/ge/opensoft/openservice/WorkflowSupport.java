@@ -17,6 +17,9 @@ import java.util.regex.*;
 
 abstract class WorkflowSupport {
     @Test
+    void reviewAssignmentsDeliverAtomicPreferenceAwareNotices() throws Exception { ApprovalAssignmentAcceptance.run(this); }
+
+    @Test
     void administratorsSearchAndRespondToOperationalEvents() throws Exception { EventSearchAcceptance.run(this); }
 
     @Test
