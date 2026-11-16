@@ -13,6 +13,11 @@ final class SavedReports {
     private SavedReports() {}
 
     static Map<String, Object> save(Store.Db db, String actor, Object input) throws SQLException {
+        return save(db, actor, "", input);
+    }
+
+    static Map<String, Object> save(Store.Db db, String actor, String id, Object input)
+            throws SQLException {
         var body = object(input);
         require(
                 body.keySet().equals(Set.of("name", "table", "query", "shared")),
@@ -27,19 +32,24 @@ final class SavedReports {
             args.put(entry.getKey(), (String) entry.getValue());
         }
         Analytics.report(db, table, args);
-        require(
-                db.count("SELECT COUNT(*) FROM os_saved_report WHERE owner_id=?", actor) < 100,
-                "Saved report limit reached");
-        String id = id();
-        db.update(
-                "INSERT INTO os_saved_report(report_id,owner_id,name,table_name,definition,shared)"
-                    + " VALUES(?,?,?,?,?,?)",
-                id,
-                actor,
-                name,
-                table,
-                JSON.writeValueAsString(definition),
-                body.get("shared").equals(true) ? 1 : 0);
+        if (id.isEmpty()) {
+            require(
+                    db.count("SELECT COUNT(*) FROM os_saved_report WHERE owner_id=?", actor) < 100,
+                    "Saved report limit reached");
+            id = id();
+            db.update(
+                    "INSERT INTO os_saved_report(report_id,owner_id,name,table_name,definition,shared)"
+                            + " VALUES(?,?,?,?,?,?)",
+                    id, actor, name, table, JSON.writeValueAsString(definition),
+                    body.get("shared").equals(true) ? 1 : 0);
+        } else if (db.update(
+                        "UPDATE os_saved_report SET name=?,table_name=?,definition=?,shared=?"
+                                + " WHERE report_id=? AND owner_id=?",
+                        name, table, JSON.writeValueAsString(definition),
+                        body.get("shared").equals(true) ? 1 : 0, id, actor)
+                != 1) {
+            throw new Failure(404, "Owned report not found");
+        }
         return map("report_id", id, "name", name);
     }
 

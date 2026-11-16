@@ -506,3 +506,5 @@ Diverse batch progress: **OS-D20-01 implemented** (workstream 13, PARITY-05): ex
 **OS-D20-03 implemented** (workstream 9, PARITY-04): paginated immutable publication history, including retired versions, restricted to administrators and excluding later drafts. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-04 implemented** (workstream 8, PARITY-02): administrator SLA cancellation through API and Operations, terminal across later ticks/reloads; overdue breach evidence preserved. Automatic cancellation conditions remain missing. [Acceptance and exact coverage](paired-cycles-diverse20-2026-11-16.md).
+
+**OS-D20-05 implemented** (workstream 14, PARITY-07): owners update saved definitions/sharing in place, with current-viewer evaluation and denied foreign edits. Browser report designer, version conflicts and historical metrics remain open. Five rounds span five workstreams; next: scheduled work, approval reminders, integer queries, AI preview and deployment preflight. [Evidence](paired-cycles-diverse20-2026-11-16.md).

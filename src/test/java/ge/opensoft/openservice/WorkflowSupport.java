@@ -73,6 +73,9 @@ abstract class WorkflowSupport {
     void cancelledServiceClocksRemainTerminal() throws Exception { DiverseBatchAcceptance.cancelClocks(this); }
 
     @Test
+    void savedReportUpdatesPreserveOwnershipAndIdentity() throws Exception { DiverseBatchAcceptance.updateReport(this); }
+
+    @Test
     void platformOperationsShareRealAuthenticationAndPersistence() throws Exception { PlatformOperationsAcceptance.run(this); }
 
     @Test

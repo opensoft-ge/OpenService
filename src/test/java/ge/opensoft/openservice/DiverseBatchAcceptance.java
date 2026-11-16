@@ -110,6 +110,47 @@ final class DiverseBatchAcceptance {
         assertEquals(400, h.json("POST", ROOT+"clocks/"+late, map("operation", "cancel"), auth("admin")).statusCode());
     }
 
+    static void updateReport(WorkflowSupport h) throws Exception {
+        h.account("ReportAgent", "agent");
+        String original;
+        try (var db = h.store.open()) {
+            var schema = Service.schema(db, "incident");
+            original = JSON.writeValueAsString(schema);
+            object(schema.get("fields")).put("cost", "Cost");
+            schema.put("field_rules", map("cost", map("type", "decimal")));
+            db.update("UPDATE os_schema SET definition="+db.jsonParameter()+" WHERE name='incident'", JSON.writeValueAsString(schema));
+            db.connection.commit();
+        }
+        try {
+            var definition = map("name", "Original report", "table", "incident", "shared", true, "query", map("field", "cost"));
+            String id = PlatformOperationsAcceptance.post(h, "reports", definition).get("report_id").toString();
+            String path = ROOT+"reports/"+id;
+            assertEquals(200, h.get(path, auth("ReportAgent")).statusCode());
+            assertEquals(404, h.json("POST", path, definition, auth("ReportAgent")).statusCode());
+            assertEquals(404, h.json("POST", ROOT+"reports/missing", definition, auth("admin")).statusCode());
+            var invalid = new LinkedHashMap<>(definition);
+            invalid.put("query", map("field", "not_a_number"));
+            assertEquals(400, h.json("POST", path, invalid, auth("admin")).statusCode());
+            definition.put("name", "Updated report");
+            definition.put("shared", false);
+            assertEquals(id, PlatformOperationsAcceptance.post(h, "reports/"+id, definition).get("report_id"));
+            assertEquals(404, h.get(path, auth("ReportAgent")).statusCode());
+            assertEquals(200, h.get(path, auth("admin")).statusCode());
+            try (var db = h.store.open()) {
+                assertEquals(1, db.count("SELECT COUNT(*) FROM os_saved_report"));
+                assertEquals("Updated report", db.one("SELECT name FROM os_saved_report WHERE report_id=?", id).get("name"));
+            }
+            definition.put("shared", true);
+            PlatformOperationsAcceptance.post(h, "reports/"+id, definition);
+            assertEquals(200, h.get(path, auth("ReportAgent")).statusCode());
+        } finally {
+            try (var db = h.store.open()) {
+                db.update("UPDATE os_schema SET definition="+db.jsonParameter()+" WHERE name='incident'", original);
+                db.connection.commit();
+            }
+        }
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

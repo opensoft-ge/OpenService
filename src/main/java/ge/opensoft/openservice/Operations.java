@@ -75,7 +75,7 @@ final class Operations {
                 SavedReports.remove(db, actor, id);
                 return map("removed", true);
             }
-            return SavedReports.save(db, actor, input);
+            return SavedReports.save(db, actor, id, input);
         }
         if (resource.equals("dependencies") && method.equals("GET"))
             return AssetOperations.impact(db, id);
