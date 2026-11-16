@@ -358,6 +358,61 @@ final class DiverseBatchAcceptance {
         assertFalse(unreadable.toString().contains("invalid-envelope"));
     }
 
+    static void reportHistory(WorkflowSupport h) throws Exception {
+        h.account("HistoryViewer","reader");
+        String original;
+        try(var db=h.store.open()) {
+            var schema=Service.schema(db,"incident"); original=JSON.writeValueAsString(schema);
+            object(schema.get("fields")).put("cost","Cost");
+            schema.put("field_rules",map("cost",map("type","decimal")));
+            db.update("UPDATE os_schema SET definition="+db.jsonParameter()+" WHERE name='incident'",JSON.writeValueAsString(schema));
+            db.connection.commit();
+        }
+        try {
+            var definition=map("name","Execution history","table","incident","shared",true,"query",map("field","cost"));
+            String id=PlatformOperationsAcceptance.post(h,"reports",definition).get("report_id").toString();
+            String path=ROOT+"report-history/"+id;
+            assertEquals(401,h.get(path,null).statusCode());
+            assertEquals(405,h.json("POST",path,map(),auth("admin")).statusCode());
+            assertEquals(404,h.get(ROOT+"report-history/missing",auth("admin")).statusCode());
+            assertTrue(objects(parsed(h.get(path,auth("HistoryViewer"))).get("result")).isEmpty());
+            result(h,"reports/"+id); result(h,"reports/"+id);
+            assertEquals(200,h.get(ROOT+"reports/"+id,auth("HistoryViewer")).statusCode());
+            var before=objects(parsed(h.get(path,auth("admin"))).get("result"));
+            assertEquals(2,before.size());
+            assertEquals(before.getFirst().get("definition_hash"),before.getLast().get("definition_hash"));
+            assertEquals(1,objects(parsed(h.get(path,auth("HistoryViewer"))).get("result")).size());
+            definition.put("query",map("field","cost","minimum","2"));
+            PlatformOperationsAcceptance.post(h,"reports/"+id,definition);
+            result(h,"reports/"+id);
+            var updated=objects(parsed(h.get(path,auth("admin"))).get("result"));
+            assertNotEquals(before.getFirst().get("definition_hash"),updated.getFirst().get("definition_hash"));
+            try(var db=h.store.open()) {
+                for(int i=0;i<100;i++) db.update("INSERT INTO os_report_run VALUES(?,?,?,?,?,?)",id(),id,RecordAccess.owner(db,"admin"),0,0,"0".repeat(64));
+                db.connection.commit();
+            }
+            result(h,"reports/"+id);
+            assertEquals(100,objects(parsed(h.get(path,auth("admin"))).get("result")).size());
+            try(var executor=java.util.concurrent.Executors.newFixedThreadPool(4)) {
+                var calls=new ArrayList<java.util.concurrent.Future<Integer>>();
+                for(int i=0;i<12;i++) calls.add(executor.submit(()->h.get(ROOT+"reports/"+id,auth("admin")).statusCode()));
+                for(var call:calls) assertEquals(200,call.get(30,java.util.concurrent.TimeUnit.SECONDS));
+            }
+            assertEquals(100,objects(parsed(h.get(path,auth("admin"))).get("result")).size());
+            assertEquals(1,objects(parsed(h.get(path,auth("HistoryViewer"))).get("result")).size());
+            definition.put("shared",false);
+            PlatformOperationsAcceptance.post(h,"reports/"+id,definition);
+            assertEquals(404,h.get(path,auth("HistoryViewer")).statusCode());
+            assertEquals(200,h.json("DELETE",ROOT+"reports/"+id,map(),auth("admin")).statusCode());
+            assertEquals(404,h.get(path,auth("admin")).statusCode());
+            try(var db=h.store.open()) { assertEquals(0,db.count("SELECT COUNT(*) FROM os_report_run")); }
+        } finally {
+            try(var db=h.store.open()) {
+                db.update("UPDATE os_schema SET definition="+db.jsonParameter()+" WHERE name='incident'",original); db.connection.commit();
+            }
+        }
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

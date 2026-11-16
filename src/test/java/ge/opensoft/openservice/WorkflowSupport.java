@@ -46,6 +46,7 @@ abstract class WorkflowSupport {
             for (String table :
                     List.of(
                             "os_outbox",
+                            "os_report_run",
                             "os_recovery_budget",
                             "os_requester_record",
                             "os_email_enrollment",
@@ -59,6 +60,9 @@ abstract class WorkflowSupport {
 
     @Test
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
+
+    @Test
+    void savedReportHistoryIsBoundedAndIsolatedByViewer() throws Exception { DiverseBatchAcceptance.reportHistory(this); }
 
     @Test
     void jobReceiptsExposeOnlySafeExecutionMetadata() throws Exception { DiverseBatchAcceptance.jobReceipts(this); }

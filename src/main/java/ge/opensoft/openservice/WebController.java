@@ -346,7 +346,7 @@ public class WebController {
         }
         Matcher platform =
                 Pattern.compile(
-                                "/api/openservice/operations/(jobs|connectors|calendars|clocks|reports|knowledge|dependencies|events|references|qualification|provisioning|audit-access|audit-checkpoint|password-policy|assist|approval-reminders|assist-preview|preflight|event-actions)(?:/([a-z0-9_-]{1,80}))?")
+                                "/api/openservice/operations/(jobs|connectors|calendars|clocks|reports|knowledge|dependencies|events|references|qualification|provisioning|audit-access|audit-checkpoint|password-policy|assist|approval-reminders|assist-preview|preflight|event-actions|report-history)(?:/([a-z0-9_-]{1,80}))?")
                         .matcher(path);
         if (platform.matches()) {
             method(method, "GET", "POST", "DELETE");

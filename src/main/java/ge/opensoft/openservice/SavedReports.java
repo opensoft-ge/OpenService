@@ -60,7 +60,7 @@ final class SavedReports {
                 actor);
     }
 
-    static Map<String, Object> run(Store.Db db, String actor, String id) throws SQLException {
+    static Map<String, Object> find(Store.Db db, String actor, String id) throws SQLException {
         var report =
                 db.one(
                         "SELECT * FROM os_saved_report WHERE report_id=? AND (owner_id=? OR"
@@ -68,13 +68,23 @@ final class SavedReports {
                         id,
                         actor);
         if (report == null) throw new Failure(404, "Report not found");
+        return report;
+    }
+
+    static Map<String, Object> run(Store.Db db, String actor, String id) throws SQLException {
+        long started=System.nanoTime();
+        if(db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
+        var report=find(db,actor,id);
         var args = new LinkedHashMap<String, String>();
         object(report.get("definition")).forEach((key, value) -> args.put(key, value.toString()));
-        return Analytics.report(db, report.get("table_name").toString(), args);
+        var result=Analytics.report(db, report.get("table_name").toString(), args);
+        ReportRuns.record(db,actor,report,Math.max(0,(System.nanoTime()-started)/1_000_000));
+        return result;
     }
 
     static void remove(Store.Db db, String actor, String id) throws SQLException {
         if (db.update("DELETE FROM os_saved_report WHERE report_id=? AND owner_id=?", id, actor)
                 != 1) throw new Failure(404, "Owned report not found");
+        db.update("DELETE FROM os_report_run WHERE report_id=?",id);
     }
 }

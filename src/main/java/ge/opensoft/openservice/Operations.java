@@ -77,6 +77,10 @@ final class Operations {
             }
             return SavedReports.save(db, actor, id, input);
         }
+        if(resource.equals("report-history")) {
+            if(!method.equals("GET")) throw new Failure(405,"Use GET for report history");
+            return ReportRuns.history(db,actor,id);
+        }
         if (resource.equals("dependencies") && method.equals("GET"))
             return AssetOperations.impact(db, id);
         if (resource.equals("references") && method.equals("GET")) {

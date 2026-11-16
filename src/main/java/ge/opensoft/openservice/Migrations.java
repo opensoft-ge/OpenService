@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 34;
+    static final int VERSION = 35;
 
     private Migrations() {}
 
@@ -456,6 +456,13 @@ final class Migrations {
                     "VARCHAR(20) NOT NULL DEFAULT 'open' CHECK(state IN ('open','acknowledged','resolved'))");
             db.update("INSERT INTO os_migration(version,name) VALUES(34,?)",
                     "operational event acknowledgment and resolution");
+        }
+        if (version < 35) {
+            db.update("CREATE TABLE IF NOT EXISTS os_report_run(run_id VARCHAR(32) PRIMARY KEY,"
+                    + "report_id VARCHAR(32) NOT NULL,viewer_id VARCHAR(32) NOT NULL,executed_at BIGINT NOT NULL,"
+                    + "duration_ms BIGINT NOT NULL,definition_hash VARCHAR(64) NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_report_run_history ON os_report_run(report_id,viewer_id,executed_at)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(35,?)","bounded per-viewer report execution history");
         }
     }
 

@@ -60,3 +60,4 @@ These are OpenService contracts, not ServiceNow wire compatibility. Routes below
 | POST `event-actions` | `{key,operation,reason}` accepts acknowledge, resolve or reopen. Duplicate state changes are idempotent; new occurrences reopen resolved events. |
 
 Numeric reports use `/api/openservice/analytics/{table}` with optional exact `minimum`/`maximum`, also available in Analytics and saved definitions. See [analytics](analytics.md).
+| GET `report-history/{report_id}` | Authenticated viewers inspect their own latest 100 successful executions of a currently visible saved report. Duration and definition digest only; execution still rechecks live data permissions. Deleting the report removes history. |
