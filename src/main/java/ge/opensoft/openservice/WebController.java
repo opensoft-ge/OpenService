@@ -523,7 +523,7 @@ public class WebController {
         }
         Matcher transfer =
                 Pattern.compile(
-                                "/api/openservice/migrations/([a-f0-9]{32})(?:/(step|preview|apply|sync|cutover|archive))?")
+                                "/api/openservice/migrations/([a-f0-9]{32})(?:/(step|preview|apply|sync|cutover|archive|reconciliation))?")
                         .matcher(path);
         if (transfer.matches()) {
             c.admin();
@@ -553,6 +553,10 @@ public class WebController {
             if (action.isEmpty()) {
                 method(method, "GET");
                 return json(map("result", TransferJobs.describe(c.db, job)), 200);
+            }
+            if(action.equals("reconciliation")) {
+                method(method,"GET");
+                return json(map("result",TransferReconciliation.inspect(c.db,c.db.viewerId,job)),200);
             }
             method(method, "POST");
             Object input = body(c);

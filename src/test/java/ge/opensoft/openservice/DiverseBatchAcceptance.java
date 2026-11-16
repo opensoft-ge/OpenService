@@ -540,6 +540,60 @@ final class DiverseBatchAcceptance {
         try(var db=h.store.open()) { db.update(sql,values);db.connection.commit(); }
     }
 
+    static void reconciliation(WorkflowSupport h) throws Exception {
+        TransferAcceptance.seed();
+        h.account("ReconcileReader","reader");
+        String job=TransferAcceptance.result(h.json("POST",TransferAcceptance.API,TransferAcceptance.plan(),auth("admin")),201).get("job_id").toString();
+        String base=TransferAcceptance.API+"/"+job,path=base+"/reconciliation";
+        assertEquals(401,h.get(path,null).statusCode());
+        assertEquals(403,h.get(path,auth("ReconcileReader")).statusCode());
+        assertEquals(404,h.get(TransferAcceptance.API+"/"+id()+"/reconciliation",auth("admin")).statusCode());
+        assertEquals(405,h.json("POST",path,map(),auth("admin")).statusCode());
+        assertEquals(400,h.get(path+"?extra=1",auth("admin")).statusCode());
+        var initial=TransferAcceptance.result(h.get(path,auth("admin")),200);
+        assertEquals(false,initial.get("local_reconciliation_passed"));
+        TransferAcceptance.fetch(h,job);
+        TransferAcceptance.result(h.json("POST",base+"/apply",map(),auth("admin")),200);
+        var clean=TransferAcceptance.result(h.get(path,auth("admin")),200);
+        assertEquals(true,clean.get("local_reconciliation_passed"));
+        assertEquals(false,clean.get("source_completeness_verified"));
+        assertTrue(((Number)clean.get("compared_links")).intValue()>0);
+        Map<String,Object> link;
+        try(var db=h.store.open()) {
+            link=db.all("SELECT * FROM os_transfer_link").stream().filter(row->object(row.get("detail")).get("kind").equals("record")).findFirst().orElseThrow();
+        }
+        String target=object(link.get("detail")).get("target").toString();
+        fixtureUpdate(h,"UPDATE os_record SET revision=revision+1 WHERE sys_id=?",target);
+        var changed=TransferAcceptance.result(h.get(path,auth("admin")),200);
+        assertEquals(1,((Number)changed.get("changed_destinations")).intValue());
+        assertEquals(false,changed.get("local_reconciliation_passed"));
+        assertEquals(false,changed.get("truncated"));
+        fixtureUpdate(h,"DELETE FROM os_transfer_item WHERE job_id=? AND source_table=? AND source_id=?",job,link.get("source_table"),link.get("source_id"));
+        assertEquals(1,TransferAcceptance.result(h.get(path,auth("admin")),200).get("missing_source_items"));
+        try(var db=h.store.open()) {
+            for(int i=0;i<101;i++) {
+                String absent=id();
+                db.update("INSERT INTO os_transfer_link(source_url,source_table,source_id,target_id,detail) VALUES(?,'incident',?,?,?)",
+                        link.get("source_url"),absent,absent,JSON.writeValueAsString(map("kind","record","target",absent,"destination",map("private","not returned"))));
+            }
+            db.connection.commit();
+        }
+        var bounded=TransferAcceptance.result(h.get(path,auth("admin")),200);
+        assertEquals(102,((Number)bounded.get("changed_destinations")).intValue());
+        assertEquals(102,bounded.get("missing_source_items"));
+        assertEquals(100,objects(bounded.get("conflicts")).size());
+        assertEquals(100,objects(bounded.get("missing")).size());
+        assertEquals(true,bounded.get("truncated"));
+        assertFalse(bounded.toString().contains("not returned"));
+        try(var db=h.store.open()) {
+            db.update("INSERT INTO os_transfer_item(job_id,source_table,source_id,data) SELECT ?,source_table,source_id,'{}' FROM os_transfer_link WHERE NOT EXISTS (SELECT 1 FROM os_transfer_item i WHERE i.job_id=? AND i.source_table=os_transfer_link.source_table AND i.source_id=os_transfer_link.source_id)",job,job);
+            db.connection.commit();
+        }
+        var onlyConflicts=TransferAcceptance.result(h.get(path,auth("admin")),200);
+        assertEquals(0,onlyConflicts.get("missing_source_items"));
+        assertEquals(true,onlyConflicts.get("truncated"));
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

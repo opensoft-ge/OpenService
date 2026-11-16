@@ -67,9 +67,12 @@ Administrator-only API routes (cookie sessions require `X-CSRF-Token`; JSON POST
 | `/{job}/apply` | POST `{}`, atomic promotion; returns counts and unmapped/missing reports |
 | `/{job}/sync` | POST `{}`, create a fresh full-rescan job from an applied job |
 | `/{job}/archive?table=…&after=…` | GET up to 100 source rows; pass the last source ID as `after` |
+| `/{job}/reconciliation` | GET local missing-source and changed-destination counts, with at most 100 identifiers per category |
 | `/{job}/cutover` | POST all four boolean confirmations from the wizard |
 
 Re-fetching a completed job or applying an already applied/stale job returns 409. Source failures return sanitized 502 responses; invalid plans/data return 400. A transport failure does not advance checkpoints. A failed apply writes no partial users, files, records, configuration or correlations.
+
+Reconciliation compares retained local staging, correlations and destination snapshots without contacting the source or modifying data. `local_reconciliation_passed` requires an applied job with no reported local discrepancies. `source_completeness_verified` is always false: restricted source permissions, omitted data and arbitrary configuration translation still need independent review. A local pass is not cutover approval; current-generation, final synchronization and confirmation requirements remain in force. Output is bounded, but processing inspects all retained links and is not qualified for large migration volumes. The diagnostic is currently an administrator API; the wizard does not yet present its summary.
 
 The protocol fixture and browser data are synthetic. A real ServiceNow instance, its permissions, API limits and retained history have **not** been verified in this release. Official contract references reviewed 2026-11-14: [Table API](https://www.servicenow.com/docs/r/api-reference/rest-apis/c_TableAPI.html), [Attachment API](https://www.servicenow.com/docs/r/api-reference/rest-apis/c_AttachmentAPI.html), [journals](https://www.servicenow.com/docs/r/api-reference/web-services/retrieving-journal-entries.html), [audit/history distinction](https://www.servicenow.com/docs/r/platform-security/c_DiffBtwnAuditHistSets.html), and [update sets](https://www.servicenow.com/docs/r/application-development/system-update-sets/exploring-system-update-sets.html). Current Brazil documentation informs research; it does not establish conformance against the project's provisional Australia baseline.
 
