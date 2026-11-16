@@ -61,6 +61,9 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void jobReceiptsExposeOnlySafeExecutionMetadata() throws Exception { DiverseBatchAcceptance.jobReceipts(this); }
+
+    @Test
     void priorKnowledgePublicationsCanBeRestoredWithoutChangingDrafts() throws Exception { DiverseBatchAcceptance.restoreKnowledge(this); }
 
     @Test

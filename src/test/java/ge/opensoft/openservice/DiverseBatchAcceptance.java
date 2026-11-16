@@ -326,6 +326,38 @@ final class DiverseBatchAcceptance {
         assertEquals(400,h.json("POST",ROOT+resource,map("operation","publish"),auth("admin")).statusCode());
     }
 
+    static void jobReceipts(WorkflowSupport h) throws Exception {
+        h.account("ReceiptReader","reader");
+        String id=PlatformOperationsAcceptance.post(h,"jobs",map("kind","notification","key","receipt",
+                "payload",map("username","ReceiptReader","message","Private message"))).get("job_id").toString();
+        assertEquals(403,h.get(ROOT+"jobs/"+id,auth("ReceiptReader")).statusCode());
+        assertEquals(404,h.get(ROOT+"jobs/missing",auth("admin")).statusCode());
+        assertEquals("not_available",result(h,"jobs/"+id).get("receipt_status"));
+        assertTrue(new WorkWorker(h.store).runOne(System.currentTimeMillis()));
+        var complete=result(h,"jobs/"+id);
+        assertEquals("succeeded",complete.get("state"));
+        assertEquals("available",complete.get("receipt_status"));
+        assertEquals(map("delivered",true),complete.get("receipt"));
+        assertFalse(complete.toString().contains("Private message"));
+        assertFalse(complete.containsKey("envelope"));
+        for(String kind:List.of("connector.read","migration.step")) {
+            try(var db=h.store.open()) {
+                db.update("UPDATE os_work SET kind=?,result=? WHERE job_id=?",kind,
+                        Outbox.encrypt(h.store.secret,JSON.writeValueAsString(map("receipt",
+                                map("alias","safe","revision",1,"bytes",42,"sha256","a".repeat(64),"token","synthetic-secret")))),id);
+                db.connection.commit();
+            }
+            var receipt=object(result(h,"jobs/"+id).get("receipt"));
+            assertEquals(kind.equals("connector.read")?4:0,receipt.size());
+            assertFalse(receipt.toString().contains("synthetic-secret"));
+        }
+        try(var db=h.store.open()) { db.update("UPDATE os_work SET result='invalid-envelope' WHERE job_id=?",id); db.connection.commit(); }
+        var unreadable=result(h,"jobs/"+id);
+        assertEquals("unreadable",unreadable.get("receipt_status"));
+        assertEquals(map(),unreadable.get("receipt"));
+        assertFalse(unreadable.toString().contains("invalid-envelope"));
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

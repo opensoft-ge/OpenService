@@ -99,7 +99,7 @@ final class Operations {
         }
         if (method.equals("GET"))
             return switch (resource) {
-                case "jobs" -> WorkJobs.list(db, actor);
+                case "jobs" -> id.isEmpty() ? WorkJobs.list(db, actor) : WorkJobs.detail(store, db, actor, id);
                 case "connectors" ->
                         db.all("SELECT alias,origin,revision FROM os_connector ORDER BY alias");
                 case "calendars" -> db.all("SELECT * FROM os_calendar ORDER BY calendar_id");

@@ -115,6 +115,32 @@ final class WorkJobs {
                 "SELECT " + COLUMNS + " FROM os_work ORDER BY created_at DESC,job_id LIMIT 100");
     }
 
+    static Map<String,Object> detail(Store store, Store.Db db, String actor, String id) throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        var row = db.one("SELECT "+COLUMNS+",result FROM os_work WHERE job_id=?",id);
+        if(row==null) throw new Failure(404,"Job not found");
+        String encrypted=row.remove("result").toString();
+        row.put("receipt",map());
+        row.put("receipt_status","not_available");
+        if(!encrypted.isEmpty()) {
+            try {
+                var receipt=object(Outbox.decrypt(store.secret,encrypted).get("receipt"));
+                var allowed=switch(row.get("kind").toString()) {
+                    case "notification" -> Set.of("delivered");
+                    case "connector.read" -> Set.of("alias","revision","bytes","sha256");
+                    default -> Set.<String>of();
+                };
+                var safe=new LinkedHashMap<>(receipt);
+                safe.keySet().retainAll(allowed);
+                row.put("receipt",safe);
+                row.put("receipt_status","available");
+            } catch(Exception invalid) {
+                row.put("receipt_status","unreadable");
+            }
+        }
+        return row;
+    }
+
     static void control(Store.Db db, String actor, String id, String operation)
             throws SQLException {
         Service.requireAccountAdministrator(db, actor);

@@ -181,7 +181,7 @@ Administrator `GET /api/openservice/configuration` exports current definitions a
 
 ## Typed numeric reports
 
-Authenticated `GET /api/openservice/analytics/{table}?field=estimate` reports count, value count, sum, min, max and average over all authorized matching rows. Optional `group_by` and `q` select grouping and the existing encoded-query filter. See [analytics](analytics.md) for numeric precision, blanks, empty selections and limits.
+Authenticated `GET /api/openservice/analytics/{table}?field=estimate` reports count, value count, sum, min, max and average over all authorized matching rows. Optional `group_by` and `q` select grouping and the existing encoded-query filter; `minimum` and `maximum` add exact inclusive numeric bounds. See [analytics](analytics.md) for numeric precision, blanks, empty selections and limits.
 
 ### Internal activity visibility
 

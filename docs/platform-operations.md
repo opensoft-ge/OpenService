@@ -39,3 +39,24 @@ Before inviting real users, record the exact image digest, application/DB locati
 - Establish external readiness monitoring, failure/queue alerts, DB capacity alerts and an on-call owner. Test alert delivery and incident escalation. HA/failover and complete manual accessibility assessment remain separate release gates.
 
 For a disposable local installation, `LOAD_PASSWORD=<disposable password> bash scripts/load-smoke.sh http://127.0.0.1:PORT 200 8` measures authenticated reads. Supply the secret through a protected environment mechanism rather than recording a real password in history. This bounded smoke is not sustained capacity or a production SLO test. Installation/recovery scripts create and remove only their own disposable containers and volumes.
+
+## Native platform extensions
+
+These are OpenService contracts, not ServiceNow wire compatibility. Routes below use `/api/openservice/operations/`; responses are under `result`. Existing authentication, session CSRF and current permissions apply. Administrator-only unless stated otherwise. The [round report](paired-cycles-diverse20-2026-11-16.md) records full acceptance and limits.
+
+| Method and resource | Input and behavior |
+|---|---|
+| GET `dependencies/{asset_id}` | At most 100 visible impacted assets, cycle-safe; `truncated` indicates another distinct visible asset. Available to authorized readers. |
+| DELETE `connectors/{alias}` | `{reason}` removes the local encrypted credential and audits retirement. Later queued reads fail while the alias is absent. Remote token revocation is separate. |
+| GET `knowledge/{article_id}` | Up to 100 immutable versions, including retired snapshots. `?before=N` follows `next_before`. Administrator-only; drafts are separate. |
+| POST `knowledge/{article_id}` | `{operation:"restore",version:N}` publishes an older snapshot as a new version without modifying the draft. Only workspace-visible articles may be published. |
+| POST `clocks/{sla_id}` | `{operation:"cancel"}` makes a running/paused clock terminal. A detected breach is preserved. Also available in the Operations form. |
+| POST `reports/{report_id}` | `{name,table,query,shared}` updates the owner's definition in place. Staff can manage their own definitions; authorized users execute shared reports under their own permissions. |
+| POST `jobs` | `{kind,key,payload,run_at?}` schedules one supported job. Optional ISO instant has millisecond precision and a 366-day horizon; explicit Retry makes it due now. |
+| GET `jobs/{job_id}` | Job metadata plus `receipt` and `receipt_status`: not_available, available or unreadable. Only delivery/connector metadata is exposed; no message, token or provider-body content. |
+| POST `approval-reminders/{approval_id}` | Empty object delivers a preference-aware in-app reminder after rechecking current reviewer authority. Deduplicates while its notice is retained. |
+| POST `assist-preview` | `{table,record_id}` returns selected grounding/content, revision and alias/model without calling a provider. This is a snapshot, not redaction or version-bound execution consent. |
+| GET `preflight` | Seven actionable configuration checks. `shared_release_qualified` is always false; external deployment qualification is recorded separately. |
+| POST `event-actions` | `{key,operation,reason}` accepts acknowledge, resolve or reopen. Duplicate state changes are idempotent; new occurrences reopen resolved events. |
+
+Numeric reports use `/api/openservice/analytics/{table}` with optional exact `minimum`/`maximum`, also available in Analytics and saved definitions. See [analytics](analytics.md).
