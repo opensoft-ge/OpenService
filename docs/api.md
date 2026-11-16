@@ -418,3 +418,7 @@ Existing PUT `/api/openservice/groups/{group}/members` and DELETE `.../members/{
 ### Compare two accounts’ current record permissions
 
 GET `/api/openservice/users/{id}/permission-comparison` or matching `/admin/accounts/{id}/permission-comparison` takes exactly table, record_id and with (exact second username, 1–80 ASCII letters/digits). Administrator-only; invalid/repeated parameters 400, absent account/record 404, POST 405; HEAD follows GET authorization. API result contains subjects: two entries with sanitized account and diagnosis. Each diagnosis uses the same existing evaluator; hidden fields and record values are absent. The same account can be compared with itself. UI may initially open without query to show the form. Policy results do not establish login eligibility or guarantee workflow/validation acceptance.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

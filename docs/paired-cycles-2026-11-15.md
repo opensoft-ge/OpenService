@@ -219,3 +219,7 @@ The first full run passed all 535 tests but missed one branch for an explicitly 
 The refreshed exact gate passes after the empty-query boundary case. Final complete review found no new/reopened defect or further runtime repair. Current publication secret scan reports zero findings with full redaction; all 19 preceding cycle evidence archives and bot-only/co-author-free commit messages were verified. All 20 cycles remain local, with no push/deployment.
 
 **Completed cycle 20.** Final clean gate: 535 tests, zero failures/errors/skips; Java 4506/4506 lines, 2417/2417 branches, 266/266 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. Final complete review found no new or reopened defects and made no further runtime repairs.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

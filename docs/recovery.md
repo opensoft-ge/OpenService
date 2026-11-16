@@ -16,3 +16,7 @@ This proves a bounded, quiesced backup/restore path for the exercised schema and
 The optional second argument to the drill selects the source application image; the first image remains the restore/upgrade target. A local schema 13 → 14 rehearsal has passed with synthetic data; the exact images and current evidence are recorded in [release qualification](release-qualification.md). Other application/database versions still require their own rehearsal with an authorized data copy. Keep ADOPT-15/17/18 and OS-PARITY-10 partial until those deployment-specific requirements are evidenced.
 
 For schema 14 onward, the drill also creates a requester-owned request and an emailed invitation whose SMTP endpoint deliberately refuses connections on loopback. It stops the source before snapshotting queued envelopes, restores them byte-for-byte, verifies requester ownership/isolation and keeps the restored worker disabled. Real recovery must reconcile possible previously accepted SMTP messages before resuming an at-least-once queue.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

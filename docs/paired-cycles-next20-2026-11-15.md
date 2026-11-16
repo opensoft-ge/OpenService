@@ -306,3 +306,7 @@ Confirmed implementation defects repaired in this batch include the credential-a
 Official discovery expanded or refined the backlog for authentication policies, workload identity federation, reusable credential/device bindings, shared saved filters, configurable audit capture/retention and viewer privileges, query/data policies, access simulation and governed AI-resource diagnosis. Each discovery retains sources, status, dependencies and acceptance expectations in its cycle entry and the roadmap/compatibility ledger. Original local contracts do not establish licensed ServiceNow instance conformance.
 
 M0 remains the supported scope: synthetic-data local evaluation. M1–M3 are still unmet. Real HTTPS/SMTP deployment qualification, enterprise identity requirements (including MFA/SSO), operational ownership, workload/load and recovery targets, live migration reconciliation and remaining security/accessibility assessments require further work. Historical image/dependency scans and deployment/restore drills describe their named earlier artifacts; this batch did not requalify a release image or run GitHub-hosted CI. No push or deployment was performed.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

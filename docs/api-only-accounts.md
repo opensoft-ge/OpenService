@@ -11,3 +11,7 @@ At least one active browser-enabled administrator must remain. Mode, role and ac
 Schema 18 adds `os_user.api_only`, default false, preserving existing accounts, credentials and required-change state. Quiesce old application nodes during upgrade: old binaries do not enforce this restriction. Keep the flag in backups and verify behavior after restore. SQLite/PostgreSQL acceptance covers upgrade, restart, rollback, concurrency, all roles and interaction with password replacement. Browser acceptance covers mode changes, revocation, denied login and fresh sign-in after restoration, with desktop/mobile light/dark checks.
 
 Current boundaries: dedicated organization per deployment; no OAuth/client credentials, per-integration token scopes, API key rotation, IP restrictions, machine identity provisioning or automatic connector configuration. This local extension is informed by ServiceNow's Brazil non-interactive sessions documentation, not a claim of equivalent protocol support or vendor endpoint conformance.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

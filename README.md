@@ -137,3 +137,7 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, val
 See the [professional appearance and dark-mode requirements](docs/product-experience.md), including current implementation status and browser-release acceptance criteria.
 
 Deployment tooling can use stateless `GET /readyz` for database/migration readiness (200/503). Container and Compose health checks use this route. See [probe contract](docs/api.md#readiness-for-deployment-tooling), [20-cycle evidence](docs/paired-cycles-2026-11-15.md) and [current local qualification](docs/platform-expansion-2026-11-16.md#research-and-validation).
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](docs/ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

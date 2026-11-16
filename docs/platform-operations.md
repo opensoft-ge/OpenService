@@ -68,3 +68,7 @@ Numeric reports use `/api/openservice/analytics/{table}` with optional exact `mi
 | GET `queue-health` | Administrator-only aggregate due/scheduled/processing/failed work, expired leases, oldest overdue age and remaining 5000-job capacity. Alerts cover disabled workers with pending work, failures, expired leases, five-minute overdue work and full retention. The Operations page presents these checks and recovery actions. |
 
 Queue cleanup is available from Operations or POST `jobs/retention` with `{"operation":"cleanup"}`. It removes only succeeded/cancelled work created more than 30 days ago; it cannot free a queue filled entirely with recent jobs. Retry and cancel still require queued/failed state and current administrator authority. Refresh the dashboard after recovery. External alert routing, representative load qualification and operational ownership remain separate requirements.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

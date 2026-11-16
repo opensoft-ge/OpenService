@@ -68,3 +68,7 @@ Administrator GET `/api/openservice/delivery/retention?days=90` returns a `resul
 Only delivered or cancelled rows whose link expiry is strictly earlier than the current time minus the selected days qualify. This grace period is measured from **link expiry**, not the last send/cancellation. Counts and cutoff are recalculated on apply; the preview is an estimate, not a frozen selection. Queued, processing and failed jobs are retained regardless of age. Account links, business records and security-event history are not deleted. Each apply records `delivery.metadata_purged` with days, cutoff and actual count, including zero; rollback preserves both rows and audit atomicity. Repeat to process another batch. There is no scheduled cleanup, archive/recovery area, configurable legal hold, or general data-retention engine. Review organizational retention needs before applying; this does not assert regulatory compliance.
 
 Existing local accounts can now [enroll a verified recovery email](email-enrollment.md) through the same durable queue. Cancellation and retention cover this message kind too.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

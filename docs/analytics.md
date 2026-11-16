@@ -26,3 +26,7 @@ The existing `/api/now/stats/{table}` count contract is unchanged. ServiceNow's 
 SQLite/PostgreSQL HTTP tests verify exact decimal results, negative and blank values, grouping/filtering, unauthorized and hidden-record behavior, empty selections and all 10,001 rows of a selection beyond the Table API page cap. Chromium verifies the workspace-to-report journey and a numeric result from a configured table.
 
 Inclusive `minimum` and `maximum` bounds use plain decimal text (at most 128 characters), exact comparison and no exponent notation. Omit or clear either bound for an open range. Invalid or reversed bounds return 400. A range excludes blank numeric values before grouping; unfiltered count semantics stay unchanged. The Analytics form retains bounds after reload, and saved-report query definitions accept the same options. The metrics table is keyboard-focusable for horizontal scrolling on narrow screens.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

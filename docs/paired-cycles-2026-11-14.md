@@ -111,3 +111,7 @@ QA round 1: reviewed full diff/new tests, shared version check, mutation lock sc
 QA round 2: complete accumulated diff and untracked acceptance helper re-reviewed against `502a4fb`, including the added unknown-property case. Zero new/reopened/unresolved findings, no repairs. All 431 tests pass without failures/errors/skips. Exact project: 2,662/2,662 lines, 1,452/1,452 branches, 169/169 methods. Touched Assignments.java: 87/87, 58/58, 2/2; WebController.java: 1,180/1,180, 554/554, 40/40 (line/branch/method). Exact-count and whitespace gates pass. OS-Q10-10 implemented.
 
 All ten requested paired cycles are complete. The final suite includes 20 Chromium tests and both database variants of the workflow contracts. No proprietary instance conformance or enterprise release readiness is established. M1–M3 remain open; durable verified delivery, requester/field-read permissions, enterprise identity, workflow jobs/approvals/SLAs and production operating evidence remain tracked priorities.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

@@ -117,3 +117,7 @@ Cycle 8: 428 passing tests; exact Java line/branch/method counts 2,622/2,622; 1,
 Clean gate: 455 tests, zero failures/errors/skips on SQLite/PostgreSQL and Chromium. Whole Java scope: 3640/3640 executable lines, 1931/1931 branches, 225/225 methods, 22542/22542 instructions and 41/41 instrumented classes. The exact skill gate passed every production Java file; browser migration coverage remains 75/75 lines, 49/49 branches and 12/12 functions. Templates and styles are verified through HTTP, browser, mobile and axe-core checks rather than included in Java coverage.
 
 [Release qualification](release-qualification.md) records fixed-base QA, SMTP/crash/concurrency tests, requester/field negative cases, fresh Compose installation, schema 13 → 14 upgrade, pending-delivery/requester restore, runtime SBOM, source secret scan and the remaining OS advisories. Local checks do not establish GitHub CI success for an unpublished commit or production readiness.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

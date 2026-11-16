@@ -101,3 +101,7 @@ Repeat for GCP and Azure. Tests mock all providers and assert database protectio
 Back up the database before changing the application image. The current initializer creates missing physical tables but does not migrate existing column definitions. Plan schema changes explicitly. Secret rotation may require a new application revision; an application restart alone does not rotate stored login passwords.
 
 Destruction is intentionally blocked for database resources. To remove a test environment, first export/back up its data, explicitly remove the relevant deletion protection, review a destroy plan and confirm what is being deleted. AWS retains a final snapshot; its name must remain unique on repeated destroy/recreate cycles. Azure's `prevent_destroy` must be changed deliberately. Terraform state-backend resources are managed separately and should be retained according to your retention policy.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](../docs/ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

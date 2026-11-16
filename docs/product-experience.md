@@ -29,3 +29,7 @@ The self-hosted `theme.js` runs before the stylesheet to set the first-paint the
 [ServiceNow Working with themes](https://www.servicenow.com/docs/r/platform-user-interface/next-experience-theming.html), retrieved 2026-11-15, resolved to **Brazil**, updated 2026-09-10. It documents theme variants and administrator theme creation/publishing; the source notes that custom components do not automatically adopt theming. This is supplemental discovery, not a change to the provisional Australia API contract or a licensed-instance conformance claim. OpenService's local two-theme preference is an original bounded capability; it does not implement ServiceNow Theme Builder or its configuration tables.
 
 `UX-002` remains planned: administrator-defined themes, safe preview/publishing, scoped availability and account-synchronized preferences. Dependencies: versioned configuration and the relevant administration permissions. Acceptance must cover role restrictions, invalid/low-contrast palettes, preview without publication, rollback, existing user overrides and upgrades. Current scope remains the maintained professional light/dark pair, not arbitrary user CSS.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

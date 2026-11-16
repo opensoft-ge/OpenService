@@ -553,3 +553,11 @@ Discovery follow-up, 2026-11-16: [Brazil signature status](https://www.serviceno
 **OS-D20-20 implemented**: Workstream 16, PARITY-10: aggregate queue-health API/dashboard, actionable recovery alerts and keyboard-accessible retention cleanup. Schema-35 restore, schema-33 upgrade, restart recovery and final image/source scans are recorded in the report; external alert routing, HA/DR and real shared deployment qualification remain open. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
 Final diverse-batch qualification: 20 local rounds across 13 workstreams, 712 passing tests and exact full Java/browser-script coverage. Fresh install, schema 35 restore, schema 33 upgrade and packaged worker restart passed. Both 200-read/eight-client smokes passed this run; OS-EXP-16-PERF-01 remains open. The final scan has no high/critical or Java findings, with 30 medium/4 low upstream OS findings lacking listed fixes. Shared deployment/enterprise readiness gates remain unmet. [Full feature and qualification report](paired-cycles-diverse20-2026-11-16.md).
+
+## Required AI, agent and conversational delivery — OS-AI-001–005
+
+Owner direction added 2026-11-16: fully AI-enabled core journeys, contextual conversational support and agents that complete permitted work are required product capabilities. Follow the [AI acceptance contract](ai-capabilities.md) and its five backlog dimensions: conversation, assistance, scoped actions, reliable/governed execution and measured outcomes.
+
+**Status:** Partial: the existing implementation provides explicitly enabled administrator summaries and permission-filtered grounding previews. It has no general conversational support experience or autonomous tool/action execution. Content de-identification, revision-bound external-send consent, provider qualification and broader agent evaluations remain open. See the existing OS-PARITY-06, OS-DISC-02 and OS-DISC-AI-CONTAINMENT entries; preserve their unresolved limits.
+
+Prioritize a complete supported journey with identity, source permissions, typed APIs and execution controls in place. Record implementation evidence and acceptance results per slice; a summary endpoint, conversation store or documentation change does not complete the parent requirement. Keep these items visible alongside other release blockers.

@@ -20,3 +20,7 @@ Schema 15 adds `os_email_enrollment`; schema 28 adds independent old/new address
 Upgrade from schema 14 preserves identities and password hashes. The disposable restore drill includes pending enrollments and their encrypted queued messages for schema 15 sources. Restoring an older database creates the new table through the ordered migration. This is a local implementation, not a ServiceNow Password Reset API or six-digit code compatibility claim.
 
 The dual-proof API and Chromium journeys are exercised on the final platform batch; see [platform expansion](platform-expansion-2026-11-16.md). Newly stored passwords normalize to NFC before hashing and length checks, including reauthentication. Legacy password hashes retain their original matching semantics.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

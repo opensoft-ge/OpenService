@@ -17,3 +17,7 @@ The browser workspace is `/admin/password-exclusions`. Unknown/repeated query ar
 Schema 16 adds the policy table transactionally; schema 15 upgrades preserve accounts and credentials. Keep the policy table with the database backup. Acceptance covers SQLite/PostgreSQL upgrades, restart, rollback, duplicate writers, all password-setting routes, token preservation, administrator authorization, browser keyboard navigation and both themes. The restore drill compares policy rows and verifies enforcement after restore.
 
 This feature is a **custom exclusion list**, not a maintained common/compromised-password corpus. New credentials require 15–1024 Unicode code points. Absent NFC normalization and an absent maintained screening corpus remain recorded gaps against current NIST guidance; no NIST conformance or complete ServiceNow password-policy parity is claimed. Configure transport security before real deployment and enter only synthetic/known-unsafe examples into the policy interface, never actual users' secrets.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

@@ -104,3 +104,7 @@ Maximum 10,000 records per file and 6 MB per request. Split larger exports into 
 The file-upload importer does not migrate attachments, journal histories, passwords, ACLs, flows, scripts, catalog configuration or resolve reference targets. The upload feature accepts new supporting files, but does not fetch ServiceNow attachment bodies. Test these dependencies before calling a migration complete. Source values beyond database column limits can still fail transactionally at commit; keep original exports and resolve the validation issue before retrying.
 
 No connector credentials or real customer data are bundled. The demo records in the browser journey are synthetic.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

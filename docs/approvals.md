@@ -58,3 +58,7 @@ This is a read-only snapshot, not permission to execute or a reservation of appr
 Use the existing request form/API to create a fresh review after withdrawal, even at the same record/configuration revision. All normal current permissions, reviewer eligibility and input checks apply. The new review has a new ID, reason and pending status; the old withdrawn row and its audit entry remain intact. At most one **non-withdrawn** request per reviewer/target/record/configuration revision is allowed. Pending, approved and rejected rows still prevent duplicates; this does not undo a rejection or reuse an approval automatically.
 
 Schema 20 transactionally replaces the old all-status unique constraint with a partial unique index. It preserves all row values and sequence positions, including across rollback, restart and PostgreSQL backup/restore. Stop the application and take a consistent backup before upgrading; this is not a mixed-version rolling upgrade. Evidence: `ApprovalResubmissionAcceptance`, `ApprovalResubmissionTest` and the expanded withdrawal browser journey, plus disposable restore/upgrade drills.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

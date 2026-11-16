@@ -28,3 +28,7 @@ Trivy 0.76.2 used vulnerability data updated 2026-11-15 (Java DB also 2026-11-15
 Scanners and exact coverage do not establish absence of vulnerabilities. The OS findings remain open, and production identity, real email/HTTPS delivery, operating ownership, workload capacity, retention policy and M1–M3 adoption gates remain unqualified. Native text/multipart/empty-content-type Basic clients must follow the [new explicit header or CSRF contract](api.md#browser-writes-and-basic-credentials). No remote deployment or push was performed.
 
 Reproduce acceptance with `sh scripts/verify.sh` using the pinned Java installation. Build `docker build -t openservice:followup10-20261115 .`; run `scripts/fresh-install-drill.sh IMAGE`, `scripts/restore-drill.sh IMAGE` and `scripts/restore-drill.sh IMAGE PRIOR_IMAGE`. Temporary evidence is under `target/release/` and `/tmp/openservice-followup10-evidence/`; per-cycle logs and scan results use `/tmp/openservice-followup10-*`. These local temporary files are not a durable external evidence archive.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

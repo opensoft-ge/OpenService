@@ -173,3 +173,7 @@ User-authorized sequential run; local commits only. Each cycle fixes its QA base
 OS-046 adds a guided source connection, private checkpointed staging, explicit identity/role and field/configuration mappings, binary attachments, administrator-only history archives, atomic promotion, rescan synchronization and cutover verification. Full permission/script/integration translation and live-source qualification remain partial roadmap items.
 
 QA repaired stale-job overwrite risk, cross-scope membership/attachment references, browser error detail, legacy-upgrade replay and malformed metadata handling. Final review found no further defects in the fixed `0f53ddf` scope. Final gate: 441 tests; Java 3229/3229 lines, 1743/1743 branches and 196/196 methods; browser script 75/75 lines, 49/49 branches and 12/12 functions. Docker build, restart persistence, administrator/anonymous access boundaries, UID 10001 and packaged notice/inventory checks passed. [Detailed evidence](validation.md) records reproducible commands, repaired harness assumptions and limits.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

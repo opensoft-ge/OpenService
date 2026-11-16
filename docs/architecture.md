@@ -19,3 +19,7 @@ Password authentication uses a separate short transaction phase before business 
 `Configuration.java` validates and atomically promotes versioned definitions in the existing `os_schema` store. `TypedFields.java` supplies shared validation, reference integrity, assignment eligibility and state-entry policies. PostgreSQL HTTP mutations acquire a shared advisory lock before record/account routing; SQLite retains IMMEDIATE write transactions. This serializes configuration promotion and record/reference mutations. The JSON package format and constraints are documented in [configuration](configuration.md).
 
 `Analytics.java` streams numeric values from the complete authorization-filtered record selection and accumulates exact decimal totals per group. It is shared by the local analytics API and server-rendered reporting workspace. It does not reuse the capped Table API page or cast decimals to floating-point database aggregates.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

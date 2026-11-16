@@ -33,3 +33,7 @@ OS-A20-02 updates only the local stylesheet response fixture to include a visibl
 2026-11-15 cycle 10: five synthetic password-length rejection fixtures now state 15–1024 instead of 12–1024 in their JSON detail/raw representations. Inputs, statuses and every other decoded field are unchanged. This is an explicit local policy change, not updated vendor conformance evidence.
 
 2026-11-15 cycle 13: refreshed only GET `/static/app.css` raw bytes for scoped account-detail panel spacing. Every other decoded fixture field is identical to the cycle baseline. This is original local UI regression evidence.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

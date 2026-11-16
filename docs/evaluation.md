@@ -56,3 +56,7 @@ For a forgotten password, an administrator opens the person’s account, verifie
 Administrators can open **Authentication events** to inspect browser/Basic password successes, failures and temporary throttling. The page displays entries in pages of 100 and retains the newest 10,000. Unknown usernames are fingerprinted, and credentials are excluded. This diagnostic journal is separate from account-change Security events and does not replace external monitoring or an agreed retention policy.
 
 Use **Older events** to investigate earlier retained journal entries and **Download this page** to save their sanitized JSON. Refresh **Latest events** for newly recorded activity; downloads contain the selected page rather than a complete archive.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

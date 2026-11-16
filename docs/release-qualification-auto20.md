@@ -28,3 +28,7 @@ Reproduce the gate with `sh scripts/verify.sh`. Build with `docker build -t open
 M1–M3 remain unmet. Qualify the actual HTTPS/reverse proxy, SMTP/deliverability, authorized recipients, backup encryption/restore ownership, load and operational monitoring before a shared pilot. SSO/MFA, inherited roles, multi-organization isolation, protected audit retention, attachment malware scanning, general business-notification/migration workers, scoped integration credentials, HA/DR and a complete manual accessibility review remain work. Browser tests cover keyboard interactions, mobile overflow and automated axe checks in both themes; this is not complete WCAG conformance. No licensed ServiceNow instance was used for conformance.
 
 The new readiness probe checks database reachability and exact migration history only. It deliberately exposes no internal diagnostics and creates no sessions. It does not validate every schema object or worker/SMTP health, and should not be used to restart all instances during an external database outage. Hosted GitHub CI has not verified these unpublished commits.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.

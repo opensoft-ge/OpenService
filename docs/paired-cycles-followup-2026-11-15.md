@@ -197,3 +197,7 @@ Each row is a bounded local capability. Enterprise identity, scoped integration 
 Local qualification also passed: fresh install, schema 23→23 restore and 20→23 upgrade, matching image classes/resources and runtime dependency inventory, and source/dependency scans. The 30 medium and 4 low OS findings remain open; see [qualification details](release-qualification-followup10.md). Final review included all supporting documentation and preserved these limits.
 
 **Completed cycle 10.** Final clean gate: 581 tests, zero failures/errors/skips; Java 4843/4843 lines, 2601/2601 branches, 287/287 methods. Exact per-file Java and JavaScript gates pass. Browser migration: 75/75 lines, 49/49 branches, 12/12 functions; theme: 36/36 lines, 15/15 branches, 6/6 functions. Final complete review found no new or reopened defects and made no further runtime repairs.
+
+## AI product direction
+
+Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.
