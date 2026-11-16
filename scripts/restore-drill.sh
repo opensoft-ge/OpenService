@@ -145,8 +145,19 @@ if [ "$drill_source_version" -ge 33 ]; then
         "$drill_address/api/openservice/operations/clocks" | jq -er '.result.sla_id')
     api -X POST -H 'Content-Type: application/json' --data '{"operation":"pause"}' \
         "$drill_address/api/openservice/operations/clocks/$drill_clock" >/dev/null
-    api -X POST -H 'Content-Type: application/json' --data '{"name":"Restore totals","table":"u_service_case","query":{"field":"estimate"},"shared":true}' \
-        "$drill_address/api/openservice/operations/reports" >/dev/null
+    drill_report=$(api -X POST -H 'Content-Type: application/json' --data '{"name":"Restore totals","table":"u_service_case","query":{"field":"estimate"},"shared":true}' \
+        "$drill_address/api/openservice/operations/reports" | jq -er '.result.report_id')
+    if [ "$drill_source_version" -ge 35 ]; then
+        api "$drill_address/api/openservice/operations/reports/$drill_report" | jq -e '.result.rows[0].sum == "0.1"' >/dev/null
+    fi
+    drill_ci=$(api -X POST -H 'Content-Type: application/json' --data '{"short_description":"Restore monitored asset"}' \
+        "$drill_address/api/now/table/cmdb_ci" | jq -er '.result.sys_id')
+    jq -n --arg asset "$drill_ci" '{key:"restore-event",asset_id:$asset,severity:"warning",summary:"Preserve event through recovery"}' > "$drill_directory/event.json"
+    api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/event.json" "$drill_address/api/openservice/operations/events" >/dev/null
+    if [ "$drill_source_version" -ge 34 ]; then
+        api -X POST -H 'Content-Type: application/json' --data '{"key":"restore-event","operation":"acknowledge","reason":"Resume operator review after recovery"}' \
+            "$drill_address/api/openservice/operations/event-actions" >/dev/null
+    fi
     drill_article=$(api -X POST -H 'Content-Type: application/json' --data '{"short_description":"Published recovery guide","text":"Preserve publication through recovery"}' \
         "$drill_address/api/now/table/kb_knowledge" | jq -er '.result.sys_id')
     api -X POST -H 'Content-Type: application/json' --data '{"operation":"publish"}' \
@@ -202,9 +213,17 @@ snapshot_approvals() {
 if [ "$drill_source_version" -ge 19 ]; then snapshot_approvals source; fi
 snapshot_platform() {
     for drill_table in os_work os_notice os_connector os_calendar os_sla os_saved_report os_publication os_dependency os_operational_event os_identity os_password_policy os_password_corpus; do
+        drill_columns='*'
+        if [ "$drill_table" = os_operational_event ] && [ "$drill_source_version" -lt 34 ]; then
+            drill_columns='event_key,asset_id,severity,summary,occurrences,first_seen,last_seen'
+        fi
         docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
-            -c "SELECT row_to_json(q) FROM (SELECT * FROM $drill_table ORDER BY 1) q" > "$drill_directory/$1-$drill_table.jsonl"
+            -c "SELECT row_to_json(q) FROM (SELECT $drill_columns FROM $drill_table ORDER BY 1) q" > "$drill_directory/$1-$drill_table.jsonl"
     done
+    if [ "$drill_source_version" -ge 35 ]; then
+        docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
+            -c 'SELECT row_to_json(q) FROM (SELECT * FROM os_report_run ORDER BY run_id) q' > "$drill_directory/$1-report-runs.jsonl"
+    fi
     docker exec "$drill_prefix-$1-db" psql -At -U openservice -d openservice \
         -c 'SELECT row_to_json(q) FROM (SELECT user_id,audit_viewer,notifications FROM os_user ORDER BY user_id) q' > "$drill_directory/$1-platform-permissions.jsonl"
 }
@@ -230,6 +249,22 @@ if [ "$drill_source_version" -ge 33 ]; then
     api "$drill_address/api/openservice/operations/jobs" | jq -e '.result | any(.state == "queued")' >/dev/null
     api "$drill_address/api/openservice/operations/clocks" | jq -e '.result | any(.state == "paused")' >/dev/null
     echo 'PASS: queued encrypted work/aliases, paused SLA calendars, saved reports, knowledge, identity bindings, audit grants and password corpus survive restore.'
+    if [ "$drill_restored_version" -ge 34 ]; then
+        drill_event_state=open
+        if [ "$drill_source_version" -ge 34 ]; then drill_event_state=acknowledged; fi
+        api "$drill_address/api/openservice/operations/events" | jq -e --arg state "$drill_event_state" '.result | any(.event_key == "restore-event" and .state == $state and .occurrences == 1)' >/dev/null
+        echo 'PASS: operational event state and occurrences survive upgrade/restore.'
+    fi
+    if [ "$drill_source_version" -ge 35 ]; then
+        cmp "$drill_directory/source-report-runs.jsonl" "$drill_directory/restored-report-runs.jsonl"
+        api "$drill_address/api/openservice/operations/report-history/$drill_report" | jq -e '.result | length == 1' >/dev/null
+        echo 'PASS: bounded per-viewer report execution history survives restore.'
+    elif [ "$drill_restored_version" -ge 35 ]; then
+        api "$drill_address/api/openservice/operations/report-history/$drill_report" | jq -e '.result | length == 0' >/dev/null
+        api "$drill_address/api/openservice/operations/reports/$drill_report" | jq -e '.result.rows[0].sum == "0.1"' >/dev/null
+        api "$drill_address/api/openservice/operations/report-history/$drill_report" | jq -e '.result | length == 1' >/dev/null
+        echo 'PASS: upgraded saved report executes and records its first history entry.'
+    fi
 fi
 if [ "$drill_source_version" -ge 19 ]; then
     snapshot_approvals restored

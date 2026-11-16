@@ -62,6 +62,18 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void queueHealthRemainsRestrictedToOperators() throws Exception {
+        account("QueueReader","reader");
+        String path="/api/openservice/operations/queue-health";
+        assertEquals(401,get(path,null).statusCode());
+        assertEquals(403,get(path,auth("QueueReader")).statusCode());
+        assertEquals(405,json("POST",path,map(),auth("admin")).statusCode());
+        var health=DiverseBatchAcceptance.result(this,"queue-health");
+        assertEquals(0,health.get("due"));
+        assertTrue(objects(health.get("alerts")).isEmpty());
+    }
+
+    @Test
     void referenceSearchPaginatesLiteralLabelsWithoutLeakingHiddenRecords() throws Exception { DiverseBatchAcceptance.referenceSearch(this); }
 
     @Test

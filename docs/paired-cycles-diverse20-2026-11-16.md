@@ -4,6 +4,35 @@ Requested scope: 20 sequential open-service feature rounds, each followed by QA/
 
 QA scope is this requested batch, with fixed base `7189162`. Every review includes the accumulated batch diff. Prior 20 feature rounds were all account/credential administration; the subsequent coordinated foundation commit supplied broader engines. This batch develops those engines into useful operator and user journeys. No workstream receives more than five rounds; allocation is reviewed after each five.
 
+## Completed feature report
+
+All **20 paired rounds** completed across **13 workstreams**, with no workstream receiving more than two rounds. Each round has its own local opendevbot commit, passing full verification and accumulated QA/QC review. Nothing was pushed or deployed.
+
+| Round | Area | Added or corrected |
+|---|---|---|
+| 1 | Asset impact | Bounded dependency traversal with accurate truncation, cycles and permission filtering. |
+| 2 | Connector retirement | Audited removal of a connector alias and its stored credential. |
+| 3 | Knowledge history | Paginated immutable publication history, separate from private drafts. |
+| 4 | SLA cancellation | Cancel invalid clocks while preserving existing breach evidence; browser action included. |
+| 5 | Saved report updates | Owners update a definition and sharing in place, without duplicate reports. |
+| 6 | Scheduled work | Persisted run times, deduplication and restart-safe due-time execution. |
+| 7 | Approval reminders | Permission-checked, preference-aware, deduplicated in-app reminders. |
+| 8 | Numeric analytics | Exact decimal range filters in APIs, saved reports and keyboard-accessible light/dark forms. |
+| 9 | AI grounding preview | Inspect the authorized fields and exact content selected for transmission without contacting a provider. |
+| 10 | Deployment preflight | Seven actionable local configuration checks, separated from external release qualification. |
+| 11 | Event lifecycle | Audited acknowledge, resolve and reopen actions; recurring resolved events reopen. |
+| 12 | Knowledge restore | Publish a previous snapshot as a new immutable version while preserving drafts and history. |
+| 13 | Job receipts | Safe completion metadata with controlled missing/unreadable states. |
+| 14 | Report history | Latest 100 successful executions per viewer/report, with duration and definition digest. |
+| 15 | Record SLA views | Current record and requester permissions govern persisted clock summaries. |
+| 16 | Audit verification | Compare a retained checkpoint with its original log prefix after later events are appended. |
+| 17 | Approval diagnostics | Explain stale, unavailable, revoked or otherwise nonqualifying review decisions. |
+| 18 | Migration reconciliation | Bounded summaries of missing staged items and changed destination snapshots. |
+| 19 | Reference search | Literal, paginated label search with live table, field and record permissions. |
+| 20 | Queue health and release checks | Operator API/UI for overdue, failed, expired-lease and capacity conditions; packaged-image qualification. |
+
+Final automated acceptance: **712 tests**, zero failures/errors/skips; exact Java branch **3604/3604**, line **6771/6771**, method **391/391**. Browser JavaScript coverage remains exact. See each round below for its complete touched-file scope, QA findings and evidence. These are bounded native capabilities; most new endpoints are API-first, with browser journeys completed for clock cancellation, numeric ranges and queue recovery. They do not establish full ServiceNow parity or enterprise release readiness.
+
 ## Allocation before implementation
 
 | Workstream | Rounds | Intended outcome or justified deferral |
@@ -177,3 +206,42 @@ Round 18 implemented. Accumulated QA/QC review checked administrator authorizati
 Selected contract: authenticated GET `operations/reference-search/{table}` supports literal summary query `q` up to 200 characters, limit 1–100 (default 20), and nonnegative integer offset. Return value/label pairs, visible total and next offset after current table/field/record policy checks. Hidden display fields cannot be searched, and private rows cannot affect visible totals. Preserve the old references endpoint. Test literal percent/encoded-query-looking input, pagination, malformed parameters and access changes on both databases. [Brazil reference auto-complete](https://www.servicenow.com/docs/r/platform-administration/c_AutoCompleteForReferenceFields.html), refreshed 2026-11-16, requires table read access and supports configurable columns; this native API is not yet an autocomplete widget or configurable display-column system. Offset pages are not a stable snapshot under concurrent record changes.
 
 Round 19 implemented. Accumulated QA/QC review checked literal matching, field-read rejection, private-row counts, pagination and strict query parameters. Zero new/reopened/unresolved findings; no repairs. Full clean verification: **707 tests**, no failures/errors/skips; Java **branch 3587/3587**, **line 6748/6748**, **method 389/389**. Whole touched scope: `Operations.java` branch 89/89, line 127/127, method 5/5; `ReferenceSearch.java` branch 10/10, line 15/15, method 2/2; `WebController.java` branch 1067/1067, line 2094/2094, method 41/41. Browser script gates remain exact. Commit message: `Search reference labels with live permission filtering`. Round 18 commit: `ca59941`.
+
+### 20 — OS-D20-20: queue health and packaged release checks (workstream 16; OS-PARITY-10)
+
+Selected contract: administrator GET `operations/queue-health` and Operations dashboard show aggregate due/scheduled/processing/failed work, expired leases, oldest overdue age and remaining capacity. Provide actionable worker-disabled, failure, stale-lease, five-minute overdue and full-retention alerts without payloads or recipients. The browser journey cancels work and cleans eligible completed/cancelled work older than 30 days by keyboard, retaining state after reload in desktop light/mobile dark; run accessibility checks and inspect screenshots. Test threshold boundaries and full 5000-job retention on both engines. Official System Scheduler evidence above supports operational visibility; this does not implement external alert delivery or an availability guarantee. Qualify the final image with fresh installation, schema-35 restore, schema-33 upgrade, worker restart recovery, bounded read-load smoke and current dependency/image/secret scans; record outcomes and all remaining adoption gates.
+
+Batch provenance: new Java implementations, template changes and synthetic acceptance fixtures were authored in this repository. Public vendor documentation informed capability contracts; no vendor application source, branding assets or customer datasets were imported. Existing third-party notices, runtime license inventory and the older fixture provenance limitation remain preserved. This records the work performed; it is not a formal clean-room certification or legal clearance.
+
+Round 20 implemented. QA review identified CVE-2026-97054 in the unused inherited Go pebble utility. Verified the Java-only entrypoint and absence of application references, removed the unused binary from the runtime image, rebuilt and rescanned. New 1, fixed 1, reopened 0, unresolved 0 in the reviewed change. Subsequent accumulated review found no further defects. Keyboard cancellation and 30-day cleanup, reload persistence, axe checks and inspected desktop-light/mobile-dark screenshots passed. Remaining release gaps and upstream advisories are recorded below. Full clean verification: **712 tests**, no failures/errors/skips; Java **branch 3604/3604**, **line 6771/6771**, **method 391/391**. Whole touched scope: `Operations.java` branch 90/90, line 129/129, method 5/5; `QueueHealth.java` branch 16/16, line 21/21, method 2/2; `WebController.java` branch 1067/1067, line 2094/2094, method 41/41. Browser script gates remain exact. Commit message: `Add actionable queue health and qualify the release image`. Round 19 commit: `b7de583`.
+
+**Twenty-round allocation checkpoint:** actual allocation matches the plan except the documented refinement of round 8 into exact aggregate ranges. Workstreams 6, 7, 8, 9, 12, 13 and 14 received two rounds each; 1, 5, 10, 11, 15 and 16 received one each. Thirteen workstreams covered, maximum two rounds in any one, no concentration exception. Workstreams 2, 3 and 4 retain their explicitly documented architectural/integration deferrals. Passing bounded slices does not close M1–M3.
+
+## Final release evidence
+
+Final local image: `openservice:diverse20-20261116`, immutable ID `sha256:a6176a6780a694be505b1ba7955ed81148de0fa237026453b76e25e79919e99b`. Packaged JAR SHA-256: `edcc3a6022e8ebfc5091adb8498b4a17502765d4c04e27c3c9b96b523ff334ef`. All **145 application files, including 97 compiled classes**, and **52 nested runtime libraries** match the fully tested host build byte-for-byte. The runtime license inventory exactly matches those 52 library names; existing notices remain bundled.
+
+| Check | Observed outcome |
+|---|---|
+| Complete automated gate | 712 tests, zero failures/errors/skips; exact line 6771/6771, branch 3604/3604, method 391/391. |
+| Browser JavaScript | Migrations: 75/75 lines, 49/49 branches, 12/12 functions. Theme: 36/36 lines, 15/15 branches, 6/6 functions. |
+| Browser journeys | 57 browser tests pass. New/changed clock cancellation, numeric ranges and queue recovery/cleanup exercised by keyboard, with reload persistence and axe checks in light/dark layouts; screenshots inspected. |
+| Fresh installation | Generated private credentials, repeated setup preservation, Compose TCP readiness, health, login, administrator API and non-root UID 10001 pass. |
+| Schema 35 → 35 restore | Pass; event acknowledgment/occurrences and per-viewer report history survive, alongside existing records, configuration, attachment bytes, accounts, approvals, encrypted work, aliases, calendars and policies. |
+| Schema 33 → 35 upgrade | Pass from `sha256:146f3c5db9fdffe9a8e06ee00ba918ecaea3408996bb52af407c157b58552913`; events retain occurrences and gain open state, and an upgraded saved report executes and records its first history entry. |
+| Packaged worker restart | Queued work persists with worker disabled, then completes after app replacement with worker enabled on both PostgreSQL and SQLite. Safe delivered receipt verified. |
+| PostgreSQL bounded load | 200 authenticated reads, eight clients, worker enabled: zero failures; mean 0.609s, p95 0.691s, max 0.784s. |
+| SQLite bounded load | Same workload: zero failures in this run; mean 0.600s, p95 2.417s, max 6.134s. **OS-EXP-16-PERF-01 remains open**; the prior intermittent failure was not reproduced or fixed here. |
+| Dependency manifests and packaged Java | Trivy reports zero vulnerabilities in Maven/npm manifests and packaged Java libraries. |
+| Final OS image | Zero high/critical findings; 30 medium and 4 low findings remain, with no fixed versions listed. These are retained upstream findings, not a claim of a vulnerability-free image. |
+| Source secrets | Gitleaks 8.30.1, full redaction, current 356-file publication snapshot and archive depth two: no leaks reported. Reachable history and ignored private deployment files are outside this scan. |
+
+The first refreshed image contained an unused inherited `/usr/bin/pebble` binary built with an affected Go standard library. The [official Go advisory GO-2026-6859 / CVE-2026-97054](https://pkg.go.dev/vuln/GO-2026-6859) documents an HTTP server race. No OpenService execution path using that utility was found: the image directly launches Java. The Dockerfile now removes the unused binary; the final root filesystem and rescan confirm its absence. This is a dependency finding/removal, not a demonstrated exploit in OpenService. Trivy 0.76.2 used vulnerability DB updated 2026-11-16 01:11 UTC and Java DB updated 2026-11-15 00:58 UTC. A CycloneDX SBOM was generated from the final scan.
+
+Reproduce Java/browser acceptance with the pinned Java 27 installation and `sh scripts/verify.sh`. Image/drill commands: `docker build --pull -t openservice:diverse20-20261116 .`, `bash scripts/fresh-install-drill.sh IMAGE`, `bash scripts/restore-drill.sh IMAGE`, and `bash scripts/restore-drill.sh IMAGE PRIOR_IMAGE`. Both restore drills completed in 17 seconds on this workstation; that is not a production recovery SLA. The restored source was stopped before backup; mixed-version rolling upgrades and failover were not qualified. Per-round source digests and exact coverage evidence are in `/tmp/openservice-rNN-evidence.json`; final scan, SBOM, artifact and sanitized runtime logs are in `/tmp/openservice-diverse20-release/`. These temporary local files are not a protected external evidence archive.
+
+## Remaining adoption limits
+
+The batch improves native engines and several complete browser journeys; it does not establish full vendor parity or a production release. Actual shared HTTPS/proxy exposure, controlled inbox delivery, approved users, secret/backup custody and operational ownership remain unqualified. Enterprise SSO/MFA, custom/inherited roles and multi-organization isolation, protected external audit retention, quarantine/scanning, richer workflow/catalogue engines, live provider and ServiceNow migration qualification, external alert delivery, representative capacity testing, HA/disaster recovery and a complete manual accessibility assessment remain roadmap work. Preserve the earlier SQLite concurrency issue and obtain repeated representative evidence before concurrent SQLite evaluation. A PostgreSQL smoke pass is also not a production capacity guarantee.
+
+The final accumulated review uses fixed base `7189162c9ee451ef558f742afb847fad4847fb34`. It found no additional defects after the recorded repairs and final qualification. The report distinguishes selected feature corrections, implementation/test refinements, the removed image dependency and pre-existing release gaps. All 20 batch commits use opendevbot; no co-author trailers, push or deployment were made.

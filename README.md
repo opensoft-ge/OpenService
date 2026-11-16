@@ -6,6 +6,8 @@ OpenService is an independent project, not affiliated with, sponsored by or endo
 
 Development priorities and adoption gates are defined in the [roadmap and build order](docs/roadmap.md). Local identity, emailed invitations/recovery, durable SMTP delivery, requester isolation and configurable field-read controls are implemented and tested as bounded capabilities. Provider qualification, enterprise identity and operational controls remain adoption prerequisites. The current build supports a disposable local walkthrough with synthetic data; shared evaluation and operational pilot gates remain unmet.
 
+The [20-round feature report](docs/paired-cycles-diverse20-2026-11-16.md) records additions across thirteen workstreams, exact test/coverage results and remaining release limits. See [platform operations](docs/platform-operations.md) for native API contracts and operator recovery steps.
+
 ## Screenshots
 
 Captured from the Java application in automated Chromium tests with synthetic evaluation data. These are working screens, not design mockups.

@@ -24,7 +24,9 @@ final class Operations {
                         "SELECT sla_id,table_name,record_id,remaining_ms,state FROM os_sla ORDER BY"
                                 + " last_tick DESC LIMIT 100"),
                 "qualification",
-                qualification(store, db));
+                qualification(store, db),
+                "queueHealth",
+                QueueHealth.inspect(store,db,System.currentTimeMillis()));
     }
 
     static Map<String, Object> qualification(Store store, Store.Db db) throws Exception {
@@ -124,6 +126,7 @@ final class Operations {
                                         + " 100");
                 case "qualification" -> qualification(store, db);
                 case "preflight" -> DeploymentPreflight.inspect(store, db);
+                case "queue-health" -> QueueHealth.inspect(store,db,System.currentTimeMillis());
                 case "approval-diagnostics" -> ApprovalDiagnostics.inspect(db,actor,id);
                 case "password-policy" -> PasswordPolicies.status(db);
                 default -> throw new Failure(405, "GET is not supported here");

@@ -135,6 +135,40 @@ final class PlatformBrowserAcceptance {
         }
     }
 
+    static void queueHealth(BrowserTest h) throws Exception {
+        for(String theme:List.of("light","dark")) {
+            String job;
+            try(var db=h.store.open()) {
+                String actor=PlatformFoundationTest.bind(db);
+                db.update("DELETE FROM os_work");
+                job=WorkJobs.enqueue(h.store,db,actor,map("kind","notification","key",id(),"payload",map("username","admin","message","Queued health check"))).get("job_id").toString();
+                db.update("UPDATE os_work SET available_at=? WHERE job_id=?",System.currentTimeMillis()-600000,job);
+                db.connection.commit();
+            }
+            try(var p=Playwright.create();var browser=p.chromium().launch();var context=browser.newContext()) {
+                var page=context.newPage();
+                page.emulateMedia(new Page.EmulateMediaOptions().setColorScheme(theme.equals("dark")?com.microsoft.playwright.options.ColorScheme.DARK:com.microsoft.playwright.options.ColorScheme.LIGHT));
+                page.setViewportSize(theme.equals("dark")?390:1280,844);
+                h.login(page,"admin");page.navigate(h.base()+"/admin/operations");
+                var health=page.getByRole(AriaRole.REGION,new Page.GetByRoleOptions().setName("Queue health"));
+                assertThat(health).containsText("Enable the business worker");
+                assertThat(health).containsText("at least five minutes");
+                ReleaseBrowserAcceptance.accessible(page);
+                page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/queue-health-"+theme+".png")).setFullPage(true));
+                var row=page.locator("tr").filter(new Locator.FilterOptions().setHasText(job));
+                row.getByRole(AriaRole.BUTTON,new Locator.GetByRoleOptions().setName("Cancel").setExact(true)).press("Enter");
+                assertThat(health).containsText("No queue alerts.");
+                page.reload();assertThat(health).containsText("No queue alerts.");
+                try(var db=h.store.open()) { db.update("UPDATE os_work SET created_at=0 WHERE job_id=?",job);db.connection.commit(); }
+                health.getByRole(AriaRole.BUTTON,new Locator.GetByRoleOptions().setName("Clean up completed work older than 30 days")).press("Enter");
+                assertThat(page.locator("tr").filter(new Locator.FilterOptions().setHasText(job))).hasCount(0);
+                assertThat(health).containsText("5000 of 5000");
+                page.reload();assertThat(health).containsText("5000 of 5000");
+                ReleaseBrowserAcceptance.accessible(page);
+            }
+        }
+    }
+
     static void numericRanges(BrowserTest h) throws Exception {
         String table="u_browser_range_"+id();
         try(var db=h.store.open()) {

@@ -59,6 +59,9 @@ class BrowserTest {
     void numericRangeFormsWorkInBothThemes() throws Exception { PlatformBrowserAcceptance.numericRanges(this); }
 
     @Test
+    void queueHealthSupportsKeyboardRecoveryInBothThemes() throws Exception { PlatformBrowserAcceptance.queueHealth(this); }
+
+    @Test
     void changingRegisteredEmailRequiresBothMailboxProofs() throws Exception { PlatformBrowserAcceptance.replacement(this); }
 
     @Test
