@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 33;
+    static final int VERSION = 34;
 
     private Migrations() {}
 
@@ -450,6 +450,12 @@ final class Migrations {
             db.update(
                     "INSERT INTO os_migration(version,name) VALUES(33,?)",
                     "versioned organization password screening policy");
+        }
+        if (version < 34) {
+            addColumn(db, "os_operational_event", "state",
+                    "VARCHAR(20) NOT NULL DEFAULT 'open' CHECK(state IN ('open','acknowledged','resolved'))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(34,?)",
+                    "operational event acknowledgment and resolution");
         }
     }
 

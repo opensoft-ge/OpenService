@@ -61,6 +61,9 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void operationalEventsHaveAuditedDispositionAndRecurrence() throws Exception { DiverseBatchAcceptance.eventActions(this); }
+
+    @Test
     void deploymentPreflightIsRestrictedAndActionable() throws Exception {
         account("PreflightReader","reader");
         String path="/api/openservice/operations/preflight";

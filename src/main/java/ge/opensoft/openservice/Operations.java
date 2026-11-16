@@ -167,6 +167,8 @@ final class Operations {
                 break;
             case "events":
                 return AssetOperations.event(db, actor, body, System.currentTimeMillis());
+            case "event-actions":
+                return EventActions.apply(db, actor, body);
             default:
                 throw new Failure(405, "POST is not supported here");
         }

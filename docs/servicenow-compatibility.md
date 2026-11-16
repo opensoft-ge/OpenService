@@ -529,3 +529,5 @@ OS-DISC-02 discovery refresh, 2026-11-16: official Brazil [Data Privacy channel 
 **OS-D20-09 implemented** (workstream 15, PARITY-06): administrator AI grounding preview shares exact field selection with provider execution and performs no external request. Consent binding and content de-identification remain open in OS-DISC-02. [Evidence](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-10 implemented** (workstream 1, PARITY-10): seven actionable local deployment checks, explicit mail configuration validation and a separate external qualification checklist. This does not mark a deployment qualified. Ten rounds span ten workstreams. [Evidence](paired-cycles-diverse20-2026-11-16.md).
+
+**OS-D20-11 implemented** (workstream 13, PARITY-05): audited event acknowledgment/resolution/reopening, idempotent repeated actions and recurrence handling. Schema 34 preserves existing event history. Automatic incident creation and remediation remain open. [Evidence](paired-cycles-diverse20-2026-11-16.md).

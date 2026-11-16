@@ -256,6 +256,41 @@ final class DiverseBatchAcceptance {
         }
     }
 
+    static void eventActions(WorkflowSupport h) throws Exception {
+        h.account("EventAgent","agent");
+        String asset=h.add("cmdb_ci").get("sys_id").toString(),key="monitor / with spaces";
+        var event=map("key",key,"asset_id",asset,"severity","critical","summary","Service unavailable");
+        assertEquals("open",PlatformOperationsAcceptance.post(h,"events",event).get("state"));
+        var command=map("key",key,"operation","acknowledge","reason","Investigating");
+        assertEquals(401,h.json("POST",ROOT+"event-actions",command,null).statusCode());
+        assertEquals(403,h.json("POST",ROOT+"event-actions",command,auth("EventAgent")).statusCode());
+        assertEquals(400,h.json("POST",ROOT+"event-actions",map(),auth("admin")).statusCode());
+        var bad=new LinkedHashMap<>(command); bad.put("operation","invalid");
+        assertEquals(400,h.json("POST",ROOT+"event-actions",bad,auth("admin")).statusCode());
+        bad.put("operation","resolve"); bad.put("key","missing");
+        assertEquals(404,h.json("POST",ROOT+"event-actions",bad,auth("admin")).statusCode());
+        assertEquals("acknowledged",PlatformOperationsAcceptance.post(h,"event-actions",command).get("state"));
+        assertEquals("acknowledged",PlatformOperationsAcceptance.post(h,"event-actions",command).get("state"));
+        assertEquals("acknowledged",PlatformOperationsAcceptance.post(h,"events",event).get("state"));
+        command.put("operation","resolve");
+        assertEquals("resolved",PlatformOperationsAcceptance.post(h,"event-actions",command).get("state"));
+        command.put("operation","acknowledge");
+        assertEquals(409,h.json("POST",ROOT+"event-actions",command,auth("admin")).statusCode());
+        command.put("operation","reopen");
+        assertEquals("open",PlatformOperationsAcceptance.post(h,"event-actions",command).get("state"));
+        command.put("operation","resolve");
+        PlatformOperationsAcceptance.post(h,"event-actions",command);
+        var recurrence=PlatformOperationsAcceptance.post(h,"events",event);
+        assertEquals("open",recurrence.get("state"));
+        assertEquals(3,((Number)recurrence.get("occurrences")).intValue());
+        try(var db=h.store.open()) {
+            assertEquals(1,db.count("SELECT COUNT(*) FROM os_security_event WHERE action='event.acknowledge'"));
+            assertEquals(2,db.count("SELECT COUNT(*) FROM os_security_event WHERE action='event.resolve'"));
+            assertEquals(1,db.count("SELECT COUNT(*) FROM os_security_event WHERE action='event.reopen'"));
+            assertEquals(0,db.count("SELECT COUNT(*) FROM os_record WHERE \"table\"='incident'"));
+        }
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

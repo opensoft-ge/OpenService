@@ -69,6 +69,33 @@ class MigrationsTest {
     }
 
     @ParameterizedTest
+    @ValueSource(booleans={false,true})
+    void eventDispositionUpgradePreservesExistingOccurrences(boolean postgres) throws Exception {
+        var env=configuration(postgres);
+        var store=new Store(env);
+        try(var db=store.open()) {
+            db.update("ALTER TABLE os_operational_event DROP COLUMN state");
+            db.update("DELETE FROM os_migration WHERE version>=34");
+            db.update("INSERT INTO os_operational_event(event_key,asset_id,severity,summary,occurrences,first_seen,last_seen) VALUES('retained','asset','critical','Preserve this',7,100,200)");
+            db.connection.commit();
+            Migrations.apply(db);
+            assertEquals("open",db.one("SELECT state FROM os_operational_event").get("state"));
+            db.connection.rollback();
+            assertEquals(33,db.count("SELECT MAX(version) FROM os_migration"));
+        }
+        for(int i=0;i<2;i++) {
+            store=new Store(env);
+            try(var db=store.open()) {
+                var event=db.one("SELECT * FROM os_operational_event WHERE event_key='retained'");
+                assertEquals("open",event.get("state"));
+                assertEquals(7,((Number)event.get("occurrences")).intValue());
+                assertEquals("Preserve this",event.get("summary"));
+                assertEquals(200,((Number)event.get("last_seen")).intValue());
+            }
+        }
+    }
+
+    @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void passwordRecoveryIsAtomicAndSingleUseUnderConcurrency(boolean postgres) throws Exception {
         var store = new Store(configuration(postgres));

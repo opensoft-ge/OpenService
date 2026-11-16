@@ -99,7 +99,8 @@ final class AssetOperations {
                 "INSERT INTO"
                     + " os_operational_event(event_key,asset_id,severity,summary,occurrences,first_seen,last_seen)"
                     + " VALUES(?,?,?,?,1,?,?) ON CONFLICT(event_key) DO UPDATE SET"
-                    + " severity=excluded.severity,summary=excluded.summary,occurrences=os_operational_event.occurrences+1,last_seen=excluded.last_seen",
+                    + " severity=excluded.severity,summary=excluded.summary,occurrences=os_operational_event.occurrences+1,last_seen=excluded.last_seen,"
+                    + "state=CASE WHEN os_operational_event.state='resolved' THEN 'open' ELSE os_operational_event.state END",
                 key,
                 asset,
                 severity,
