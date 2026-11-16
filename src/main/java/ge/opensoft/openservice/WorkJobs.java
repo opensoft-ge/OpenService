@@ -27,8 +27,9 @@ final class WorkJobs {
         Service.requireAccountAdministrator(db, actor);
         var body = object(input);
         require(
-                body.keySet().equals(Set.of("kind", "key", "payload")),
-                "Provide kind, key and payload");
+                body.keySet().equals(Set.of("kind", "key", "payload"))
+                        || body.keySet().equals(Set.of("kind", "key", "payload", "run_at")),
+                "Provide kind, key, payload and optional run_at");
         String kind = text(body.get("kind"), 40), key = text(body.get("key"), 80);
         require(
                 Set.of("notification", "connector.read", "migration.step").contains(kind),
@@ -36,7 +37,18 @@ final class WorkJobs {
         var payload = object(body.get("payload"));
         String serialized = JSON.writeValueAsString(new TreeMap<>(payload));
         require(serialized.length() <= 16000, "Job payload is too large");
-        String fingerprint = Passwords.tokenHash(kind + ":" + serialized);
+        long now = System.currentTimeMillis(), availableAt = now;
+        boolean scheduled = body.containsKey("run_at");
+        if (scheduled) {
+            try {
+                var instant = java.time.Instant.parse(text(body.get("run_at"), 40));
+                require(instant.getNano() % 1_000_000 == 0, "run_at supports millisecond precision");
+                availableAt = instant.toEpochMilli();
+            } catch (java.time.DateTimeException | ArithmeticException invalid) {
+                throw new Failure(400, "Use an ISO instant for run_at");
+            }
+        }
+        String fingerprint = Passwords.tokenHash(kind + ":" + serialized + (scheduled ? ":" + availableAt : ""));
         var existing =
                 db.one(
                         "SELECT "
@@ -49,12 +61,13 @@ final class WorkJobs {
                 throw new Failure(409, "This key already identifies different work");
             return existing;
         }
+        require(!scheduled || (availableAt >= now && availableAt <= now + 366L * 86400000),
+                "Schedule work within the next 366 days");
         require(
                 db.count("SELECT COUNT(*) FROM os_work") < 5000,
                 "Work retention limit reached; clean up completed jobs");
         var user = db.one("SELECT auth_revision FROM os_user WHERE user_id=?", actor);
         String id = id();
-        long now = System.currentTimeMillis();
         db.update(
                 "INSERT INTO"
                     + " os_work(job_id,owner_id,auth_revision,kind,dedupe,fingerprint,envelope,state,attempts,available_at,created_at,lease,error,result)"
@@ -66,7 +79,7 @@ final class WorkJobs {
                 key,
                 fingerprint,
                 Outbox.encrypt(store.secret, serialized),
-                now,
+                availableAt,
                 now);
         SecurityEvents.record(db, actor, actor, "work.queued", map("job_id", id, "kind", kind));
         return db.one("SELECT " + COLUMNS + " FROM os_work WHERE job_id=?", id);

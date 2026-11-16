@@ -76,6 +76,9 @@ abstract class WorkflowSupport {
     void savedReportUpdatesPreserveOwnershipAndIdentity() throws Exception { DiverseBatchAcceptance.updateReport(this); }
 
     @Test
+    void scheduledWorkWaitsForItsPersistedDueTime() throws Exception { DiverseBatchAcceptance.scheduledWork(this); }
+
+    @Test
     void platformOperationsShareRealAuthenticationAndPersistence() throws Exception { PlatformOperationsAcceptance.run(this); }
 
     @Test

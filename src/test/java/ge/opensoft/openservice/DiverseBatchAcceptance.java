@@ -151,6 +151,32 @@ final class DiverseBatchAcceptance {
         }
     }
 
+    static void scheduledWork(WorkflowSupport h) throws Exception {
+        h.account("ScheduleReader", "reader");
+        long due = System.currentTimeMillis() + 3600000;
+        var body = map("kind", "notification", "key", "scheduled", "payload", map("username", "ScheduleReader", "message", "Scheduled reminder"),
+                "run_at", java.time.Instant.ofEpochMilli(due).toString());
+        for (Object invalid : Arrays.asList(null, "yesterday", "2020-01-01T00:00:00Z", java.time.Instant.ofEpochMilli(due).plusNanos(1).toString(), java.time.Instant.ofEpochMilli(due + 367L*86400000).toString(), "+999999999-12-31T23:59:59Z")) {
+            var bad = new LinkedHashMap<>(body); bad.put("run_at", invalid);
+            assertEquals(400, h.json("POST", ROOT+"jobs", bad, auth("admin")).statusCode());
+        }
+        assertEquals(403, h.json("POST", ROOT+"jobs", body, auth("ScheduleReader")).statusCode());
+        String job = PlatformOperationsAcceptance.post(h, "jobs", body).get("job_id").toString();
+        assertEquals(job, PlatformOperationsAcceptance.post(h, "jobs", body).get("job_id"));
+        var conflict = new LinkedHashMap<>(body); conflict.put("run_at", java.time.Instant.ofEpochMilli(due+1000).toString());
+        assertEquals(409, h.json("POST", ROOT+"jobs", conflict, auth("admin")).statusCode());
+        var restarted = new WorkWorker(new Store(h.environment));
+        assertFalse(restarted.runOne(due-1));
+        assertTrue(restarted.runOne(due));
+        assertFalse(restarted.runOne(due+1));
+        try (var db = h.store.open()) {
+            assertEquals("succeeded", db.one("SELECT state FROM os_work WHERE job_id=?", job).get("state"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_notice WHERE notice_id=?", job));
+        }
+        var notices = objects(parsed(h.get("/api/openservice/me/notifications", auth("ScheduleReader"))).get("result"));
+        assertEquals("Scheduled reminder", notices.getFirst().get("message"));
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;
