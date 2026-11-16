@@ -210,4 +210,45 @@ final class DiverseBatchAcceptance {
         assertFalse(rows.stream().anyMatch(r -> source.equals(r.get("sys_id"))));
         assertEquals(401, h.get(ROOT + "dependencies/" + source, null).statusCode());
     }
+
+    static void reminders(WorkflowSupport h) throws Exception {
+        h.account("ReminderReviewer", "agent");
+        String record = h.add("incident").get("sys_id").toString();
+        String path = "/api/openservice/records/incident/"+record+"/approvals";
+        String approval = ApprovalAcceptance.create(h, path, "ReminderReviewer", "admin");
+        String endpoint = "approval-reminders/"+approval;
+        assertEquals(401, h.json("POST", ROOT+endpoint, map(), null).statusCode());
+        assertEquals(403, h.json("POST", ROOT+endpoint, map(), auth("ReminderReviewer")).statusCode());
+        assertEquals(400, h.json("POST", ROOT+endpoint, map("extra", true), auth("admin")).statusCode());
+        assertEquals(404, h.json("POST", ROOT+"approval-reminders/"+id(), map(), auth("admin")).statusCode());
+        assertEquals(200, h.json("POST", "/api/openservice/me/notifications", map("enabled", false), auth("ReminderReviewer")).statusCode());
+        assertEquals(false, PlatformOperationsAcceptance.post(h, endpoint, map()).get("delivered"));
+        assertEquals(200, h.json("POST", "/api/openservice/me/notifications", map("enabled", true), auth("ReminderReviewer")).statusCode());
+        assertEquals(map("delivered", true, "duplicate", false), PlatformOperationsAcceptance.post(h, endpoint, map()));
+        assertEquals(map("delivered", true, "duplicate", true), PlatformOperationsAcceptance.post(h, endpoint, map()));
+        var notices = objects(parsed(h.get("/api/openservice/me/notifications", auth("ReminderReviewer"))).get("result"));
+        assertEquals(1, notices.size());
+        assertTrue(notices.getFirst().get("message").toString().contains(approval));
+        try (var db = h.store.open()) {
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_event WHERE action='approval.reminded' AND record_id=?", record));
+            db.update("UPDATE os_user SET active=0 WHERE name='ReminderReviewer'");
+            db.connection.commit();
+        }
+        assertEquals(409, h.json("POST", ROOT+endpoint, map(), auth("admin")).statusCode());
+        try (var db = h.store.open()) {
+            db.update("UPDATE os_user SET active=1 WHERE name='ReminderReviewer'");
+            db.update("INSERT INTO os_record_access(record_id,visibility,owner_id,group_id) VALUES(?,'private',?,'')", record, RecordAccess.owner(db,"admin"));
+            db.connection.commit();
+        }
+        assertEquals(404, h.json("POST", ROOT+endpoint, map(), auth("admin")).statusCode());
+        try (var db = h.store.open()) {
+            db.update("DELETE FROM os_record_access WHERE record_id=?", record);
+            db.connection.commit();
+        }
+        assertEquals(200, h.json("POST", path+"/"+approval+"/withdraw", map("comment","No longer needed"), auth("admin")).statusCode());
+        assertEquals(409, h.json("POST", ROOT+endpoint, map(), auth("admin")).statusCode());
+        String fresh = ApprovalAcceptance.create(h, path, "ReminderReviewer", "admin");
+        assertEquals(200, h.json("PATCH", "/api/now/table/incident/"+record, map("short_description","Updated proposal"), auth("admin")).statusCode());
+        assertEquals(409, h.json("POST", ROOT+"approval-reminders/"+fresh, map(), auth("admin")).statusCode());
+    }
 }

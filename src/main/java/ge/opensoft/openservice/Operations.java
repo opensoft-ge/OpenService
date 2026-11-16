@@ -119,6 +119,8 @@ final class Operations {
         require(method.equals("POST"), "Use POST for this operation");
         var body = object(input);
         switch (resource) {
+            case "approval-reminders":
+                return ApprovalReminders.send(db, actor, id, body);
             case "assist":
                 return ProviderAssist.summarize(store, db, actor, body);
             case "password-policy":
