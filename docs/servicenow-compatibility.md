@@ -511,3 +511,5 @@ PARITY-08/10: explicit group membership additions/removals now enter account sec
 PARITY-08 / OS-DISC-03: two-account current record-policy comparison implemented. Hypothetical role/group simulation and agent/tool/workflow resource diagnosis remain missing P2/M2; depend on richer policies and governed resource definitions, require non-mutating scenarios and shared enforcement. [Contract, discovery and evidence](paired-cycles-next20-2026-11-15.md). M1–M3 remain unmet.
 
 Diverse batch progress: **OS-D20-01 implemented** (workstream 13, PARITY-05): exact bounded impact traversal; **OS-D20-02 implemented** (workstream 10, PARITY-03): reasoned connector retirement and queued-work denial. [Acceptance, coverage and limits](paired-cycles-diverse20-2026-11-16.md). Parent areas remain partial.
+
+**OS-D20-03 implemented** (workstream 9, PARITY-04): paginated immutable publication history, including retired versions, restricted to administrators and excluding later drafts. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).

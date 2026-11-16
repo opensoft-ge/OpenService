@@ -67,6 +67,9 @@ abstract class WorkflowSupport {
     void retiredConnectorsCannotExecuteQueuedWork() throws Exception { DiverseBatchAcceptance.retireConnector(this); }
 
     @Test
+    void publicationHistoryIsPagedAndKeepsDraftsPrivate() throws Exception { DiverseBatchAcceptance.knowledgeHistory(this); }
+
+    @Test
     void platformOperationsShareRealAuthenticationAndPersistence() throws Exception { PlatformOperationsAcceptance.run(this); }
 
     @Test

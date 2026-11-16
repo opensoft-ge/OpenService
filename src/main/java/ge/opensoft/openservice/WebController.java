@@ -350,7 +350,7 @@ public class WebController {
                         .matcher(path);
         if (platform.matches()) {
             method(method, "GET", "POST", "DELETE");
-            c.noQuery();
+            if (!platform.group(1).equals("knowledge") || !method.equals("GET")) c.noQuery();
             String actor = c.user.get("user_id").toString();
             return json(
                     map(
@@ -362,7 +362,7 @@ public class WebController {
                                     platform.group(1),
                                     Objects.toString(platform.group(2), ""),
                                     method,
-                                    method.equals("GET") ? map() : body(c))),
+                                    method.equals("GET") ? c.arguments() : body(c))),
                     200);
         }
         if (path.equals("/") && c.role().equals("requester")) return redirect("/requests");

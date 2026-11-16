@@ -103,6 +103,10 @@ final class Operations {
                 case "connectors" ->
                         db.all("SELECT alias,origin,revision FROM os_connector ORDER BY alias");
                 case "calendars" -> db.all("SELECT * FROM os_calendar ORDER BY calendar_id");
+                case "knowledge" -> {
+                    if (id.isEmpty()) throw new Failure(405, "Specify an article for publication history");
+                    yield PublishedKnowledge.history(db, actor, id, input);
+                }
                 case "clocks" -> db.all("SELECT * FROM os_sla ORDER BY last_tick DESC LIMIT 100");
                 case "events" ->
                         db.all(

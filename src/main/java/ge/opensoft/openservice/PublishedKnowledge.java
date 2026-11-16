@@ -50,6 +50,20 @@ final class PublishedKnowledge {
         SecurityEvents.record(db, actor, actor, "knowledge.retired", map("article_id", id));
     }
 
+    static Map<String, Object> history(Store.Db db, String actor, String id, Object input) throws SQLException {
+        Service.requireAccountAdministrator(db, actor);
+        Service.record(db, "kb_knowledge", id);
+        var args = object(input);
+        require(Set.of("before").containsAll(args.keySet()), "Only before is supported");
+        long before = args.containsKey("before")
+                ? Service.number(String.valueOf(args.get("before")), 1, Integer.MAX_VALUE)
+                : Long.MAX_VALUE;
+        var rows = db.all("SELECT version,title,content,published_at,retired FROM os_publication WHERE article_id=? AND version<? ORDER BY version DESC LIMIT 101", id, before);
+        boolean more = rows.size() > 100;
+        if (more) rows.removeLast();
+        return map("article_id", id, "versions", rows, "next_before", more ? rows.getLast().get("version").toString() : "");
+    }
+
     static List<Map<String, Object>> list(Store.Db db) throws SQLException {
         return db.all(
                 "SELECT p.* FROM os_publication p WHERE p.retired=0 AND EXISTS (SELECT 1 FROM"

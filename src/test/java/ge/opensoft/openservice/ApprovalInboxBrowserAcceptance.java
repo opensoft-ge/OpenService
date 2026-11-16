@@ -98,7 +98,7 @@ final class ApprovalInboxBrowserAcceptance {
                 db.connection.commit();
             }
             page.reload();
-            assertEquals(100, page.locator("article").count());
+            assertThat(page.locator("article")).hasCount(100);
             assertThat(
                             page.getByText(
                                             "Outdated proposal. A new review is needed for the"
@@ -107,7 +107,7 @@ final class ApprovalInboxBrowserAcceptance {
                     .isVisible();
             page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Older reviews"))
                     .click();
-            assertEquals(1, page.locator("article").count());
+            assertThat(page.locator("article")).hasCount(1);
             assertThat(page.getByLabel("Review status")).hasValue("rejected");
             assertEquals(
                     0,
@@ -117,7 +117,7 @@ final class ApprovalInboxBrowserAcceptance {
                             .count());
             page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Latest reviews"))
                     .click();
-            assertEquals(100, page.locator("article").count());
+            assertThat(page.locator("article")).hasCount(100);
         }
     }
 }

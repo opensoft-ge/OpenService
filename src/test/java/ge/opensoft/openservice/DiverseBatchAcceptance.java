@@ -48,6 +48,37 @@ final class DiverseBatchAcceptance {
         }
     }
 
+    static void knowledgeHistory(WorkflowSupport h) throws Exception {
+        assertEquals(405, h.get(ROOT + "assist", auth("admin")).statusCode());
+        h.account("HistoryReader", "reader");
+        String article = h.add("kb_knowledge").get("sys_id").toString();
+        String tablePath = "/api/now/table/kb_knowledge/" + article;
+        assertEquals(200, h.json("PATCH", tablePath, map("text", "Published content"), auth("admin")).statusCode());
+        PlatformOperationsAcceptance.post(h, "knowledge/" + article, map("operation", "publish"));
+        assertEquals(200, h.json("PATCH", tablePath, map("text", "PRIVATE DRAFT"), auth("admin")).statusCode());
+        try (var db = h.store.open()) {
+            for (int i=2; i<=102; i++) db.update("INSERT INTO os_publication(article_id,version,title,content,published_at,retired) VALUES(?,?,?,?,?,1)", article,i,"Title "+i,"Snapshot "+i,now());
+            db.connection.commit();
+        }
+        String path = "knowledge/" + article;
+        var first = result(h, path);
+        assertEquals(100, objects(first.get("versions")).size());
+        assertEquals("3", first.get("next_before"));
+        assertEquals(102, ((Number)objects(first.get("versions")).getFirst().get("version")).intValue());
+        var last = result(h, path + "?before=3");
+        assertEquals(2, objects(last.get("versions")).size());
+        assertEquals("", last.get("next_before"));
+        assertEquals("Published content", objects(last.get("versions")).getLast().get("content"));
+        assertFalse(last.toString().contains("PRIVATE DRAFT"));
+        assertTrue(objects(result(h, path + "?before=1").get("versions")).isEmpty());
+        assertEquals(401, h.get(ROOT + path, null).statusCode());
+        assertEquals(403, h.get(ROOT + path, auth("HistoryReader")).statusCode());
+        assertEquals(404, h.get(ROOT + "knowledge/missing", auth("admin")).statusCode());
+        for (String query : List.of("before=0", "before=no", "before=2147483648", "extra=1", "before=2&before=3"))
+            assertEquals(400, h.get(ROOT + path + "?" + query, auth("admin")).statusCode(), query);
+        assertEquals(400, h.json("POST", ROOT + path + "?before=2", map("operation", "retire"), auth("admin")).statusCode());
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;
