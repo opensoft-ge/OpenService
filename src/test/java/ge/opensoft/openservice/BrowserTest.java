@@ -24,6 +24,9 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test
+    void knowledgeSearchWorksWithKeyboardInBothThemes() throws Exception { KnowledgeSearchBrowserAcceptance.run(this); }
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         ContractSupport.properties(registry);

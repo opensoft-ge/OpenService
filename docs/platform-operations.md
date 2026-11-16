@@ -72,3 +72,9 @@ Queue cleanup is available from Operations or POST `jobs/retention` with `{"oper
 ## AI product direction
 
 Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.
+
+## Find published knowledge
+
+Signed-in users can search `/knowledge` or GET `/api/openservice/knowledge` with `q` (up to 200 characters), `limit` (1–100, default 100) and `offset` (0–1,000,000, default 0). Search matches a literal substring in the current published title/body; `%`, `_` and `!` are literal. ASCII case-insensitive matching works on both supported databases; full Unicode linguistic matching, ranking and attachment search are not provided.
+
+The API retains the `result` article list and adds filtered `total`, normalized `query`, `limit`, `offset`, `previous_offset` and `next_offset` (-1 on the final page). Navigation preserves the search. Results and counts exclude deleted, retired and newly restricted articles; draft edits never replace published snapshots. Pagination is evaluated on each request, not a frozen export, so concurrent publication changes can move entries between pages.

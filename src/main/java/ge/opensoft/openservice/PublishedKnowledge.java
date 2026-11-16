@@ -85,12 +85,6 @@ final class PublishedKnowledge {
     }
 
     static List<Map<String, Object>> list(Store.Db db) throws SQLException {
-        return db.all(
-                "SELECT p.* FROM os_publication p WHERE p.retired=0 AND EXISTS (SELECT 1 FROM"
-                    + " os_record r WHERE r.sys_id=p.article_id AND r.\"table\"='kb_knowledge') AND"
-                    + " NOT EXISTS (SELECT 1 FROM os_record_access a WHERE a.record_id=p.article_id"
-                    + " AND a.visibility<>'workspace') AND p.version=(SELECT MAX(v.version) FROM"
-                    + " os_publication v WHERE v.article_id=p.article_id) ORDER BY p.published_at"
-                    + " DESC,p.article_id LIMIT 100");
+        return objects(KnowledgeSearch.page(db,Map.of()).get("result"));
     }
 }

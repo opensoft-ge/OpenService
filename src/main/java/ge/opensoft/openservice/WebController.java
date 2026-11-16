@@ -338,11 +338,11 @@ public class WebController {
         }
         if (path.equals("/knowledge") || path.equals("/api/openservice/knowledge")) {
             method(method, "GET");
-            c.noQuery();
-            var rows = PublishedKnowledge.list(c.db);
+            c.uniqueQuery();
+            var result = KnowledgeSearch.page(c.db,c.arguments());
             return path.startsWith("/api/")
-                    ? json(map("result", rows), 200)
-                    : view(c, "knowledge", map("table", "knowledge", "articles", rows));
+                    ? json(result, 200)
+                    : view(c, "knowledge", map("table", "knowledge", "articles", result.get("result"),"search",result));
         }
         Matcher platform =
                 Pattern.compile(

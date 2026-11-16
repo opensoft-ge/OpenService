@@ -16,6 +16,9 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test
+    void requestersSearchOnlyCurrentPublishedKnowledge() throws Exception { KnowledgeSearchAcceptance.run(this); }
+
     static final String PASSWORD = "test-only-password-long";
     @Autowired Store store;
     @Autowired Environment environment;
