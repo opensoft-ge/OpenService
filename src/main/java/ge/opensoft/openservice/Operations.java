@@ -83,6 +83,10 @@ final class Operations {
         }
         if (resource.equals("dependencies") && method.equals("GET"))
             return AssetOperations.impact(db, id);
+        if(resource.equals("reference-search")) {
+            if(!method.equals("GET")) throw new Failure(405,"Reference search requires GET");
+            return ReferenceSearch.search(db,id,input);
+        }
         if(resource.equals("clocks") && method.equals("GET") && !id.isEmpty())
             return ServiceClocks.forRecord(db,id,input);
         if (resource.equals("references") && method.equals("GET")) {

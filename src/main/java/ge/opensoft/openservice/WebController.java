@@ -346,14 +346,15 @@ public class WebController {
         }
         Matcher platform =
                 Pattern.compile(
-                                "/api/openservice/operations/(jobs|connectors|calendars|clocks|reports|knowledge|dependencies|events|references|qualification|provisioning|audit-access|audit-checkpoint|password-policy|assist|approval-reminders|assist-preview|preflight|event-actions|report-history|approval-diagnostics)(?:/([a-z0-9_-]{1,80}))?")
+                                "/api/openservice/operations/(jobs|connectors|calendars|clocks|reports|knowledge|dependencies|events|references|qualification|provisioning|audit-access|audit-checkpoint|password-policy|assist|approval-reminders|assist-preview|preflight|event-actions|report-history|approval-diagnostics|reference-search)(?:/([a-z0-9_-]{1,80}))?")
                         .matcher(path);
         if (platform.matches()) {
             method(method, "GET", "POST", "DELETE");
             boolean historyQuery=platform.group(1).equals("knowledge") && method.equals("GET");
             boolean clockQuery=platform.group(1).equals("clocks") && platform.group(2)!=null && method.equals("GET");
             boolean auditQuery=platform.group(1).equals("audit-checkpoint") && method.equals("GET");
-            if(!historyQuery && !clockQuery && !auditQuery) c.noQuery();
+            boolean referenceQuery=platform.group(1).equals("reference-search") && method.equals("GET");
+            if(!historyQuery && !clockQuery && !auditQuery && !referenceQuery) c.noQuery();
             String actor = c.user.get("user_id").toString();
             return json(
                     map(

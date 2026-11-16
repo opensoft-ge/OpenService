@@ -538,3 +538,5 @@ Discovery follow-up, 2026-11-16: [Brazil signature status](https://www.serviceno
 **OS-D20-17 implemented**: Workstream 7, PARITY-02: administrator diagnostics explain current review eligibility and revisions using the enforcement rules. No review mutation, automatic approval or transition execution. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-18 implemented**: Workstream 11, PARITY-03: native reconciliation reports missing retained source items and changed destinations with bounded samples. A local pass does not verify source completeness or authorize cutover; live-instance qualification remains open. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
+
+**OS-D20-19 implemented**: Workstream 12, PARITY-01: native literal reference-label search with bounded pagination and current table/field/record permissions. The legacy references endpoint is preserved; configurable labels and a browser picker remain open. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).

@@ -594,6 +594,51 @@ final class DiverseBatchAcceptance {
         assertEquals(true,onlyConflicts.get("truncated"));
     }
 
+    static void referenceSearch(WorkflowSupport h) throws Exception {
+        h.account("ReferenceReader","reader");
+        String path=ROOT+"reference-search/incident";
+        for(String label:List.of("Team%One","TeamTwo","TeamThree")) {
+            assertEquals(201,h.json("POST","/api/now/table/incident",map("short_description",label),auth("admin")).statusCode());
+        }
+        assertEquals(401,h.get(path,null).statusCode());
+        assertEquals(400,h.get(ROOT+"reference-search",auth("admin")).statusCode());
+        assertEquals(404,h.get(ROOT+"reference-search/no_such_table",auth("admin")).statusCode());
+        assertEquals(405,h.json("POST",path,map(),auth("admin")).statusCode());
+        var first=result(h,"reference-search/incident?limit=2");
+        assertEquals(3,first.get("total"));
+        assertEquals(2,objects(first.get("items")).size());
+        assertEquals(2,first.get("next_offset"));
+        var last=result(h,"reference-search/incident?limit=2&offset=2");
+        assertEquals(1,objects(last.get("items")).size());
+        assertNull(last.get("next_offset"));
+        assertTrue(objects(result(h,"reference-search/incident?offset=2147483647").get("items")).isEmpty());
+        var escaped=result(h,"reference-search/incident?q=%25");
+        assertEquals(1,escaped.get("total"));
+        assertEquals("Team%One",objects(escaped.get("items")).getFirst().get("label"));
+        assertEquals(0,result(h,"reference-search/incident?q=Team%5EOR").get("total"));
+        for(String suffix:List.of("?limit=0","?limit=101","?offset=-1","?limit=x","?extra=1","?q=a&q=b","?q="+"x".repeat(201),"?q=%00"))
+            assertEquals(400,h.get(path+suffix,auth("admin")).statusCode());
+        String hidden=objects(first.get("items")).getFirst().get("value").toString();
+        Map<String,Object> original;
+        try(var db=h.store.open()) {
+            original=Service.schema(db,"incident");
+            db.update("INSERT INTO os_record_access(record_id,visibility,owner_id,group_id) VALUES(?,'private',?,'')",hidden,RecordAccess.owner(db,"admin"));db.connection.commit();
+        }
+        var visible=object(parsed(h.get(path,auth("ReferenceReader"))).get("result"));
+        assertEquals(2,visible.get("total"));
+        assertFalse(visible.toString().contains(hidden));
+        try {
+            var restricted=new LinkedHashMap<>(original);
+            var rules=new LinkedHashMap<>(TypedFields.rules(original));
+            var field=new LinkedHashMap<>(object(rules.getOrDefault("short_description",map("type","string"))));
+            field.put("read_roles",List.of("admin"));rules.put("short_description",field);restricted.put("field_rules",rules);
+            ApprovalAcceptance.writeSchema(h,restricted);
+            assertEquals(403,h.get(path,auth("ReferenceReader")).statusCode());
+            assertEquals(403,h.get(path+"?q=Team",auth("ReferenceReader")).statusCode());
+            assertEquals(200,h.get(path,auth("admin")).statusCode());
+        } finally { ApprovalAcceptance.writeSchema(h,original); }
+    }
+
     static void impact(WorkflowSupport h) throws Exception {
         String source = h.add("cmdb_ci").get("sys_id").toString();
         String middle;

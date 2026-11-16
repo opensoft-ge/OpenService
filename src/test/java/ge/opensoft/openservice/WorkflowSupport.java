@@ -62,6 +62,9 @@ abstract class WorkflowSupport {
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }
 
     @Test
+    void referenceSearchPaginatesLiteralLabelsWithoutLeakingHiddenRecords() throws Exception { DiverseBatchAcceptance.referenceSearch(this); }
+
+    @Test
     void migrationReconciliationReportsMissingAndChangedDestinations() throws Exception { DiverseBatchAcceptance.reconciliation(this); }
 
     @Test
