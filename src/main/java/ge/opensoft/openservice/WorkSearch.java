@@ -10,7 +10,7 @@ final class WorkSearch {
   Service.requireAccountAdministrator(db,actor);require(Set.of("q","kind","state","limit","offset").containsAll(args.keySet()),"Use q, kind, state, limit and offset");
   String q=args.getOrDefault("q","").strip(),kind=args.getOrDefault("kind","all"),state=args.getOrDefault("state","all");
   require(q.length()<=200 && q.indexOf('\0')<0,"Search must be at most 200 characters without NUL");
-  require(Set.of("all","notification","connector.read","migration.step","migration.fetch","approval.reminder").contains(kind),"Unsupported work kind");require(Set.of("all","queued","processing","failed","succeeded","cancelled").contains(state),"Unsupported work state");
+  require(Set.of("all","notification","connector.read","connector.write","migration.step","migration.fetch","approval.reminder").contains(kind),"Unsupported work kind");require(Set.of("all","queued","processing","failed","succeeded","cancelled").contains(state),"Unsupported work state");
   int limit=Service.number(args.getOrDefault("limit","100"),1,100),offset=Service.number(args.getOrDefault("offset","0"),0,1000000);
   String literal="%"+q.toLowerCase(Locale.ROOT).replace("!","!!").replace("%","!%").replace("_","!_")+"%";
   String selection=" FROM os_work WHERE (?='all' OR kind=?) AND (?='all' OR state=?) AND (LOWER(job_id) LIKE ? ESCAPE '!' OR LOWER(dedupe) LIKE ? ESCAPE '!')";

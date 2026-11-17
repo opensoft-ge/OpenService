@@ -73,6 +73,7 @@ final class WorkWorker {
                                 case "notification" ->
                                         Notifications.deliver(
                                                 db, job.get("job_id").toString(), payload, now);
+                                case "connector.write" -> ConnectorWrites.execute(store,db,job,payload);
                                 case "connector.read" -> Connectors.read(store, db, payload);
                                 case "approval.reminder" -> ScheduledApprovalReminders.deliver(db,db.viewerId,payload);
                                 case "migration.fetch" -> MigrationFetch.step(db,payload,store.migrationOrigins);
@@ -86,6 +87,7 @@ final class WorkWorker {
                             };
                     continuing=job.get("kind").equals("migration.fetch") && Boolean.TRUE.equals(object(output).get("continue"));
                     if(continuing)state="queued";
+                    if(job.get("kind").equals("connector.write") && !Boolean.TRUE.equals(object(output).get("acknowledged"))){state="failed";error="REMOTE_OUTCOME_REQUIRES_REVIEW";}
                     // Keep bounded receipts only. Migration details remain in the migration
                     // journal.
                     result =
@@ -112,6 +114,7 @@ final class WorkWorker {
                                             ? "failed"
                                             : "queued";
                     error = permanent ? "AUTHORITY_OR_INPUT_UNAVAILABLE" : "EXECUTION_FAILED";
+                    if(job.get("kind").equals("connector.write")){state="failed";error="RECONCILIATION_REQUIRED";}
                 }
                 boolean terminal = Set.of("succeeded", "cancelled").contains(state);
                 db.update(

@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 46;
+    static final int VERSION = 47;
 
     private Migrations() {}
 
@@ -513,6 +513,11 @@ final class Migrations {
         if(version<46){
             db.update("CREATE TABLE IF NOT EXISTS os_work_attempt(job_id VARCHAR(32) NOT NULL,lease VARCHAR(32) NOT NULL,ordinal BIGINT NOT NULL,attempt_number INTEGER NOT NULL,started_at BIGINT NOT NULL,finished_at BIGINT NOT NULL,state VARCHAR(30) NOT NULL,error VARCHAR(80) NOT NULL,PRIMARY KEY(job_id,ordinal),UNIQUE(job_id,lease))");
             db.update("INSERT INTO os_migration(version,name) VALUES(46,?)","bounded durable work attempt history");
+        }
+        if(version<47){
+            db.update("CREATE TABLE IF NOT EXISTS os_connector_action(action_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,alias VARCHAR(80) NOT NULL,method VARCHAR(10) NOT NULL,path VARCHAR(2048) NOT NULL,inputs TEXT NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_connector_resolution(job_id VARCHAR(32) PRIMARY KEY,decision VARCHAR(20) NOT NULL,note TEXT NOT NULL,actor_id VARCHAR(32) NOT NULL,recorded_at VARCHAR(26) NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(47,?)","reviewed connector writes and reconciliation");
         }
     }
 

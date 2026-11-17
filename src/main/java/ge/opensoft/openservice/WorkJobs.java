@@ -32,7 +32,7 @@ final class WorkJobs {
                 "Provide kind, key, payload and optional run_at");
         String kind = text(body.get("kind"), 40), key = text(body.get("key"), 80);
         require(
-                Set.of("notification", "connector.read", "migration.step", "migration.fetch", "approval.reminder").contains(kind),
+                Set.of("notification", "connector.read", "connector.write", "migration.step", "migration.fetch", "approval.reminder").contains(kind),
                 "Unsupported job kind");
         var payload = object(body.get("payload"));
         String serialized = JSON.writeValueAsString(new TreeMap<>(payload));
@@ -66,6 +66,7 @@ final class WorkJobs {
         require(
                 db.count("SELECT COUNT(*) FROM os_work") < 5000,
                 "Work retention limit reached; clean up completed jobs");
+        if(kind.equals("connector.write")){require(key.equals(payload.get("key")),"Job key must match the reviewed action key");ConnectorActions.validate(store,db,payload,true);}
         if(kind.equals("migration.fetch"))MigrationFetch.validate(db,actor,payload);
         if(kind.equals("approval.reminder"))ScheduledApprovalReminders.validate(db,actor,payload);
         var user = db.one("SELECT auth_revision FROM os_user WHERE user_id=?", actor);
@@ -133,6 +134,7 @@ final class WorkJobs {
                 var allowed=switch(row.get("kind").toString()) {
                     case "notification" -> Set.of("delivered");
                     case "approval.reminder" -> Set.of("delivered","duplicate");
+                    case "connector.write" -> Set.of("action_id","action_revision","alias","http_status","bytes","sha256","acknowledged","correlation_id");
                     case "connector.read" -> Set.of("alias","revision","bytes","sha256");
                     case "migration.fetch" -> Set.of("migration_id","status","phase","staged_rows");
                     default -> Set.<String>of();
@@ -159,13 +161,15 @@ final class WorkJobs {
                     "DELETE FROM os_work WHERE state IN ('succeeded','cancelled') AND created_at<?",
                     System.currentTimeMillis() - 30L * 86400000);
             db.update("DELETE FROM os_work_attempt WHERE NOT EXISTS (SELECT 1 FROM os_work WHERE os_work.job_id=os_work_attempt.job_id)");
+            db.update("DELETE FROM os_connector_resolution WHERE NOT EXISTS (SELECT 1 FROM os_work WHERE os_work.job_id=os_connector_resolution.job_id)");
         } else {
-            var row = db.one("SELECT state FROM os_work WHERE job_id=?", id);
+            var row = db.one("SELECT state,kind,attempts FROM os_work WHERE job_id=?", id);
             if (row == null) throw new Failure(404, "Job not found");
             require(
                     Set.of("queued", "failed").contains(row.get("state")),
                     "Only queued or failed work can be controlled");
             boolean retry = operation.equals("retry");
+            require(!retry || !row.get("kind").equals("connector.write") || ((Number)row.get("attempts")).intValue()==0,"Attempted connector writes cannot be replayed; reconcile the external outcome");
             db.update(
                     "UPDATE os_work SET state=?,attempts=0,available_at=?,error='',envelope="
                             + (retry ? "envelope" : "''")

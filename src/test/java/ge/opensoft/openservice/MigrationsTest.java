@@ -15,6 +15,18 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void connectorActionUpgradePreservesExistingAliasesAndWork(boolean postgres) throws Exception {
+        var environment=configuration(postgres).withProperty("CONNECTOR_ALLOWED_ORIGINS","https://integration.example.invalid");var store=new Store(environment);String job,envelope;
+        try(var db=store.open()){
+            String actor=PlatformFoundationTest.bind(db);Connectors.save(store,db,actor,Values.map("alias","retained","origin","https://integration.example.invalid","token","retained-synthetic-token"));envelope=db.one("SELECT envelope FROM os_connector WHERE alias='retained'").get("envelope").toString();job=WorkJobs.enqueue(store,db,actor,Values.map("kind","notification","key","legacy-connector-upgrade","payload",Values.map("username","admin","message","Retained pending work"))).get("job_id").toString();
+            db.update("DROP TABLE os_connector_resolution");db.update("DROP TABLE os_connector_action");db.update("DELETE FROM os_migration WHERE version>=47");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_connector_action"));assertEquals(0,db.count("SELECT COUNT(*) FROM os_connector_resolution"));db.connection.rollback();assertEquals(46,db.count("SELECT MAX(version) FROM os_migration"));
+        }
+        for(int n=0;n<2;n++)try(var db=new Store(environment).open()){
+            assertEquals(envelope,db.one("SELECT envelope FROM os_connector WHERE alias='retained'").get("envelope"));assertEquals("queued",db.one("SELECT state FROM os_work WHERE job_id=?",job).get("state"));assertEquals(0,db.count("SELECT COUNT(*) FROM os_connector_action"));assertEquals(0,db.count("SELECT COUNT(*) FROM os_connector_resolution"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));
+        }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void attemptHistoryUpgradeDoesNotInventPastExecutions(boolean postgres) throws Exception {
         var environment=configuration(postgres);var store=new Store(environment);String job;
         try(var db=store.open()){

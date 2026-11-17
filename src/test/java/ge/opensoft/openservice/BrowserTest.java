@@ -25,6 +25,7 @@ import java.util.*;
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
     @Test void migrationFetchContinuesAfterTheBrowserCloses() throws Exception { MigrationFetchBrowserAcceptance.run(this); }
+    @Test void connectorActionsReachReceiptsAndVerifiedReconciliation() throws Exception { ConnectorActionsBrowserAcceptance.run(this); }
     @Test void catalogueAssistanceReachesAReviewedOwnedRequest() throws Exception { CatalogueAssistBrowserAcceptance.run(this); }
     @Test void proposedCreationCanBeCheckedInBothThemes() throws Exception { CreationPreviewBrowserAcceptance.run(this); }
     @Test void jobAttemptHistoryIsAccessibleInBothThemes() throws Exception { WorkAttemptsBrowserAcceptance.run(this); }

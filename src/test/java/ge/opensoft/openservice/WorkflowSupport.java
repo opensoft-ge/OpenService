@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void connectorActionsRequireReviewedCurrentIntent() throws Exception { ConnectorActionsAcceptance.run(this); }
+    @Test void connectorWritesNeverReplayAmbiguousOutcomes() throws Exception { ConnectorActionsAcceptance.boundaries(this); }
     @Test void migrationFetchContinuesThroughReviewAcrossRestarts() throws Exception { MigrationFetchAcceptance.run(this); }
     @Test void migrationFetchHonorsCancellationLeasesAndRetryLimits() throws Exception { MigrationFetchAcceptance.boundaries(this); }
     @Test void catalogueAssistanceRequiresReviewedDataAndExplicitCreation() throws Exception { CatalogueAssistAcceptance.run(this); }
@@ -129,7 +131,7 @@ abstract class WorkflowSupport {
                             "os_transfer_link")) db.update("DELETE FROM " + table);
             for (String table :
                     List.of(
-                            "os_fulfilment", "os_configuration_install", "os_event_case", "os_offering", "os_catalog_order", "os_outbox",
+                            "os_connector_action", "os_connector_resolution", "os_fulfilment", "os_configuration_install", "os_event_case", "os_offering", "os_catalog_order", "os_outbox",
                             "os_report_run",
                             "os_recovery_budget",
                             "os_requester_record",

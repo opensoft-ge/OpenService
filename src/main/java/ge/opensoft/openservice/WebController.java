@@ -371,6 +371,39 @@ public class WebController {
             var result=AttachmentHolds.inspect(c.db,id);return api?json(map("result",result),200):view(c,"attachment-access",map("table",result.get("table"),"file",result));
         }
 
+        if(Set.of("/admin/connector-actions","/api/openservice/connector-actions").contains(path)){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");
+            if(method.equals("POST")){var saved=ConnectorActions.save(c.db,"",body(c));return json(map("result",saved),201);}
+            var actions=ConnectorActions.list(c.db);return api?json(map("result",actions),200):view(c,"connector-actions",map("table","operations","actions",actions));
+        }
+        Matcher connectorAction=Pattern.compile("/(?:admin|api/openservice)/connector-actions/(new|[0-9a-f]{32})").matcher(path);
+        if(connectorAction.matches()){
+            boolean api=path.startsWith("/api/"),fresh=connectorAction.group(1).equals("new");method(method,"GET",api?"PUT":"POST");c.admin();c.noQuery();c.uniqueQuery();String id=fresh?"":connectorAction.group(1);
+            if(!method.equals("GET")){
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(form.get("active")),"Choose active or inactive");form.put("active",Boolean.parseBoolean(form.get("active").toString()));form.put("inputs",JSON.readValue(Objects.toString(form.get("inputs"),""),Object.class));input=form;}
+                var result=ConnectorActions.save(c.db,id,input);return api?json(map("result",result),200):redirect("/admin/connector-actions/"+result.get("action_id"));
+            }
+            var action=fresh?map("action_id","","name","","alias","","method","POST","path","/","inputs",List.of(),"active",1,"revision",0):ConnectorActions.find(c.db,id);
+            return api?json(map("result",action),200):view(c,"connector-action",map("table","operations","action",action,"inputsJson",JSON.writeValueAsString(action.get("inputs"))));
+        }
+        Matcher connectorActionRun=Pattern.compile("/(?:admin|api/openservice)/connector-actions/([0-9a-f]{32})/run").matcher(path);
+        if(connectorActionRun.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=connectorActionRun.group(1);boolean api=path.startsWith("/api/");Map<String,Object> preview=null;
+            if(method.equals("POST")){
+                Map<String,Object> input;if(api)input=new LinkedHashMap<>(object(body(c)));else{input=new LinkedHashMap<>(c.arguments());input.remove("csrf");CatalogueQuestions.form(input);input.put("values",input.getOrDefault("answers",map()));input.remove("answers");if(input.containsKey("confirm")){TypedFields.require(input.get("confirm").equals("true"),"Confirm the reviewed external write");input.put("confirm",true);}}
+                String operation=WorkJobs.text(input.remove("operation"),12);TypedFields.require(Set.of("preview","queue").contains(operation),"Choose preview or queue");
+                if(operation.equals("queue")){var job=ConnectorActions.queue(store,c.db,id,input);return api?json(map("result",job),201):redirect("/admin/jobs/"+job.get("job_id"));}
+                preview=ConnectorActions.preview(store,c.db,id,input);
+            }
+            var result=map("action",ConnectorActions.find(c.db,id),"preview",preview,"key",id());return api?json(map("result",result),200):view(c,"connector-action-run",map("table","operations","run",result,"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
+        }
+        Matcher connectorReconcile=Pattern.compile("/(?:admin|api/openservice/operations)/jobs/([0-9a-f]{32})/reconcile").matcher(path);
+        if(connectorReconcile.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=connectorReconcile.group(1);boolean api=path.startsWith("/api/");
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}ConnectorWrites.reconcile(c.db,id,input);if(!api)return redirect(path);}
+            var result=ConnectorWrites.reconciliation(c.db,id);return api?json(map("result",result),200):view(c,"connector-reconcile",map("table","operations","review",result));
+        }
+
         Matcher connectorConsole=Pattern.compile("/admin/connectors/([a-z][a-z0-9_-]{0,79})").matcher(path);
         if(connectorConsole.matches()){
             method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String alias=connectorConsole.group(1);
