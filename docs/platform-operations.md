@@ -92,3 +92,7 @@ GET `/api/openservice/event-search` exposes the same selection with `q` (up to 2
 ## Personal notification history
 
 Use `/account/notifications` or GET `/api/openservice/me/notifications` with `q` (literal substring, maximum 200 characters), `state` (`all`, `unread`, `acknowledged`), `limit` (1–100, default 100) and `offset` (0–1,000,000). Results and totals are restricted to the signed-in account before paging. ASCII case-insensitive matching is supported; `%`, `_` and `!` are literal. API metadata includes `total`, `query`, `state`, `limit`, `offset`, `previous_offset` and `next_offset` (-1 at the end). Pages are live selections, not snapshots. Browser acknowledgement and preference saves preserve filters; acknowledging an unread message removes it from that selection. Delivery preferences do not erase retained messages.
+
+## Grant audit access
+
+Accounts → select a person → Audit access lets administrators enable or disable the separate audit-viewer grant. It permits reading/exporting retained workspace security and authentication journals, which can contain account activity. It does not change the account role or grant administration/business-record access. Saving uses the existing security-audited operation and signs out the target’s browsers; security links are revoked. Administrators retain inherent journal access even with the separate grant disabled.

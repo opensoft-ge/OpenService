@@ -2582,9 +2582,13 @@ public class WebController {
         if (method.equals("POST")) {
             try {
                 String operation = c.parameter("operation", "status");
-                if (!Set.of("status", "role", "recovery").contains(operation))
+                if (!Set.of("status", "role", "recovery", "audit").contains(operation))
                     throw new Failure(400, "Choose an account operation");
-                if (operation.equals("role")) {
+                if (operation.equals("audit")) {
+                    String enabled=c.parameter("enabled", "");
+                    TypedFields.require(Set.of("true","false").contains(enabled), "Choose enabled or disabled audit access");
+                    AuditGovernance.grant(c.db,c.user.get("user_id").toString(),map("user_id",id,"enabled",Boolean.parseBoolean(enabled)));
+                } else if (operation.equals("role")) {
                     Service.changeRole(
                             c.db,
                             c.user.get("user_id").toString(),
@@ -2624,6 +2628,7 @@ public class WebController {
                                 "accounts",
                                 "account",
                                 account,
+                                "auditViewer", c.db.count("SELECT audit_viewer FROM os_user WHERE user_id=?",id)==1,
                                 "passwordChangeRequired",
                                 PasswordReset.state(c.db, id).get("required"),
                                 "apiOnly",

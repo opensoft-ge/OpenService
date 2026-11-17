@@ -143,3 +143,23 @@ Final gates: 726 tests, zero failures/errors/skips; whole-project Java 6859/6859
 | WebController.java | 2108/2108 | 1083/1083 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Search personal notification history with preserved filters`. No push.
+
+## Round 7 — audit access from account administration
+
+Selected `OS-N17-07`, workstream 4 / OS-PARITY-08. Separate audit-viewer authority and read-only journals already exist in the API; the account browser cannot grant it. Add an explicit audit-viewer selection to the existing administrator account form (`operation=audit`, `enabled=true|false`). Reuse the existing audited grant/revoke service and its session invalidation. Display the stored grant independently from account role; administrators retain inherent audit access. No custom-role/domain delegation or expanded record access. Alternatives: saved-report management and profile editing.
+
+Official evidence: [granular security roles](https://www.servicenow.com/docs/r/platform-security/platsec-granular-roles.html) and [process administration](https://www.servicenow.com/docs/r/platform-security/c_DelegatedAdministration.html), Brazil updated 2026-09-10, retrieved 2026-11-17. Audit-viewer and configuration authority are separated; hierarchical domain policy overrides are broader. Merge domain-specific policy inheritance and agent-role configuration viewer/admin separation into existing WS4/WS15 missing P1 gaps, dependent on organization isolation and agent execution identities. Acceptance must deny upward/cross-domain writes and preserve current role checks. Next research: saved reports and analytics.
+
+Acceptance: administrator grants/revokes through real protected form; invalid selection, CSRF and unauthorized writes denied; target role unchanged, security evidence retained, browser sessions revoked, newly authenticated audit reader can view/export journals but cannot administer accounts. Both themes/mobile/keyboard and persisted selected state. Targeted database/browser acceptance and the final clean full gate passed.
+
+The new protected-form regression returned 400 against the previous unsupported operation on both databases, then passed with the implementation. Browser inspection found the audit panel heading lacked the established inset/header treatment; corrected the fragment before the final run. No authority or session defect was found in the accumulated-change review.
+
+Post-repair review of the accumulated production changes, callers and boundary tests found no new/reopened defects and made no changes. Final desktop-light/mobile-dark rendering and accessibility passed; grant and revoke preserve role, restrict journal authority and invalidate sessions as documented.
+
+Final gates: 729 tests, zero failures/errors/skips; whole-project Java 6864/6864 lines, 3655/3655 branches, 400/400 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| WebController.java | 2113/2113 | 1087/1087 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Manage separate audit access from account administration`. No push.

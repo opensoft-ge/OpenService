@@ -24,6 +24,8 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void auditGrantsWorkInBothThemes() throws Exception { AuditGrantBrowserAcceptance.run(this); }
+
     @Test
     void notificationHistorySearchWorksInBothThemes() throws Exception { NotificationSearchBrowserAcceptance.run(this); }
 
