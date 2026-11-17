@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 45;
+    static final int VERSION = 46;
 
     private Migrations() {}
 
@@ -509,6 +509,10 @@ final class Migrations {
             addColumn(db,"os_offering","questions","TEXT NOT NULL DEFAULT '[]'");
             addColumn(db,"os_catalog_order","answers","TEXT NOT NULL DEFAULT '[]'");
             db.update("INSERT INTO os_migration(version,name) VALUES(45,?)","validated catalogue questions and retained answers");
+        }
+        if(version<46){
+            db.update("CREATE TABLE IF NOT EXISTS os_work_attempt(job_id VARCHAR(32) NOT NULL,lease VARCHAR(32) NOT NULL,ordinal BIGINT NOT NULL,attempt_number INTEGER NOT NULL,started_at BIGINT NOT NULL,finished_at BIGINT NOT NULL,state VARCHAR(30) NOT NULL,error VARCHAR(80) NOT NULL,PRIMARY KEY(job_id,ordinal),UNIQUE(job_id,lease))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(46,?)","bounded durable work attempt history");
         }
     }
 

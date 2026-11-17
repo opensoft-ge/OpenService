@@ -119,6 +119,7 @@ final class WorkWorker {
                         now + Math.min(300000L, 1000L << ((Number) job.get("attempts")).intValue()),
                         job.get("job_id"),
                         job.get("lease"));
+                WorkAttempts.finish(db,job.get("job_id"),job.get("lease"),Math.max(now,System.currentTimeMillis()),state.equals("queued")?"retry_scheduled":state,error);
                 db.connection.commit();
             }
         }

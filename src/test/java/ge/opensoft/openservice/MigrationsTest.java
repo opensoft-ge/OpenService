@@ -15,6 +15,22 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void attemptHistoryUpgradeDoesNotInventPastExecutions(boolean postgres) throws Exception {
+        var environment=configuration(postgres);var store=new Store(environment);String job;
+        try(var db=store.open()){
+            String actor=PlatformFoundationTest.bind(db);job=WorkJobs.enqueue(store,db,actor,Values.map("kind","notification","key","legacy-attempt","payload",Values.map("username","admin","message","Retained work"))).get("job_id").toString();
+            db.update("UPDATE os_work SET state='processing',attempts=2,lease=?,available_at=0 WHERE job_id=?",Values.id(),job);db.update("DROP TABLE os_work_attempt");db.update("DELETE FROM os_migration WHERE version>=46");db.connection.commit();
+            Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_work_attempt"));db.connection.rollback();assertEquals(45,db.count("SELECT MAX(version) FROM os_migration"));
+        }
+        var upgraded=new Store(environment);try(var db=upgraded.open()){String actor=PlatformFoundationTest.bind(db);assertEquals(0L,WorkAttempts.page(db,actor,job,Map.of()).get("total"));}
+        assertTrue(new WorkWorker(upgraded).runOne(System.currentTimeMillis()+100));
+        try(var db=new Store(environment).open()){
+            String actor=PlatformFoundationTest.bind(db);var attempts=Values.objects(WorkAttempts.page(db,actor,job,Map.of()).get("result"));assertEquals(1,attempts.size());assertEquals(1L,((Number)attempts.getFirst().get("ordinal")).longValue());assertEquals(3,attempts.getFirst().get("attempt_number"));assertEquals("succeeded",attempts.getFirst().get("state"));
+            assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));
+        }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void catalogueQuestionsUpgradePreservesLegacyOrdersAndNewAnswers(boolean postgres) throws Exception {
         var environment=configuration(postgres);var store=new Store(environment);String offering,legacy;
         try(var db=store.open()){

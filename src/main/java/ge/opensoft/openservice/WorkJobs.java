@@ -87,10 +87,10 @@ final class WorkJobs {
     }
 
     static Map<String, Object> claim(Store.Db db, long now) throws SQLException {
-        db.update(
-                "UPDATE os_work SET state='failed',lease='',error='LEASE_EXHAUSTED' WHERE"
-                    + " state='processing' AND attempts>=5 AND available_at<=?",
-                now);
+        for(var expired:db.all("SELECT job_id,lease FROM os_work WHERE state='processing' AND attempts>=5 AND available_at<=?"+(db.postgres?" FOR UPDATE SKIP LOCKED":""),now)){
+            WorkAttempts.finish(db,expired.get("job_id"),expired.get("lease"),now,"failed","LEASE_EXHAUSTED");
+            db.update("UPDATE os_work SET state='failed',lease='',error='LEASE_EXHAUSTED' WHERE job_id=?",expired.get("job_id"));
+        }
         var job =
                 db.one(
                         "SELECT * FROM os_work WHERE state IN ('queued','processing') AND"
@@ -98,6 +98,7 @@ final class WorkJobs {
                                 + (db.postgres ? " FOR UPDATE SKIP LOCKED" : ""),
                         now);
         if (job == null) return null;
+        WorkAttempts.finish(db,job.get("job_id"),job.get("lease"),now,"lease_expired","LEASE_EXPIRED");
         job.put("lease", id());
         job.put("attempts", ((Number) job.get("attempts")).intValue() + 1);
         db.update(
@@ -107,6 +108,7 @@ final class WorkJobs {
                 job.get("attempts"),
                 now + 120000,
                 job.get("job_id"));
+        WorkAttempts.start(db,job,now);
         return job;
     }
 
@@ -154,6 +156,7 @@ final class WorkJobs {
             db.update(
                     "DELETE FROM os_work WHERE state IN ('succeeded','cancelled') AND created_at<?",
                     System.currentTimeMillis() - 30L * 86400000);
+            db.update("DELETE FROM os_work_attempt WHERE NOT EXISTS (SELECT 1 FROM os_work WHERE os_work.job_id=os_work_attempt.job_id)");
         } else {
             var row = db.one("SELECT state FROM os_work WHERE job_id=?", id);
             if (row == null) throw new Failure(404, "Job not found");

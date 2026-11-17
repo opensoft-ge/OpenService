@@ -448,6 +448,11 @@ public class WebController {
             var offering=Catalogue.find(c.db,id,c.role().equals("admin"));return api?json(map("result",offering),200):view(c,"catalogue-item",map("table","catalogue","offering",offering,"orderKey",id(),"eligible",CatalogueEligibility.eligible(c.db,id)));
         }
 
+        Matcher jobAttempts=Pattern.compile("/(?:admin/jobs|api/openservice/operations/jobs)/([0-9a-f]{32})/attempts").matcher(path);
+        if(jobAttempts.matches()){
+            method(method,"GET");c.uniqueQuery();var history=WorkAttempts.page(c.db,c.db.viewerId,jobAttempts.group(1),c.arguments());
+            return path.startsWith("/api/")?json(history,200):view(c,"work-attempts",map("table","operations","history",history));
+        }
         Matcher jobReceipt=Pattern.compile("/admin/jobs/([0-9a-f]{32})").matcher(path);
         if(jobReceipt.matches()){method(method,"GET");c.noQuery();return view(c,"job-receipt",map("table","operations","job",WorkJobs.detail(store,c.db,c.db.viewerId,jobReceipt.group(1))));}
         if(path.equals("/admin/jobs") || path.equals("/api/openservice/job-search")) {
