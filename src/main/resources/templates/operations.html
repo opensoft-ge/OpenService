@@ -1,6 +1,6 @@
 <!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main class="platform-page">
 <section class="page-heading"><div><span class="eyebrow">PLATFORM OPERATIONS</span><h1>Operations</h1><p>Manage durable work, connector credentials and business-time service clocks.</p></div></section>
-<p><a class="button" href="/admin/events">Operational events</a></p>
+<p><a class="button" href="/admin/events">Operational events</a> <a class="button" href="/admin/calendars/preview">Preview a service deadline</a></p>
 <section class="panel retention-panel"><h2>Deployment status</h2><dl><th:block th:each="check:${qualification}"><dt th:text="${#strings.replace(check.key,'_',' ')}"></dt><dd th:text="${check.value}"></dd></th:block></dl></section>
 <section class="panel retention-panel" aria-labelledby="queue-health-title"><h2 id="queue-health-title">Queue health</h2>
 <dl><dt>Worker</dt><dd th:text="${queueHealth.worker_enabled ? 'Enabled' : 'Disabled'}"></dd>

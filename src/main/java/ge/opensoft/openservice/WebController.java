@@ -290,6 +290,11 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/admin/calendars/preview") || path.equals("/api/openservice/calendar-preview")) {
+            method(method,"GET");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");
+            Object result=api || !c.arguments().isEmpty()?BusinessDeadline.preview(c.db,c.db.viewerId,c.arguments()):null;
+            return api?json(map("result",result),200):view(c,"calendar-preview",map("table","operations","preview",result,"selection",c.arguments(),"calendars",c.db.all("SELECT calendar_id FROM os_calendar ORDER BY calendar_id")));
+        }
         Matcher questions=Pattern.compile("/record/([a-z0-9_]{1,80})/([0-9a-f]{32})/assistant").matcher(path);
         if(questions.matches()) {
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=questions.group(1),id=questions.group(2);

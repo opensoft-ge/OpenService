@@ -317,3 +317,24 @@ Final gates: 751 tests, zero failures/errors/skips; whole-project Java 7000/7000
 | WebController.java | 2179/2179 | 1147/1147 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add previewed record questions with governed provider consent`. No push.
+
+## Round 15 — explain a business-time deadline before starting work
+
+Selected `OS-N17-15`, workstream 8 / OS-PARITY-02. Active clocks consume calendar time, but administrators cannot preview the date reached by a proposed business-minute budget. Add a read-only calendar preview through browser/API: explicit calendar, ISO-8601 start and 1–525600 business minutes; calculate the exact UTC/local deadline and contributing business windows with the existing timezone/weekday/holiday semantics. Compute through at most 3660 local dates and return at most 100 windows with explicit truncation. No active clock mutation, pause forecast, inherited schedules or arbitrary 24x7 fallback. Alternatives: affected-asset review and approval diagnostics.
+
+Official evidence: [SLA duration and schedules](https://www.servicenow.com/docs/r/it-service-management/service-level-management/c_SLATimingsAndSchedules.html), Brazil updated 2026-09-10, retrieved 2026-11-17. Business duration spans eligible windows; the vendor's optional no-schedule behavior differs from this explicit-calendar contract. Merge original-versus-adjusted breach-time explanations and schedule/paused-time timelines into the existing SLA gap, missing P2, dependent on persisted pause events and calendar composition. Next research: unified dependency maps and impact review.
+
+Acceptance: weekends, holidays, before/after hours, exact boundaries, spring/fall DST timeline duration, bounded horizon/list, invalid dates/budgets/query, administrator boundaries, unchanged clocks/calendar, keyboard and light/dark/mobile. Focused and final full gates passed.
+
+The missing preview route returned 404 on both databases before implementation. Focused database/browser tests passed for holiday/weekend arithmetic, start/end boundaries, spring/fall DST, strict limits and unchanged active clocks. Both theme screenshots were inspected. Accumulated-change review checked the calendar arithmetic against existing clock semantics, prior authority repairs and the complete route/input contracts; no new/reopened finding or repair. Final full verification passed.
+
+Rebalance checkpoint 15: 15 verified rounds cover 12 workstreams, with no workstream exceeding two rounds and no consecutive concentration. Remaining allocation stays 16/assets, 17/approvals, 18/reporting, 19/jobs and 20/production engineering, adding workstream 16 for 13 overall. The bounded stateless assistant replaced the persistent-conversation draft with explicit lifecycle deferrals. No concentration exception; M1–M3 remain unmet.
+
+Final gates: 754 tests, zero failures/errors/skips; whole-project Java 7021/7021 lines, 3793/3793 branches, 412/412 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| BusinessDeadline.java | 17/17 | 18/18 | 2/2 |
+| WebController.java | 2183/2183 | 1157/1157 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Explain calendar-based service deadlines in the browser`. No push.
