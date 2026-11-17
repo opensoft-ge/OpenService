@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 48;
+    static final int VERSION = 49;
 
     private Migrations() {}
 
@@ -522,6 +522,10 @@ final class Migrations {
         if(version<48){
             db.update("CREATE TABLE IF NOT EXISTS os_notice_target(notice_id VARCHAR(32) PRIMARY KEY REFERENCES os_notice(notice_id) ON DELETE CASCADE,kind VARCHAR(20) NOT NULL,target_id VARCHAR(32) NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(48,?)","authorized notification resource targets");
+        }
+        if(version<49){
+            db.update("CREATE TABLE IF NOT EXISTS os_attachment_scan(attachment_id VARCHAR(32) PRIMARY KEY REFERENCES os_attachment(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,status VARCHAR(20) NOT NULL,sha256 VARCHAR(64) NOT NULL,engine VARCHAR(255) NOT NULL,completed_at BIGINT NOT NULL,hold_revision BIGINT NOT NULL,release_on_clean INTEGER NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(49,?)","durable current-content attachment scanning");
         }
     }
 

@@ -393,6 +393,7 @@ final class TransferApply {
                     name,
                     row.get("content"),
                     type);
+            AttachmentScanning.enqueue(db,id);
             remember(db, job, "sys_attachment", id, link, "attachment");
             counts.put("attachments", (int) counts.get("attachments") + 1);
         }

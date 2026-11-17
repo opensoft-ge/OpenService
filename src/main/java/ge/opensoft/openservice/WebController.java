@@ -361,6 +361,10 @@ public class WebController {
         Matcher reportExport=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/export\\.csv").matcher(path);
         if(reportExport.matches()){method(method,"GET");c.noQuery();String id=reportExport.group(1);byte[] csv=ReportExport.csv(c.db,c.db.viewerId,id);disposition(c,"report-"+id+".csv");return binary(csv,"text/csv; charset=UTF-8",200);}
 
+        Matcher attachmentScan=Pattern.compile("/(?:admin|api/openservice)/attachments/([0-9a-f]{32})/scan").matcher(path);
+        if(attachmentScan.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=attachmentScan.group(1);boolean api=path.startsWith("/api/");if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}var result=AttachmentScanning.rescan(c.db,id,input);return api?json(map("result",result),200):redirect(path);}var result=AttachmentScanning.page(c.db,id);return api?json(map("result",result),200):view(c,"attachment-scan",map("table",result.get("table"),"file",result));
+        }
         Matcher attachmentAccess=Pattern.compile("/(admin/attachments|api/openservice/attachment-access)/([0-9a-f]{32})").matcher(path);
         if(attachmentAccess.matches()){
             method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=attachmentAccess.group(2);boolean api=path.startsWith("/api/");
@@ -2794,13 +2798,14 @@ public class WebController {
                     throw new Failure(400, "Choose a file");
                 if (file.getSize() > 5 * 1024 * 1024)
                     throw new Failure(400, "Attachments are limited to 5 MB");
-                String name = filename(file.getOriginalFilename());
+                String name = filename(file.getOriginalFilename()),attachmentId=id();
                 c.db.update(
                         "INSERT INTO os_attachment(sys_id,record_id,name,content) VALUES(?,?,?,?)",
-                        id(),
+                        attachmentId,
                         id,
                         name,
                         file.getBytes());
+                AttachmentScanning.enqueue(c.db,attachmentId);
                 Service.audit(c.db, item, c.name(), "attachment", map("name", name));
             }
             return redirect(location);
@@ -3310,6 +3315,7 @@ public class WebController {
                 name,
                 bytes,
                 type);
+        AttachmentScanning.enqueue(c.db,id);
         Service.audit(c.db, item, c.name(), "attachment", map("name", name));
         var row =
                 map(

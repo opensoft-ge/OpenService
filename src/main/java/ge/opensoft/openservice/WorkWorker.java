@@ -20,6 +20,7 @@ final class WorkWorker {
         if (!store.environment.getProperty("WORK_ENABLED", Boolean.class, false)) return;
         try {
             runOne(System.currentTimeMillis());
+            AttachmentScanning.runOne(store);
             try (var db = store.open()) {
                 ServiceClocks.tick(db, System.currentTimeMillis());
                 db.update(

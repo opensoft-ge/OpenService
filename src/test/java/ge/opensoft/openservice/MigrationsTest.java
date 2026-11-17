@@ -15,6 +15,13 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void attachmentScanUpgradePreservesLegacyContentAndHolds(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String file=Values.id();
+        try(var db=store.open()){PlatformFoundationTest.bind(db);String record=PlatformFoundationTest.record(db,"incident","Legacy attachment");db.update("INSERT INTO os_attachment(sys_id,record_id,name,content,quarantined,hold_revision) VALUES(?,?,?,?,1,2)",file,record,"retained.txt","legacy bytes".getBytes());db.update("DROP TABLE os_attachment_scan");db.update("DELETE FROM os_migration WHERE version>=49");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_attachment_scan"));db.connection.rollback();assertEquals(48,db.count("SELECT MAX(version) FROM os_migration"));}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){assertEquals(0,db.count("SELECT COUNT(*) FROM os_attachment_scan"));var row=db.one("SELECT * FROM os_attachment WHERE sys_id=?",file);assertArrayEquals("legacy bytes".getBytes(),(byte[])row.get("content"));assertEquals(1,row.get("quarantined"));assertEquals(2,((Number)row.get("hold_revision")).intValue());assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void notificationTargetsUpgradePreservesLegacyMessages(boolean postgres) throws Exception {
         var environment=configuration(postgres);var store=new Store(environment);String notice=Values.id();
         try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);Notifications.deliver(db,notice,Values.map("username","admin","message","Retained legacy notice"),1);db.update("DROP TABLE os_notice_target");db.update("DELETE FROM os_migration WHERE version>=48");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_notice_target"));db.connection.rollback();assertEquals(47,db.count("SELECT MAX(version) FROM os_migration"));}

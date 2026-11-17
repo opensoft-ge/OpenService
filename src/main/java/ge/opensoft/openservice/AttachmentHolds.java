@@ -18,6 +18,7 @@ final class AttachmentHolds {
   require(body.keySet().equals(Set.of("held","review","reason")),"Provide held, review and reason");require(body.get("held") instanceof Boolean,"Held must be boolean");String reason=WorkJobs.text(body.get("reason"),2000),review=WorkJobs.text(body.get("review"),64);var current=inspect(db,id);
   if(!review.equals(current.get("review")))throw new Failure(409,"Attachment or hold changed; review it again");
   require(!body.get("held").equals(current.get("held")),"Choose a different download-access state");
+  if(Boolean.FALSE.equals(body.get("held")))AttachmentScanning.requireRelease(db,id);
   db.update("UPDATE os_attachment SET quarantined=?,hold_revision=hold_revision+1 WHERE sys_id=?",Boolean.TRUE.equals(body.get("held"))?1:0,id);
   SecurityEvents.record(db,db.viewerId,db.viewerId,"attachment.access_changed",map("attachment_id",id,"held",body.get("held"),"sha256",current.get("sha256"),"reason",reason));return inspect(db,id);
  }

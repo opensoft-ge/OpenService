@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void attachmentScansQuarantineUntilCurrentCleanEvidence() throws Exception { AttachmentScanningAcceptance.run(this); }
+    @Test void scanReviewAndImportedFilesRetainCurrentBoundaries() throws Exception { AttachmentScanningAcceptance.boundaries(this); }
     @Test void conflictResolutionRejectsUnsupportedRowsAndChangedReviewers() throws Exception { MigrationConflictsAcceptance.boundaries(this); }
     @Test void directAssetRelationshipsAreVisiblePagedAndMutable() throws Exception { AssetRelationshipsAcceptance.run(this); }
     @Test void assetRelationshipChangesRequireCurrentAuthority() throws Exception { AssetRelationshipsAcceptance.boundaries(this); }
@@ -126,7 +128,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_attachment",
+                            "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

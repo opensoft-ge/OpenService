@@ -137,12 +137,13 @@ public class Store {
     }
 
     public Db open() throws SQLException {
-        return new Db(DriverManager.getConnection(url, properties), postgres);
+        var db=new Db(DriverManager.getConnection(url, properties), postgres);db.attachmentScanning=environment.getProperty("ATTACHMENT_SCANNING_ENABLED",Boolean.class,false);return db;
     }
 
     public static class Db implements AutoCloseable {
         public final Connection connection;
         final boolean postgres;
+        boolean attachmentScanning;
         String viewerId;
         String viewerRole;
 
