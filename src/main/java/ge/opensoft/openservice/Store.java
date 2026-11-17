@@ -149,7 +149,11 @@ public class Store {
         public Db(Connection connection, boolean postgres) throws SQLException {
             this.connection = connection;
             this.postgres = postgres;
-            connection.setAutoCommit(false);
+            try { connection.setAutoCommit(false); }
+            catch(SQLException failure) {
+                try { connection.close(); } catch(SQLException cleanup) { failure.addSuppressed(cleanup); }
+                throw failure;
+            }
         }
 
         public String jsonParameter() {

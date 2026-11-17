@@ -145,3 +145,7 @@ Open an accessible saved report, enter **New report name**, then choose **Create
 ## Find retained background work
 
 From Operations, choose **Search all retained work**. Administrators can search job IDs/deduplication keys, filter kind and state, page through retained jobs and open a safe receipt. Search excludes encrypted payloads and receipt contents. SQLite case folding is ASCII; pages reflect live data. Retry/cancel are available for queued or failed jobs and recheck current authority and state. Processing jobs cannot be cancelled through this control. Retry preserves the existing payload and execution rules; it is not an automatic business-action rollback.
+
+## SQLite acquisition contention
+
+If another transaction prevents opening the request transaction within the existing busy timeout, OpenService returns **503 Service Unavailable** with `Retry-After: 1`. This specific response says the request did not start; it does not imply arbitrary failed writes can safely be repeated. The browser recovery page and theme remain usable while the database is busy. No request is automatically replayed, and post-acquisition or unrelated SQL failures retain their existing behavior. Monitor contention and qualify representative capacity before shared use; a graceful failure is not high availability.

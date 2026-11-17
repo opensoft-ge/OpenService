@@ -1,3 +1,7 @@
+# Twenty paired rounds — 17 November 2026
+
+Final clean `sh scripts/verify.sh`: **775 tests**, zero failures/errors/skips; whole-project Java **7078/7078 lines, 3843/3843 branches, 414/414 methods**. Exact touched-file gates passed for each round; browser migration/theme scripts also retain exact full line/branch/function coverage. The [complete feature and QA report](paired-cycles-2026-11-17.md) records 20 bounded features across 13 workstreams, repairs, discovery, current package/drill/scan evidence and remaining adoption limits. No push or deployment. Earlier counts below are historical.
+
 # Coordinated platform expansion — 16 November 2026
 
 Final clean `sh scripts/verify.sh`: **663 tests**, zero failures/errors/skips; whole-project Java **6437/6437 lines, 3353/3353 branches, 361/361 methods**, all 82 production source files passing the exact-count gate. JavaScript migration/theme gates also remain exact. The final image, same-version restore, schema 23 → 33 upgrade, dependency/image/secret scans, local load smoke, browser checks and remaining limits are documented in the [platform expansion report](platform-expansion-2026-11-16.md#research-and-validation). New feature work is one coordinated batch, not a product/QA loop. This evidence supersedes historical totals below and does not close shared-deployment or production gates.

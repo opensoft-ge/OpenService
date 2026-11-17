@@ -173,6 +173,10 @@ if [ "$drill_source_version" -ge 33 ]; then
     api -X POST -H 'Content-Type: application/json' --data-binary "@$drill_directory/corpus.json" \
         "$drill_address/api/openservice/operations/password-policy" >/dev/null
 fi
+if [ "$drill_source_version" -ge 36 ]; then
+    api -X POST -H 'Content-Type: application/json' --data '{"display_name":"Recovery operator","job_title":"Platform owner"}' \
+        "$drill_address/api/openservice/me/profile" | jq -e '.result.display_name == "Recovery operator"' >/dev/null
+fi
 snapshot source
 docker stop "$drill_prefix-source-app" >/dev/null
 snapshot_delivery() {
@@ -237,6 +241,16 @@ curl --max-time 10 -fsS "$drill_address/readyz" | jq -e '.status == "ready"' >/d
 drill_restored_version=$(docker exec "$drill_prefix-restored-db" psql -At -U openservice -d openservice -c 'SELECT MAX(version) FROM os_migration')
 [ "$drill_restored_version" -ge "$drill_source_version" ]
 snapshot restored
+if [ "$drill_restored_version" -ge 36 ]; then
+    drill_profile_name=''
+    drill_profile_title=''
+    if [ "$drill_source_version" -ge 36 ]; then
+        drill_profile_name='Recovery operator'
+        drill_profile_title='Platform owner'
+    fi
+    api "$drill_address/api/openservice/me/profile" | jq -e --arg name "$drill_profile_name" --arg title "$drill_profile_title" '.result.display_name == $name and .result.job_title == $title' >/dev/null
+    echo 'PASS: profile text survives restore, or older accounts receive empty profile defaults on upgrade.'
+fi
 if [ "$drill_source_version" -ge 33 ]; then
     snapshot_platform restored
     for drill_table in os_work os_notice os_connector os_calendar os_sla os_saved_report os_publication os_dependency os_operational_event os_identity os_password_policy os_password_corpus platform-permissions; do

@@ -1,6 +1,37 @@
 # OpenService: 20 paired development and QA/QC rounds, 17 November 2026
 
-Status: in progress. This report records actual implementation and validation; planned rows are not delivered features. Fixed batch review base: `e80a665f121e99489f480131a52ca777ec304282`, clean `main` at start. Each feature receives a local opendevbot commit only after acceptance, exact coverage and a clean accumulated-change QA review. No push or deployment is authorized by this batch.
+Status: completed — 20 paired rounds. This report records actual implementation and validation; planned rows are not delivered features. Fixed batch review base: `e80a665f121e99489f480131a52ca777ec304282`, clean `main` at start. Each feature receives a local opendevbot commit only after acceptance, exact coverage and a clean accumulated-change QA review. No push or deployment is authorized by this batch.
+
+## Completed feature report
+
+All 20 paired development and QA/QC rounds completed across 13 workstreams. Each round has a local opendevbot commit and a passing clean full test/coverage run. No workstream received more than two rounds, and no adjacent rounds share a workstream. QA repairs are recorded separately and are not extra features. Nothing was pushed or deployed.
+
+| Round | Workstream | Added capability | Delivered outcome |
+|---|---|---|---|
+| 1 | 9 | Search published knowledge | Requester title/body search and pagination exclude drafts, retired articles and restricted records. |
+| 2 | 15 | Bind AI consent to reviewed data | Summary execution requires an unexpired preview bound to actor, record and provider configuration. |
+| 3 | 8 | Manage business calendars | Administrators create and edit timezone, weekday and holiday calendars through Operations. |
+| 4 | 13 | Find and respond to operational events | Literal search, severity/state filters, pages and audited acknowledgement/resolution/reopening. |
+| 5 | 7 | Notify assigned reviewers | Atomic in-app notices when a review is requested or delegated, honoring opt-out. |
+| 6 | 6 | Search personal notifications | Private history search, unread/acknowledged filters and pagination with preserved actions. |
+| 7 | 4 | Manage separate audit access | Account administration can grant/revoke audit-viewer access without changing the account role. |
+| 8 | 14 | Manage saved reports | Browser creation, editing, sharing, deletion and repair of owned definitions under current permissions. |
+| 9 | 3 | Edit personal profiles | Owner-managed normalized display name/job title, separate from login identity and security permissions. |
+| 10 | 11 | Review migration reconciliation | Protected browser review and JSON download of staged/destination reconciliation with explicit source-completeness limits. |
+| 11 | 9 | Compare published versions | Administrator comparison of selected immutable knowledge snapshots, without substituting unpublished drafts. |
+| 12 | 12 | Pick reference records | Search, select and clear a reference through current source/target permissions and record revision checks. |
+| 13 | 5 | Retain and verify audit checkpoints | Download a checkpoint and verify its retained prefix after later events; independent trusted retention is still required. |
+| 14 | 15 | Ask previewed record questions | Administrator browser assistant with exact question/data consent, bounded read-only provider output and source links. |
+| 15 | 8 | Explain business-time deadlines | Read-only deadline calculation with weekday, holiday and DST windows and explicit bounded truncation. |
+| 16 | 13 | Inspect dependent assets | Browser list of visible downstream configuration items with field-safe labels, hidden-path exclusion and truncation. |
+| 17 | 7 | Diagnose and remind approvals | Current eligibility explanation and protected, preference-aware in-app reminders from review history. |
+| 18 | 14 | Copy reports privately | Copy an authorized definition into a new independently owned private report without copying results/history. |
+| 19 | 6 | Find and recover background work | Search retained job metadata, filter/page results, retry/cancel eligible jobs and inspect safe receipts. |
+| 20 | 16 | Recover from SQLite acquisition contention | Sanitized retryable response before business work starts, connection cleanup and a requalified local release artifact. |
+
+Final automated verification: **775 tests**, zero failures/errors/skips; Java **7078/7078 lines**, **3843/3843 branches** and **414/414 methods**. Browser JavaScript exact coverage also passed. Each round below records its complete touched-file scope. These are bounded native capabilities, not full ServiceNow parity or production certification. Runtime scans/drills and their remaining risks are recorded in round 20.
+
+Actual distribution matches the planned table. Deferred workstreams 1 (shared deployment), 2 (enterprise identity) and 10 (integration-provider qualification) retain explicit prerequisites. Persistent multi-turn conversations were narrowed in round 14 to a complete stateless question journey; autonomous actions and real-model outcome evaluation remain open.
 
 ## Baseline and selection
 
@@ -279,7 +310,7 @@ Official research: [Log Export Service sources](https://www.servicenow.com/docs/
 
 Acceptance: administrator/delegated viewer access, anonymous/ungranted/revoked denial, download equality, strict parameters, valid earlier prefix after append, changed-prefix mismatch, browser download/verification through keyboard in both themes/mobile. Focused and final clean full gates passed.
 
-Focused SQLite/PostgreSQL and browser acceptance passed after the old route returned 404. Review confirmed authorization uses the separate live audit grant, download/verification parameters are strict, downloads contain only checkpoint metadata and verification compares an earlier prefix after later append operations. No new or reopened findings in accumulated-change review; full gate follows.
+Focused SQLite/PostgreSQL and browser acceptance passed after the old route returned 404. Review confirmed authorization uses the separate live audit grant, download/verification parameters are strict, downloads contain only checkpoint metadata and verification compares an earlier prefix after later append operations. No new or reopened findings in accumulated-change review; the subsequent full gate passed.
 
 QA R13-1: the first full run exposed an intermittent pre-existing session-revocation test failure on PostgreSQL: an unordered query assumed its first row was the earliest event. Production revocation and all three events were correct. Added explicit journal sequence ordering to the acceptance query; no product behavior or assertion was weakened. The failed full run is superseded below.
 
@@ -431,3 +462,60 @@ Final gates: 770 tests, zero failures/errors/skips; whole-project Java 7067/7067
 | WorkSearch.java | 10/10 | 6/6 | 1/1 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Search retained background work and expose safe recovery receipts`. No push.
+
+## Round 20 — graceful database acquisition failure and release qualification
+
+Selected `OS-N17-20`, workstream 16 / OS-PARITY-10. Investigate a concrete candidate in the existing SQLite contention backlog: a lock can fail transaction acquisition before routing, currently escaping as HTTP 500, with a JDBC connection left unclosed if initialization fails. Reproduce before repairing. Scope the retryable response strictly to acquisition: sanitized 503 and Retry-After, no business work or automatic replay. Preserve all other SQL failures and PostgreSQL behavior. Serve public appearance assets without needing a database so a sustained lock does not destroy the recovery page. Keep migration scripts authenticated. Alternatives: external deployment qualification, SSO and provider integration remain prerequisite-dependent.
+
+Official evidence retrieved 2026-11-17: [SQLite result codes](https://www.sqlite.org/rescode.html) distinguish primary BUSY/LOCKED codes and extended codes; [Brazil Impact availability](https://www.servicenow.com/docs/r/impact/io-availability.html), updated 2026-09-10, describes hosted availability alerts. Merge external uptime/latency evidence, ownership and alert timelines into the existing P1 operations backlog. A local 503 contract does not establish hosted availability or resolve the previously intermittent concurrent-load finding. Next research: scoped enterprise identity and real deployment/provider qualification.
+
+Acceptance: real held SQLite transaction drives concurrent API read/write failures, no writes before acquisition, recovery after release, safe error headers/body, JDBC cleanup including secondary close failure, unrelated errors unchanged, and real browser light/dark/mobile recovery while the database remains locked. Qualify the exact packaged artifact using fresh-install, same-version restore, prior-schema upgrades, durable-worker restart, bounded concurrent reads, current dependency/image/secret scans and a byte-matched runtime SBOM. No production deployment or automatic business-action rollback claim. Results: final automated and packaged qualification evidence is recorded below.
+
+Old-behavior reproduction: a real held SQLite transaction made the API return 500, failed initialization did not close its JDBC connection, and public appearance assets attempted database acquisition. Tests ran before implementation. The repair maps only acquisition BUSY/LOCKED failures; it cannot mislabel a later commit/close failure as unstarted business work. Other SQL errors and PostgreSQL are explicitly tested unchanged.
+
+QA R20-2: route comparison found the first asset refactor would reject HEAD, which the existing dispatcher treated as GET. Preserved GET/HEAD for public appearance assets and added a direct HEAD assertion; other methods remain denied. This repair preserves the existing HTTP contract. Focused checks rerun before freezing the final source.
+
+Focused checks passed after the HEAD repair: actual concurrent lock denial and write recovery, sanitized API/browser responses, no business write before acquisition, public appearance without database/session access, protected migration script behavior, preserved non-contention/PostgreSQL failures and connection cleanup. The browser retained the lock through rendering, theme toggling and accessibility checks; desktop-light/mobile-dark screenshots were inspected. Accumulated review against the fixed batch base, including all earlier repairs, found no new/reopened defect and made no further repair. Full verification and packaged qualification are recorded below.
+
+### Packaged release qualification and checkpoint 20
+
+The final source stayed frozen. The local image was rebuilt with `docker build --no-cache --pull -t openservice:n17-20261117 .`; no deployment occurred. Byte comparison matched every application class/resource and nested runtime library against the clean tested host JAR. The 52-library license inventory and CycloneDX runtime inventory match the actual packaged bytes; this is a technical inventory check, not legal clearance.
+
+Image: `sha256:af3728cceaab2eda2415fdbb8ad689b33d9c17e72e9a4ac346d33289de6082b3`. Packaged JAR SHA-256: `e839f672c94a50836c2e86a85ab34295a853eee080c97dd41b382c78eceac74c`. Identical application files: 173 (109 classes); runtime libraries: 52.
+
+| Qualification | Actual result |
+|---|---|
+| Fresh install | PASS: private credentials, repeat-safe setup, Compose TCP readiness, health, login and administrator API authentication. |
+| Same-version restore | PASS: schema 36 → 36, including profile text, records, attachment bytes, credentials, access boundaries, audit and encrypted queued work; 18 seconds in this disposable local drill. |
+| Upgrade from prior diverse batch | PASS: schema 35 → 36; old accounts receive empty profile defaults, existing state retained; 16 seconds. |
+| Upgrade from platform expansion | PASS: schema 33 → 36, including first saved-report execution history after upgrade; 17 seconds. |
+| Durable worker restart | PASS on PostgreSQL and SQLite: work queued with worker disabled, process recreated, worker enabled, succeeded receipt and healthy queue verified. |
+| Publication and image secrets | No secrets detected in the scoped publication snapshot or image. Scanner evidence is not a guarantee of absence. |
+| Manifest and exact runtime-library vulnerabilities | No findings. |
+| Image vulnerabilities | No high/critical or Java findings; 30 medium and 4 low OS-package findings with no scanner-listed fixed versions. These remain release risks. |
+
+Scanned with Trivy 0.76.2; vulnerability database updated `2026-11-17T06:59:44.233351399Z` and downloaded `2026-11-17T09:00:10.296419Z`. The full image scan recognized Ubuntu 26.04 and the packaged JAR. No exclusions were added to hide findings.
+
+| Database | Requests / concurrency | Failures | Mean | p95 | Maximum |
+|---|---|---|---|---|---|
+| postgresql | 200 / 8 | 0 | 0.603261 s | 0.652392 s | 0.666686 s |
+| sqlite | 200 / 8 | 0 | 0.664046 s | 3.130854 s | 7.643648 s |
+
+These read-only smoke samples are not representative capacity or latency SLO evidence. OS-EXP-16-PERF-01 remains open: SQLite waits were materially longer, and the earlier intermittent failure has not been causally proved to be this acquisition case. PostgreSQL also needs workload-specific qualification. No automatic retry was added and no timing or coverage threshold was relaxed.
+
+Reproduce with `sh scripts/verify.sh`, the Docker build above, `bash scripts/fresh-install-drill.sh IMAGE`, `bash scripts/restore-drill.sh IMAGE [PRIOR_IMAGE]`, and `LOAD_PASSWORD=... bash scripts/load-smoke.sh http://127.0.0.1:PORT 200 8` against disposable installations. Extend existing source-image qualification only with selected local images. The amended restore script checks profile retention/defaults behavior; shell scripts, HTML and CSS are not Java/JavaScript coverage targets and are qualified through these drills and rendered browser journeys. Raw scan/SBOM/artifact/drill evidence is retained locally under `/tmp/openservice-n17-release/`; clean-test reports are under `target/`. These generated results are not committed.
+
+Checkpoint 20: all 20 planned feature rounds delivered across 13 workstreams, at most two per workstream with no adjacent repeats; no concentration exception. Round 14 deliberately narrowed persistent conversations to an independently useful stateless question/consent journey. Planned workstreams 1, 2 and 10 remain deferred with prerequisites. Discovery was performed each round and merged into existing gaps; schedule inheritance was newly tracked, while provider privacy, delegated reviews, diagnostics, visualization reuse and availability evidence refined existing items. No continuous crawler or vendor conformance was claimed.
+
+Remaining adoption gates: real HTTPS/proxy/SMTP and permitted-user/operational ownership (M1); live ServiceNow/identity/connector/provider qualification and broader permission/configuration semantics (M2); representative production load, HA/disaster recovery and manual assistive-technology assessment (M3). Configurable table-read policies remain a coherent missing contract; directly seeded read-policy fixtures are defensive tests, not supported configuration promotion. AI quality/cost/latency benefits have not been measured against a real model. Exact coverage does not waive any of these gaps.
+
+Final scope reconciliation also ran the skill's exact-count checker over **all 102 production Java source files**, with every file passing full line/branch/method coverage. No source changed after the clean run. Final accumulated review includes runtime evidence, the HEAD compatibility repair, profile upgrade/restore behavior and the documentation refresh; no new/reopened finding or further repair was required. All four disposable install/restore/upgrade drills and both worker/load checks completed successfully.
+
+Final gates: 775 tests, zero failures/errors/skips; whole-project Java 7078/7078 lines, 3843/3843 branches, 414/414 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| Store.java | 96/96 | 50/50 | 10/10 |
+| WebController.java | 2215/2215 | 1195/1195 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Handle SQLite acquisition contention and qualify the release artifact`. No push.

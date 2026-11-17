@@ -24,6 +24,8 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void databaseBusyRecoveryWorksInBothThemes() throws Exception { SQLiteContentionBrowserAcceptance.run(this); }
+
  @Test void retainedWorkSearchWorksInBothThemes() throws Exception { WorkSearchBrowserAcceptance.run(this); }
 
  @Test void privateReportCopiesWorkInBothThemes() throws Exception { ReportCopyBrowserAcceptance.run(this); }

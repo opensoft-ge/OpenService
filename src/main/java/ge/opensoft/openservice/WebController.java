@@ -95,6 +95,14 @@ public class WebController {
                 "Content-Security-Policy",
                 "default-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors"
                         + " 'none'; form-action 'self'; base-uri 'self'");
+        if(Set.of("/static/app.css","/static/theme.js").contains(request.getRequestURI())) {
+            if(!Set.of("GET","HEAD").contains(request.getMethod()))return new ModelAndView("error",map("errorTitle","Method Not Allowed","errorDetail","GET or HEAD required"),HttpStatus.METHOD_NOT_ALLOWED);
+            boolean css=request.getRequestURI().equals("/static/app.css");
+            if(css)response.setHeader("Content-Disposition","inline; filename=app.css");
+            try(var input=WebController.class.getResourceAsStream(request.getRequestURI())) {
+                return binary(Objects.requireNonNull(input).readAllBytes(),css?"text/css; charset=utf-8":"text/javascript; charset=utf-8",200);
+            }
+        }
         if (request.getRequestURI().equals("/readyz")) {
             if (!request.getMethod().equals("GET")) return json(map("error", "GET required"), 405);
             if (request.getQueryString() != null && !request.getQueryString().isEmpty())
@@ -102,9 +110,16 @@ public class WebController {
             boolean ready = Readiness.ready(store);
             return json(map("status", ready ? "ready" : "not_ready"), ready ? 200 : 503);
         }
-        try (var db = store.open()) {
-            return dispatch(db, request, response);
+        Store.Db acquired;
+        try { acquired=store.open(); }
+        catch(java.sql.SQLException unavailable) {
+            if(store.postgres || !Set.of(5,6).contains(unavailable.getErrorCode() & 255))throw unavailable;
+            response.setHeader("Retry-After","1");
+            String detail="The database is busy. This request did not start. Try again shortly.";
+            if(request.getRequestURI().startsWith("/api/"))return json(map("error",map("message","Service Unavailable","detail",detail),"status","failure"),503);
+            return new ModelAndView("error",map("errorTitle","Service Unavailable","errorDetail",detail),HttpStatus.SERVICE_UNAVAILABLE);
         }
+        try (var db = acquired) { return dispatch(db, request, response); }
     }
 
     private ModelAndView dispatch(
@@ -117,7 +132,7 @@ public class WebController {
                 throw new Failure(413, "Request exceeds 6 MB");
             String path = request.getRequestURI(), method = request.getMethod();
             boolean publicPath =
-                    Set.of("/healthz", "/login", "/forgot", "/static/app.css", "/static/theme.js")
+                    Set.of("/healthz", "/login", "/forgot")
                                     .contains(path)
                             || path.matches("/(?:join|recover|verify-email)/[A-Za-z0-9_-]{32}");
             var user =
@@ -612,17 +627,7 @@ public class WebController {
             c.db.count("SELECT 1");
             return json(map("status", "ok"), 200);
         }
-        if (path.equals("/static/app.css")) {
-            method(method, "GET");
-            c.response.setHeader("Content-Disposition", "inline; filename=app.css");
-            try (var input = WebController.class.getResourceAsStream("/static/app.css")) {
-                return binary(
-                        Objects.requireNonNull(input).readAllBytes(),
-                        "text/css; charset=utf-8",
-                        200);
-            }
-        }
-        if (Set.of("/static/migrations.js", "/static/theme.js").contains(path)) {
+        if (path.equals("/static/migrations.js")) {
             method(method, "GET");
             try (var input = WebController.class.getResourceAsStream(path)) {
                 return binary(
