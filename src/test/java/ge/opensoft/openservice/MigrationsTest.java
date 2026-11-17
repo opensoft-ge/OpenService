@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void knowledgeFeedbackUpgradeRollsBackAndRetainsReviews(boolean postgres) throws Exception {
+        var env=configuration(postgres);var store=new Store(env);
+        try(var db=store.open()){db.update("DROP TABLE os_knowledge_feedback");db.update("DELETE FROM os_migration WHERE version>=39");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_knowledge_feedback"));db.connection.rollback();assertEquals(38,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){db.update("INSERT INTO os_knowledge_feedback(feedback_id,article_id,version,user_id,helpful,details,updated_at,reviewed,review_note) VALUES('feedback','article',1,'user',0,'Retained feedback',1,1,'Retained review')");db.connection.commit();}
+        try(var db=new Store(env).open()){assertEquals("Retained review",db.one("SELECT review_note FROM os_knowledge_feedback WHERE feedback_id='feedback'").get("review_note"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void profileUpgradePreservesAccountsAndRepeatsSafely(boolean postgres) throws Exception {
         var env=configuration(postgres);var store=new Store(env);
         try(var db=store.open()){

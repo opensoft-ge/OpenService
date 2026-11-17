@@ -138,3 +138,27 @@ Final gates: 794 tests, zero failures/errors/skips; whole-project Java 7202/7202
 | WebController.java | 2257/2257 | 1251/1251 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Export saved reports using current viewer permissions`. No push.
+
+## Round 6 — versioned knowledge feedback and editorial review
+
+Selected `OS-N17B-06`, workstream 9 / OS-PARITY-04. Published articles have immutable version snapshots and search, but no reader feedback or editorial follow-up. Add a dedicated published article page with one personal helpful/not-helpful response and optional details per user/version. Administrators review current feedback revisions in an article-specific queue; changed feedback reopens review, identical retries retain an existing decision. Public views disclose only the current user's response; editorial notes remain administrator-only. Reject stale publication submissions and hide retired, deleted, private/group or unpublished articles. Review history is not an article publication or automatic content edit.
+
+Compared feedback (9), full read-policy configuration (4) and personal notification controls (6). Choose this planned complete requester → editor journey now, with no further primary WS9 feature in this batch. Acceptance covers isolated responses, role/CSRF/input boundaries, real public-snapshot separation, stale versions/reviews, both feedback values, retries and edits, retained review through restart, upgrade rollback, bounded administration and both-theme requester/admin browser journeys. No public comment threads, star ratings, task assignment, notifications, automated article generation or full feedback-history pagination claim.
+
+Official evidence retrieved 2026-11-17: Brazil [knowledge feedback](https://www.servicenow.com/docs/r/servicenow-platform/knowledge-management/r_KnowledgeFeedback.html) and [actionable feedback](https://www.servicenow.com/docs/r/servicenow-platform/knowledge-management/configure-act-know-feedback-properties.html), updated 2026-09-10. Merge configurable negative-feedback tasks, editor assignment and feedback-history filtering/pagination into existing missing P2 knowledge/fulfilment work, dependent on scoped knowledge administration and durable workflow. Acceptance must route feedback to an eligible editor without granting draft access to the reporter and preserve the reviewed publication version. This manual review slice is not that automated workflow. Next research: consistent table-read access policy.
+
+Both database acceptance regressions failed with 404 before implementation. Focused SQLite/PostgreSQL, browser and upgrade checks pass. The requester browser submits literal markup safely, the administrator records a private follow-up, and the requester sees reviewed status without that internal note. Upgrade checks exercise rollback and repeated startup with retained review contents.
+
+QA R6-1: after the initial full pass, a boundary browser regression using a long unbroken published title reproduced horizontal overflow. Apply the existing wrapping utility to knowledge/article/review headings and retain the long-title regression. This repairs presentation within the same feature; it is not counted as an additional feature. The final source is re-frozen and fully reverified after the repair.
+
+Inspected final long-title mobile-dark and administrator-light screenshots: wrapping now remains within the viewport. Final accumulated-change review rechecked publication isolation, personal response projection, editorial-only notes, strict input/CSRF, revision and duplicate submission behavior, transactional upgrades, all download/connector/report boundaries and previous approval/consent repairs. No new or reopened defect remained and this review required no further repair.
+
+Final gates: 799 tests, zero failures/errors/skips; whole-project Java 7236/7236 lines, 4049/4049 branches, 433/433 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| KnowledgeFeedback.java | 19/19 | 38/38 | 4/4 |
+| Migrations.java | 194/194 | 104/104 | 3/3 |
+| WebController.java | 2269/2269 | 1277/1277 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add versioned knowledge feedback and private editorial review`. No push.

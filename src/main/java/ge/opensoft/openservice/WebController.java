@@ -211,6 +211,7 @@ public class WebController {
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
                                 && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:catalogue/[0-9a-f]{32}|api/openservice/catalogue/[0-9a-f]{32}/order)")))
+                        && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/feedback")
                         && !path.matches(
                                 "/(?:api/openservice/comments/[^/]+/[0-9a-f]{32}|record/[^/]+/[0-9a-f]{32}/comment)"))
                     throw new Failure(403, "Read-only account");
@@ -305,6 +306,20 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher knowledgeFeedback=Pattern.compile("/(knowledge|api/openservice/knowledge)/([0-9a-f]{32})(/feedback)?").matcher(path);
+        if(knowledgeFeedback.matches()){
+            boolean api=path.startsWith("/api/"),write=knowledgeFeedback.group(3)!=null;method(method,write?"POST":"GET");c.noQuery();c.uniqueQuery();String id=knowledgeFeedback.group(2);Map<String,Object> result;
+            if(write){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");String helpful=Objects.toString(form.get("helpful"),"");TypedFields.require(Set.of("true","false").contains(helpful),"Choose whether the article was helpful");form.put("helpful",Boolean.parseBoolean(helpful));form.put("version",Service.number(Objects.toString(form.get("version"),""),1,Integer.MAX_VALUE));input=form;}result=KnowledgeFeedback.submit(c.db,id,input);if(!api)return redirect("/knowledge/"+id);}
+            else result=KnowledgeFeedback.page(c.db,id);
+            return api?json(map("result",result),200):view(c,"knowledge-article",map("table","knowledge","article",result.get("article"),"feedback",result.get("feedback")));
+        }
+        Matcher knowledgeReview=Pattern.compile("/(?:admin/knowledge/([0-9a-f]{32})/feedback|api/openservice/knowledge-feedback/([0-9a-f]{32}))").matcher(path);
+        if(knowledgeReview.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(knowledgeReview.group(1),knowledgeReview.group(2));
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=form;}KnowledgeFeedback.review(c.db,id,input);if(!api)return redirect(path);}
+            var result=KnowledgeFeedback.reviewPage(c.db,id);return api?json(map("result",result),200):view(c,"knowledge-feedback-review",map("table","knowledge","review",result));
+        }
+
         Matcher reportExport=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/export\\.csv").matcher(path);
         if(reportExport.matches()){method(method,"GET");c.noQuery();String id=reportExport.group(1);byte[] csv=ReportExport.csv(c.db,c.db.viewerId,id);disposition(c,"report-"+id+".csv");return binary(csv,"text/csv; charset=UTF-8",200);}
 

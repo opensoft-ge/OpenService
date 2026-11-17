@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void knowledgeFeedbackBindsPublicVersionsAndPrivateEditorialReviews() throws Exception { KnowledgeFeedbackAcceptance.run(this); }
  @Test void reportExportsRecheckCurrentViewerAndProtectSpreadsheetLabels() throws Exception { ReportExportAcceptance.run(this); }
  @Test void attachmentHoldsBlockEveryDownloadAndBindRelease() throws Exception { AttachmentHoldsAcceptance.run(this); }
  @Test void connectorConsolePinsReviewedConfigurationAndReceipts() throws Exception { ConnectorConsoleAcceptance.run(this); }
@@ -103,7 +104,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_browser_session", "os_api_key", "os_work", "os_notice", "os_connector", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice", "os_connector", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
