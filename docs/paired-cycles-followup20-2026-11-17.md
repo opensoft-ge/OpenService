@@ -189,3 +189,24 @@ Final gates: 802 tests, zero failures/errors/skips; whole-project Java 7254/7254
 | WebController.java | 2273/2273 | 1285/1285 | 42/42 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Enforce configured table read permissions across data surfaces`. No push.
+
+## Round 8 — acknowledge a reviewed notification page
+
+Selected `OS-N17B-08`, workstream 6 / OS-PARITY-02. Personal history has filters and single-message acknowledgment, but no bounded multi-message action. Add `acknowledge_many` for 1–100 distinct own notification IDs and a browser action containing only unread IDs displayed on the reviewed page. New arrivals and messages on other pages stay unread even when search pagination changes. Validate the complete batch before updating; missing/foreign IDs fail atomically, and repeating a valid batch is harmless. Preserve browser filters and the independent delivery preference.
+
+Compared personal notification controls (6), event escalation (13) and migration cancellation (11). Choose the planned small but complete personal-history operation after cross-product permission work. Acceptance: exact displayed window, concurrent later arrival, own-account isolation, 100-item boundary, invalid/duplicate IDs, atomic rollback, idempotent retry, persistence, CSRF/method/query validation and keyboard operation in both themes. Acknowledgment is a user action, not proof that someone read or acted on the messages. No deletion, global-history sweep, scheduled digests or delivery-channel preferences are claimed.
+
+Research retrieved 2026-11-17: official Brazil [portal notification controls](https://www.servicenow.com/docs/r/employee-service-management/employee-experience-foundation/portal-notif-config-form.html) and [Next Experience notification preferences](https://www.servicenow.com/docs/r/platform-administration/advanced-notification-prefrences.html), updated 2026-09-10. Merge category/channel schedules, digests and permission-aware AI preference search into existing missing P2 WS6/15 notification work, dependent on delivery channels, a preference model and scoped search. Acceptance must suppress disabled/scheduled channels without altering security-email delivery and must never expose another user's preferences. The older generic release-notes URL returned 404; no additional release-specific capability is inferred. Next research: reviewed event-to-incident escalation.
+
+The pre-implementation request failed with 400 on both databases. Focused SQLite/PostgreSQL/browser tests now pass, including a 100-item page, a later arrival left unread, whole-batch rejection and rollback, harmless repeated submission and keyboard submission with preserved filters.
+
+Inspected final desktop-light/mobile-dark screenshots. The final accumulated-change review checked authenticated ownership, complete-batch validation before mutation, retry/cleanup semantics, later arrivals, transaction rollback on invalid return filters, CSRF, escaped content, no delivery-preference mutation and earlier table-read/attachment/approval/AI-consent repairs. No new or reopened finding or repair was required.
+
+Final gates: 805 tests, zero failures/errors/skips; whole-project Java 7265/7265 lines, 4089/4089 branches, 436/436 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| Notifications.java | 36/36 | 32/32 | 4/4 |
+| WebController.java | 2275/2275 | 1287/1287 | 42/42 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Acknowledge only the displayed personal notification page`. No push.

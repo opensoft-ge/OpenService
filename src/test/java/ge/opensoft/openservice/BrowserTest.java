@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void notificationPageAcknowledgmentIsAccessibleAndBounded() throws Exception { NotificationBatchBrowserAcceptance.run(this); }
  @Test void tableReadConfigurationAndLandingAreAccessible() throws Exception { TableReadBrowserAcceptance.run(this); }
  @Test void knowledgeFeedbackJourneyWorksInBothThemes() throws Exception { KnowledgeFeedbackBrowserAcceptance.run(this); }
  @Test void reportCsvDownloadsWorkInBothThemes() throws Exception { ReportExportBrowserAcceptance.run(this); }

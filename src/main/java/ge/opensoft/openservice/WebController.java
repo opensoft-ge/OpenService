@@ -521,7 +521,9 @@ public class WebController {
                                 ? body(c)
                                 : c.parameter("operation", "").equals("preference")
                                         ? map("enabled", c.parameter("enabled", "").equals("true"))
-                                        : map("acknowledge", c.parameter("notice_id", "")));
+                                        : c.parameter("operation", "").equals("batch")
+                                                ? map("acknowledge_many",Arrays.asList(c.parameter("notice_ids", "").split(",",-1)))
+                                                : map("acknowledge", c.parameter("notice_id", "")));
             Map<String,String> selection=method.equals("GET")?c.arguments():path.startsWith("/api/")?Map.of():Map.of("q",c.parameter("return_q",""),"state",c.parameter("return_state","all"),"offset",c.parameter("return_offset","0"),"limit",c.parameter("return_limit","100"));
             var result=NotificationSearch.page(c.db,actor,selection);
             var rows=objects(result.get("result"));

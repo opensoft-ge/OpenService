@@ -38,6 +38,15 @@ final class Notifications {
         return objects(NotificationSearch.page(db,actor,Map.of()).get("result"));
     }
 
+    static void acknowledgeMany(Store.Db db,String actor,Object value) throws SQLException {
+        require(value instanceof List<?> rows && !rows.isEmpty() && rows.size()<=100,"Provide 1–100 notification IDs");
+        var ids=new LinkedHashSet<String>();for(Object id:(List<?>)value){require(id instanceof String s && s.matches("[0-9a-f]{32}"),"Use 32-character notification IDs");require(ids.add((String)id),"Notification IDs must be unique");}
+        if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");var parameters=new ArrayList<Object>();parameters.add(actor);parameters.addAll(ids);
+        String selection="user_id=? AND notice_id IN ("+String.join(",",Collections.nCopies(ids.size(),"?"))+")";
+        if(db.count("SELECT COUNT(*) FROM os_notice WHERE "+selection,parameters.toArray())!=ids.size())throw new Failure(404,"One or more notifications are unavailable");
+        db.update("UPDATE os_notice SET acknowledged=1 WHERE "+selection+" AND acknowledged=0",parameters.toArray());
+    }
+
     static void update(Store.Db db, String actor, Object input) throws SQLException {
         var body = object(input);
         if (body.keySet().equals(Set.of("enabled"))) {
@@ -46,6 +55,8 @@ final class Notifications {
                     "UPDATE os_user SET notifications=? WHERE user_id=?",
                     body.get("enabled").equals(true) ? 1 : 0,
                     actor);
+        } else if(body.keySet().equals(Set.of("acknowledge_many"))) {
+            acknowledgeMany(db,actor,body.get("acknowledge_many"));
         } else {
             require(body.keySet().equals(Set.of("acknowledge")), "Provide enabled or acknowledge");
             String id = WorkJobs.text(body.get("acknowledge"), 32);
