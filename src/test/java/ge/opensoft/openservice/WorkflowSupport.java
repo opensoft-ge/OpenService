@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void fulfilmentPreservesOrdinaryPolicyAndTransactionBoundaries() throws Exception { FulfilmentBoundariesAcceptance.run(this); }
+    @Test void routedOrdersReachARevisionProtectedRequesterOutcome() throws Exception { FulfilmentAcceptance.run(this); }
     @Test void scheduledApprovalRemindersRecheckLiveAuthorityAtDelivery() throws Exception { ScheduledApprovalRemindersAcceptance.run(this); }
     @Test void catalogueEligibilityUsesLiveGroupsAndPreservesOwnedRequests() throws Exception { CatalogueEligibilityAcceptance.run(this); }
     @Test void installedConfigurationHistoryIsAtomicAndRestricted() throws Exception {
@@ -117,7 +119,7 @@ abstract class WorkflowSupport {
                             "os_transfer_link")) db.update("DELETE FROM " + table);
             for (String table :
                     List.of(
-                            "os_configuration_install", "os_event_case", "os_offering", "os_catalog_order", "os_outbox",
+                            "os_fulfilment", "os_configuration_install", "os_event_case", "os_offering", "os_catalog_order", "os_outbox",
                             "os_report_run",
                             "os_recovery_budget",
                             "os_requester_record",

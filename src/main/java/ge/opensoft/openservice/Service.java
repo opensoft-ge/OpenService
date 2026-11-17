@@ -175,6 +175,7 @@ public final class Service {
 
     static void save(Store.Db db, Map<String, Object> item) throws SQLException {
         ApprovalGate.update(db, item);
+        Fulfilment.guard(db,item);
         db.update(
                 "UPDATE os_record SET data="
                         + db.jsonParameter()
@@ -259,6 +260,7 @@ public final class Service {
         audit(db, item, actor, "deleted", map("before", serialize(item)));
         db.update("DELETE FROM os_attachment WHERE record_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_requester_record WHERE record_id=?", item.get("sys_id"));
+        db.update("DELETE FROM os_fulfilment WHERE request_id=?",item.get("sys_id"));
         for (var member :
                 db.all("SELECT user_id FROM os_group_member WHERE group_id=?", item.get("sys_id")))
             SecurityEvents.record(

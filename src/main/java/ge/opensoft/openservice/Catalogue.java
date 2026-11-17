@@ -56,6 +56,7 @@ final class Catalogue {
         var offering=find(db,id,false);
         if(!offering.get("revision").equals(body.get("revision")))throw new Failure(409,"Offering changed; review it again");
         var item=Requests.create(db,Service.account(db,db.viewerId).get("name").toString(),map("short_description",offering.get("name"),"description",offering.get("description")+"\n\nRequest details:\n"+details));
+        CatalogueRouting.create(db,offering,item);
         db.update("INSERT INTO os_catalog_order(user_id,order_key,offering_id,offering_revision,request_id,fingerprint) VALUES(?,?,?,?,?,?)",db.viewerId,key,id,body.get("revision"),item.get("sys_id"),fingerprint);
         SecurityEvents.record(db,db.viewerId,db.viewerId,"catalogue.ordered",map("offering_id",id,"request_id",item.get("sys_id"),"revision",body.get("revision")));
         return item;

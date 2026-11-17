@@ -15,6 +15,24 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void routedFulfilmentUpgradeIsAtomicAndRetainsTasks(boolean postgres) throws Exception {
+        var environment=configuration(postgres);var store=new Store(environment);
+        try(var db=store.open()){
+            db.update("DROP TABLE os_fulfilment");db.update("ALTER TABLE os_offering DROP COLUMN fulfilment_group_id");db.update("DELETE FROM os_migration WHERE version>=44");db.connection.commit();
+            Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_fulfilment"));db.connection.rollback();assertEquals(43,db.count("SELECT MAX(version) FROM os_migration"));
+        }
+        String offering,request;
+        try(var db=new Store(environment).open()){
+            String actor=PlatformFoundationTest.bind(db),group=Service.create(db,"sys_user_group",Values.map("short_description","Retained fulfilment team"),"admin").get("sys_id").toString();
+            offering=Catalogue.save(db,actor,"",CatalogueAcceptance.offering("Retained routed offering",0,true)).get("offering_id").toString();assertEquals("",Catalogue.find(db,offering,true).get("fulfilment_group_id"));
+            CatalogueRouting.save(db,actor,offering,Values.map("group_id",group,"revision",1));request=Catalogue.order(db,offering,Values.map("revision",2,"key",Values.id(),"details","Retain delivery")).get("sys_id").toString();db.connection.commit();
+        }
+        try(var db=new Store(environment).open()){
+            PlatformFoundationTest.bind(db);assertEquals("queued",Fulfilment.detail(db,request).get("state"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));
+        }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void catalogueEligibilityUpgradePreservesExistingOfferings(boolean postgres) throws Exception {
         var environment=configuration(postgres);var store=new Store(environment);String offering,group;
         try(var db=store.open()) {

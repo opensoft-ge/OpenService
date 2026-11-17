@@ -376,6 +376,26 @@ public class WebController {
             return view(c,"record-clocks",map("table",table,"clockView",RecordClocks.page(c.db,table,id),"recordId",id,"clockWorker",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
         }
 
+        if(Set.of("/fulfilment","/api/openservice/fulfilment").contains(path)){
+            method(method,"GET");c.uniqueQuery();var page=Fulfilment.page(c.db,c.arguments());
+            return path.startsWith("/api/")?json(page,200):view(c,"fulfilment-queue",map("table","sc_request","work",page));
+        }
+        Matcher fulfilment=Pattern.compile("/(requests|api/openservice/requests)/([0-9a-f]{32})/fulfilment").matcher(path);
+        if(fulfilment.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=fulfilment.group(2);
+            if(method.equals("POST")){
+                Object input;
+                if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));form.put("request_revision",Service.number(Objects.toString(form.get("request_revision"),""),0,Integer.MAX_VALUE));input=form;}
+                var result=Fulfilment.control(c.db,id,input);return api?json(map("result",result),200):redirect("/requests/"+id+"/fulfilment");
+            }
+            var result=Fulfilment.detail(c.db,id);return api?json(map("result",result),200):view(c,"fulfilment",map("table","sc_request","task",result,"groups",c.role().equals("admin")?RecordAccess.groups(c.db):List.of()));
+        }
+        Matcher catalogueRouting=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/routing").matcher(path);
+        if(catalogueRouting.matches()){
+            boolean api=path.startsWith("/api/");c.admin();method(method,api?"PUT":"POST");c.noQuery();c.uniqueQuery();String id=catalogueRouting.group(2);Object input;
+            if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=form;}
+            var result=CatalogueRouting.save(c.db,c.db.viewerId,id,input);return api?json(map("result",result),200):redirect("/admin/catalogue/"+id);
+        }
         Matcher catalogueEligibility=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/eligibility").matcher(path);
         if(catalogueEligibility.matches()){
             boolean api=path.startsWith("/api/");c.admin();method(method,api?"PUT":"POST");c.noQuery();c.uniqueQuery();String id=catalogueEligibility.group(2);
@@ -392,8 +412,8 @@ public class WebController {
                 var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");String active=Objects.toString(form.get("active"),"");TypedFields.require(Set.of("true","false").contains(active),"Choose active or inactive");form.put("active",Boolean.parseBoolean(active));form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));
                 var saved=Catalogue.save(c.db,c.db.viewerId,id,form);return redirect("/admin/catalogue/"+saved.get("offering_id"));
             }
-            var offering=id.isEmpty()?map("offering_id","","name","","description","","active",0,"revision",0,"group_id",""):Catalogue.find(c.db,id,true);
-            return view(c,"catalogue-admin",map("table","catalogue","offerings",Catalogue.list(c.db,true),"offering",offering,"groups",RecordAccess.groups(c.db),"eligibleGroupName",CatalogueEligibility.groupName(c.db,offering.get("group_id").toString())));
+            var offering=id.isEmpty()?map("offering_id","","name","","description","","active",0,"revision",0,"group_id","","fulfilment_group_id",""):Catalogue.find(c.db,id,true);
+            return view(c,"catalogue-admin",map("table","catalogue","offerings",Catalogue.list(c.db,true),"offering",offering,"groups",RecordAccess.groups(c.db),"eligibleGroupName",CatalogueEligibility.groupName(c.db,offering.get("group_id").toString()),"routingGroupName",CatalogueRouting.name(c.db,offering.get("fulfilment_group_id").toString())));
         }
         if(path.equals("/catalogue") || path.equals("/api/openservice/catalogue")) {
             boolean api=path.startsWith("/api/");method(method,api?new String[]{"GET","POST"}:new String[]{"GET"});c.noQuery();c.uniqueQuery();
@@ -2711,6 +2731,7 @@ public class WebController {
                         table,
                         "definition",
                         definition,
+                        "hasFulfilment",item!=null && table.equals("sc_request") && Fulfilment.readable(c.db) && c.db.count("SELECT COUNT(*) FROM os_fulfilment WHERE request_id=?",id)>0,
                         "canWriteRecord",
                         !Set.of("reader", "requester").contains(c.role())
                                 && RecordPolicy.allows(
