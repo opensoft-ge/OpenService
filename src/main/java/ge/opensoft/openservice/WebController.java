@@ -575,6 +575,13 @@ public class WebController {
             var result=ReferenceSearch.search(c.db,context.get("target").toString(),c.arguments());
             return view(c,"reference-picker",map("table",table,"recordId",id,"field",field,"context",context,"search",result,"query",c.parameter("q",""),"pickerPath",path));
         }
+        Matcher knowledgeDraft=Pattern.compile("/(?:admin|api/openservice)/knowledge/([0-9a-f]{32})/draft").matcher(path);
+        if(knowledgeDraft.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=knowledgeDraft.group(1);Map<String,Object> result;
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");TypedFields.require("true".equals(form.get("confirm")),"Confirm the reviewed knowledge action");form.put("confirm",true);form.put("version",Service.number(Objects.toString(form.get("version"),""),0,Integer.MAX_VALUE));input=form;}result=KnowledgeDrafts.act(c.db,id,input);if(!api)return redirect(object(input).get("operation").equals("publish")?"/knowledge/"+id:"/record/kb_knowledge/"+id);}
+            else result=KnowledgeDrafts.review(c.db,id,c.arguments());
+            return api?json(map("result",result),200):view(c,"knowledge-draft",map("table","knowledge","review",result));
+        }
         Matcher knowledgeComparison=Pattern.compile("/(?:admin/knowledge/([0-9a-f]{32})/versions|api/openservice/knowledge/([0-9a-f]{32})/compare)").matcher(path);
         if(knowledgeComparison.matches()) {
             method(method,"GET");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");
