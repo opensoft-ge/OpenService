@@ -305,6 +305,13 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher connectorConsole=Pattern.compile("/admin/connectors/([a-z][a-z0-9_-]{0,79})").matcher(path);
+        if(connectorConsole.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String alias=connectorConsole.group(1);
+            if(method.equals("POST"))return redirect(ConnectorConsole.submit(store,c.db,alias,c.arguments()));
+            return view(c,"connector-console",map("table","operations","connector",ConnectorConsole.page(c.db,alias),"probeKey",id(),"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
+        }
+
         Matcher recordClocks=Pattern.compile("/record/([a-z][a-z0-9_]*)/([0-9a-f]{32})/clocks").matcher(path);
         if(recordClocks.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=recordClocks.group(1),id=recordClocks.group(2);

@@ -71,3 +71,25 @@ Final gates: 783 tests, zero failures/errors/skips; whole-project Java 7157/7157
 | WebController.java | 2241/2241 | 1235/1235 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Start and manage service clocks from their records`. No push.
+
+## Round 3 — test and retire a reviewed connector
+
+Selected `OS-N17B-03`, workstream 10 / OS-PARITY-03. Operations can save credentials and the API can enqueue read work, but administrators lack an alias-specific test/receipt/retirement browser journey. Add metadata-only connector detail, protected queued GET tests and reasoned retirement. Bind form review and queued tests to the complete current configuration, including credential envelope, so rotation or retire/recreate cannot silently change a reviewed destination. Preserve existing deployment origin restrictions, bounded HTTP reads, durable job authority/retries and sanitized receipts. Legacy API jobs without an optional review fingerprint retain their documented dynamic-alias behavior.
+
+Compared integrations (10), attachment holds (5) and report exports (14). Choose the integration journey next to complete a reusable administrator operation without another SLA refinement. Acceptance: admin-only access, CSRF/strict form input, no secrets/provider bodies in views or receipts, idempotent queue submission, real local HTTP worker execution, stale-form rejection, worker rejection after retire/recreate and accessible both-theme browser save → test → receipt → retire. No OAuth, external vault, caller credentials, two-way synchronization or vendor template designer claim.
+
+Official evidence retrieved 2026-11-17: Brazil Workflow Data Fabric [test a connection alias](https://www.servicenow.com/docs/r/integrate-applications/integration-hub/test-alias-configuration-template.html), Integration Hub Starter, and [multiple connections](https://www.servicenow.com/docs/r/integrate-applications/integration-hub/support-multiple-connections.html), updated 2026-09-10. Merge environment-specific connection overrides and execution-time alias evidence into existing missing P2 connector/configuration work, dependent on versioned action definitions and promotion bindings. Acceptance must show the actual selected connection and require destination configuration after promotion without transferring credentials. Next research: attachment quarantine and release governance.
+
+Both database route regressions returned 404 before implementation. Focused SQLite/PostgreSQL/browser tests pass, including a real loopback HTTP GET through the durable worker, receipt non-disclosure and a stale queued test cancelled without a second outbound call after alias retirement/recreation. The browser journey saves its own alias, tests it, reads the successful receipt and retires it. Tests use synthetic local credentials/data only.
+
+Both-theme screenshots were inspected after final verification. Accumulated-change QA rechecked administrator and CSRF boundaries, allowed destinations, relative-path validation, no credential/provider-body disclosure, queued configuration identity, alias replacement, worker authority, prior catalogue concurrency and record-clock controls. No new/reopened defect or further repair was required.
+
+Final gates: 786 tests, zero failures/errors/skips; whole-project Java 7168/7168 lines, 3949/3949 branches, 424/424 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| ConnectorConsole.java | 8/8 | 6/6 | 2/2 |
+| Connectors.java | 57/57 | 24/24 | 5/5 |
+| WebController.java | 2246/2246 | 1239/1239 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Test reviewed connector configurations and retire aliases safely`. No push.

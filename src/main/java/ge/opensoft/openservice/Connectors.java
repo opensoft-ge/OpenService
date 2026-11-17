@@ -60,19 +60,21 @@ final class Connectors {
         SecurityEvents.record(db, actor, actor, "connector.retired", map("alias", alias, "reason", reason));
     }
 
+    static String review(Map<String,Object> row) {
+        return org.apache.commons.codec.digest.DigestUtils.sha256Hex(JSON.writeValueAsString(map("alias",row.get("alias"),"origin",row.get("origin"),"revision",row.get("revision"),"envelope",row.get("envelope"))));
+    }
+    static String path(Object input) {
+        String path=WorkJobs.text(input,2048);
+        require(path.startsWith("/") && !path.startsWith("//") && !path.contains("#") && !path.contains("\\"),"Use a relative absolute path without a fragment");return path;
+    }
+
     static Map<String, Object> read(Store store, Store.Db db, Object input) throws Exception {
         var body = object(input);
-        require(body.keySet().equals(Set.of("alias", "path")), "Provide alias and path");
-        String alias = WorkJobs.text(body.get("alias"), 80),
-                path = WorkJobs.text(body.get("path"), 2048);
-        require(
-                path.startsWith("/")
-                        && !path.startsWith("//")
-                        && !path.contains("#")
-                        && !path.contains("\\"),
-                "Use a relative absolute path without a fragment");
+        require(body.keySet().equals(Set.of("alias","path")) || body.keySet().equals(Set.of("alias","path","review")),"Provide alias, path and optional review");
+        String alias=WorkJobs.text(body.get("alias"),80),path=path(body.get("path"));
         var row = db.one("SELECT * FROM os_connector WHERE alias=?", alias);
         if (row == null) throw new Failure(404, "Connector alias not found");
+        if(body.containsKey("review") && !review(row).equals(WorkJobs.text(body.get("review"),64)))throw new Failure(409,"Connector changed after review");
         String origin = row.get("origin").toString();
         require(
                 Arrays.asList(
