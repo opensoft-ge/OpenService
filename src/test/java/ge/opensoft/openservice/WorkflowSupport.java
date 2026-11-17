@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void referencePickerPreservesLiveAuthorityAndRevision() throws Exception { ReferencePickerAcceptance.run(this); }
+
  @Test void immutableKnowledgeVersionsCanBeCompared() throws Exception { KnowledgeComparisonAcceptance.run(this); }
 
     @Test void migrationReconciliationHasProtectedReviewAndDownload() throws Exception { ReconciliationBrowserAcceptance.run(this); }

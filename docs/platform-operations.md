@@ -115,3 +115,7 @@ Select a job in Migration Studio and open **Review reconciliation**. The page an
 ### Compare knowledge publications
 
 Administrators can choose **Compare publication versions** on a published article, then select the two version numbers. The page shows immutable titles/bodies with changed-field indicators; it does not render unpublished draft text or modify either version. Retired snapshots remain available to administrators through the comparison URL while the underlying article exists. A missing version returns 404. This is a field comparison, without word-level highlighting.
+
+### Reference selection
+
+On an existing record, use **Choose [reference field]** to search readable summaries, select a target or clear an optional reference. Save other edits first. Selection saves that field with the displayed record revision; changed permissions, a hidden/deleted target or a stale revision cause a denial rather than overwriting newer work. This is a separate server-rendered page, not autocomplete for unsaved records.

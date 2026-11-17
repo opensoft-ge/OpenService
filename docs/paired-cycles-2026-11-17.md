@@ -247,3 +247,26 @@ Final gates: 742 tests, zero failures/errors/skips; whole-project Java 6940/6940
 | WebController.java | 2160/2160 | 1127/1127 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Compare immutable published knowledge versions`. No push.
+
+## Round 12 — choose a reference by its readable label
+
+Selected `OS-N17-12`, workstream 12 / OS-PARITY-01. Permission-aware reference search exists only as an API; the record form expects raw IDs. Add a server-rendered chooser for an existing record's typed reference field: search readable target summaries, page authorized results, select or clear a value, then return to the record. Recheck source/target record, table and field authority on submission and require the displayed source revision. No type-ahead JavaScript, unsaved-record editing, custom qualifier or alternative display-field claim. Alternatives: audit checkpoint review and grounded assistance.
+
+Official evidence: [reference autocomplete](https://www.servicenow.com/docs/r/platform-administration/c_AutoCompleteForReferenceFields.html), Brazil updated 2026-09-10, retrieved 2026-11-17, and [reference field types](https://www.servicenow.com/docs/r/platform-administration/c_ReferenceField.html). Reference choices require table read authority; configured display columns, qualifiers, multi-column matching and inherited/overridden attributes are broader capabilities. Merge those missing P2 features into existing typed-field backlog; acceptance must enforce field visibility before labels/counts and current authority when saving. Next research: externally retained audit evidence.
+
+Acceptance: real selection/clear journey, literal search and pagination, stale revision, hidden/deleted target, revoked field/table access, wrong field/type, CSRF and forbidden reader mutation; existing record validation/approval gates unchanged; keyboard/light/dark/mobile. Focused database/browser acceptance and the clean full gates passed.
+
+Prototype QA before application: avoid rendering an empty reference panel on every record; show a panel only for each currently readable/writable typed reference. Target table read policy must be checked explicitly because `Service.record` itself enforces record visibility, not table role policy. Final source/tests still require verification.
+
+QA R12-1: accessibility inspection reproduced a visible-button/accessible-name mismatch. The selection button now includes its visible “Select record” wording in the accessible name, with the target label appended. A test fixture incorrectly reused an incident-only schema writer for custom tables; it now updates the explicit source/target schema and asserts one affected row. No product authorization bypass was reproduced.
+
+Final round-12 accumulated QA checked current table/record/field authority on lookup and submission, cross-table targets, revision handling, query-free forms, escaping and previous repairs. No new or reopened findings; no repairs in the final review. Mobile dark rendering was inspected and accessibility passed in both themes.
+
+Final gates: 745 tests, zero failures/errors/skips; whole-project Java 6962/6962 lines, 3739/3739 branches, 407/407 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| ReferencePicker.java | 15/15 | 14/14 | 2/2 |
+| WebController.java | 2167/2167 | 1131/1131 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Select readable reference records through the browser`. No push.

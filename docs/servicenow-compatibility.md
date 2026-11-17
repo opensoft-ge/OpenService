@@ -548,7 +548,7 @@ Discovery follow-up, 2026-11-16: [Brazil signature status](https://www.serviceno
 
 **OS-D20-18 implemented**: Workstream 11, PARITY-03: native reconciliation reports missing retained source items and changed destinations with bounded samples. A local pass does not verify source completeness or authorize cutover; live-instance qualification remains open. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
-**OS-D20-19 implemented**: Workstream 12, PARITY-01: native literal reference-label search with bounded pagination and current table/field/record permissions. The legacy references endpoint is preserved; configurable labels and a browser picker remain open. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
+**OS-D20-19 implemented**: Workstream 12, PARITY-01: native literal reference-label search with bounded pagination and current table/field/record permissions. The legacy references endpoint is preserved; configurable labels remain open; the existing-record browser picker is implemented under OS-N17-12. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
 **OS-D20-20 implemented**: Workstream 16, PARITY-10: aggregate queue-health API/dashboard, actionable recovery alerts and keyboard-accessible retention cleanup. Schema-35 restore, schema-33 upgrade, restart recovery and final image/source scans are recorded in the report; external alert routing, HA/DR and real shared deployment qualification remain open. [Evidence and limits](paired-cycles-diverse20-2026-11-16.md).
 
@@ -610,3 +610,7 @@ Implemented and verified: selected-job Migration Studio link to administrator-on
 ### OS-N17-11 — compare publication versions (workstream 9 / OS-PARITY-04)
 
 Implemented and verified: administrators compare exact immutable title/body snapshots through `/admin/knowledge/{id}/versions` and `/api/openservice/knowledge/{id}/compare`, with changed-field indicators and retirement metadata. Defaults to latest and predecessor; draft text is excluded. Missing/deleted versions fail. Reader/requester access stays denied. [Round 11 discovery and acceptance](paired-cycles-2026-11-17.md#round-11--compare-immutable-knowledge-publications). Word-level highlighting, translation review and scoped contributor comparison remain missing P2 in OS-DISC-KNOWLEDGE-COMPARE.
+
+### OS-N17-12 — choose readable reference records (workstream 12 / OS-PARITY-01)
+
+Implemented and verified: staff choose or clear an existing record’s typed reference through a protected browser form. Literal label search, pagination, current source/target/field permissions and revision checks precede saving. [Round 12 evidence](paired-cycles-2026-11-17.md#round-12--choose-a-reference-by-its-readable-label). Existing validation/approval rules still apply. Configurable display columns, qualifiers, inherited attributes and unsaved-record picking remain missing P2 under the existing typed-field backlog. [Brazil reference autocomplete](https://www.servicenow.com/docs/r/platform-administration/c_AutoCompleteForReferenceFields.html), updated 2026-09-10, retrieved 2026-11-17; accept only currently authorized labels/counts/selections. Next: externally retained audit evidence.
