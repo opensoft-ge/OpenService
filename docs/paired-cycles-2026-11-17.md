@@ -270,3 +270,25 @@ Final gates: 745 tests, zero failures/errors/skips; whole-project Java 6962/6962
 | WebController.java | 2167/2167 | 1131/1131 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Select readable reference records through the browser`. No push.
+
+## Round 13 — retain and verify an audit checkpoint
+
+Selected `OS-N17-13`, workstream 5 / OS-PARITY-08. Audit-viewer grants and SHA-256 retained-prefix verification already exist through the API, but the browser has no checkpoint journey. Add a read-only checkpoint screen, portable JSON download and labelled fields to verify an externally retained checkpoint. New journal entries do not invalidate an earlier prefix; changed/deleted prefix data produces an explicit mismatch. This is tamper evidence only when a trusted checkpoint is retained independently: no signature, immutable storage, protected retention or external forwarding claim. Alternatives: grounded conversational support and SLA deadline explanation.
+
+Official research: [Log Export Service sources](https://www.servicenow.com/docs/r/platform-security/les-log-sources-export.html) and [security posture practices](https://www.servicenow.com/docs/r/platform-security/security-center/best-practices.html), Brazil updated 2026-09-10, retrieved 2026-11-17. External retention, additional workflow/authentication/reference-change log sources and configurable field auditing are broader vendor capabilities. Merge source-complete forwarding, export checkpoints and protected retention into the existing WS5 missing P1 backlog; acceptance must reconcile omitted/duplicate events and detect altered retained evidence. The local hash contract is OpenService-native. Next research: contextual conversational assistance and governed provider execution.
+
+Acceptance: administrator/delegated viewer access, anonymous/ungranted/revoked denial, download equality, strict parameters, valid earlier prefix after append, changed-prefix mismatch, browser download/verification through keyboard in both themes/mobile. Focused and final clean full gates passed.
+
+Focused SQLite/PostgreSQL and browser acceptance passed after the old route returned 404. Review confirmed authorization uses the separate live audit grant, download/verification parameters are strict, downloads contain only checkpoint metadata and verification compares an earlier prefix after later append operations. No new or reopened findings in accumulated-change review; full gate follows.
+
+QA R13-1: the first full run exposed an intermittent pre-existing session-revocation test failure on PostgreSQL: an unordered query assumed its first row was the earliest event. Production revocation and all three events were correct. Added explicit journal sequence ordering to the acceptance query; no product behavior or assertion was weakened. The failed full run is superseded below.
+
+Final post-repair review of the accumulated change verified ordered evidence, live audit authority, strict checkpoint parameters, query/download separation and prior repairs. No new or reopened findings and no repairs in this final review. Desktop/mobile rendering was inspected; no claim of protected retention is made.
+
+Final gates: 748 tests, zero failures/errors/skips; whole-project Java 6969/6969 lines, 3751/3751 branches, 407/407 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| WebController.java | 2174/2174 | 1143/1143 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Retain and verify audit checkpoints through the browser`. No push.

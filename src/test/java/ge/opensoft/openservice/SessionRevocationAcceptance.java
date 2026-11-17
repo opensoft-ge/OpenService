@@ -74,7 +74,7 @@ final class SessionRevocationAcceptance {
             var rows =
                     db.all(
                             "SELECT * FROM os_security_event WHERE"
-                                + " action='account.session_revoked'");
+                                + " action='account.session_revoked' ORDER BY sequence");
             assertEquals(3, rows.size());
             assertEquals(map("session_id", firstId), rows.getFirst().get("detail"));
             assertFalse(rows.toString().contains("session_hash"));

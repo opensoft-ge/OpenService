@@ -119,3 +119,7 @@ Administrators can choose **Compare publication versions** on a published articl
 ### Reference selection
 
 On an existing record, use **Choose [reference field]** to search readable summaries, select a target or clear an optional reference. Save other edits first. Selection saves that field with the displayed record revision; changed permissions, a hidden/deleted target or a stale revision cause a denial rather than overwriting newer work. This is a separate server-rendered page, not autocomplete for unsaved records.
+
+### Retain audit evidence
+
+From **Security events**, open **Retain or verify an audit checkpoint**. Save the JSON outside this installation in a trusted location. Later enter its algorithm/count/last sequence/hash fields to compare that retained prefix. A match covers only those retained events; a mismatch requires investigation. This hash does not authenticate the downloaded file or prevent a database administrator from changing the journal. The page requires administrator or separately granted audit-viewer authority and contains no event bodies.

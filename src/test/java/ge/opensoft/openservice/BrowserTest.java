@@ -24,6 +24,8 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void auditCheckpointDownloadAndComparisonAreAccessible() throws Exception { AuditCheckpointBrowserAcceptance.browser(this); }
+
  @Test void referenceSelectionWorksInBothThemes() throws Exception { ReferencePickerBrowserAcceptance.run(this); }
 
  @Test void knowledgeVersionComparisonWorksInBothThemes() throws Exception { KnowledgeComparisonBrowserAcceptance.run(this); }

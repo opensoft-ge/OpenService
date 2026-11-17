@@ -290,6 +290,14 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/audit/checkpoint")) {
+            method(method,"GET");c.uniqueQuery();AuditGovernance.requireViewer(c.db,c.db.viewerId);
+            var args=new LinkedHashMap<String,String>(c.arguments());String download=args.getOrDefault("download","false");args.remove("download");
+            TypedFields.require(Set.of("true","false").contains(download),"Download must be true or false");
+            boolean checking=!args.isEmpty();var result=AuditGovernance.inspect(c.db,args);
+            if(download.equals("true")){TypedFields.require(!checking,"Download a current checkpoint without verification fields");disposition(c,"openservice-audit-checkpoint.json");return json(map("result",result),200);}
+            return view(c,"audit-checkpoint",map("table","audit","checkpoint",checking?result.get("observed"):result,"verification",checking?result.get("verified"):null,"submitted",args));
+        }
         Matcher picker=Pattern.compile("/record/([a-z0-9_]{1,80})/([0-9a-f]{32})/reference/([a-z0-9_]{1,80})").matcher(path);
         if(picker.matches()) {
             method(method,"GET","POST");c.uniqueQuery();String table=picker.group(1),id=picker.group(2),field=picker.group(3);
