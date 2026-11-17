@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void operatorDiagnosticsAreCurrentAndContentFree() throws Exception { OperatorDiagnosticsAcceptance.run(this); }
     @Test void stagedMigrationRowsCanBeInspectedSafely() throws Exception { MigrationRowsAcceptance.run(this); }
     @Test void reportMeasurementsRetainExactChanges() throws Exception { ReportMeasurementsAcceptance.run(this); }
     @Test void reportMeasurementsRespectCurrentAccessAndBounds() throws Exception { ReportMeasurementsAcceptance.boundaries(this); }

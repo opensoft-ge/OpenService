@@ -1,6 +1,6 @@
 # Automatic development batch — latest verification
 
-Round 19 of the [20-round report](auto20-2026-11-17.md) passes **956 tests**, zero failures/errors/skips. Whole Java: **7995/7995 lines, 5229/5229 branches, 554/554 methods**; all 74 Java files changed against the accumulated QA base pass the exact gate. Both browser-script gates pass. This is local functional evidence; prior deployment/image qualifications retain their own scope.
+Round 20 of the [20-round report](auto20-2026-11-17.md) passes **959 tests**, zero failures/errors/skips. Whole Java: **8000/8000 lines, 5247/5247 branches, 555/555 methods**; all 75 Java files changed against the accumulated QA base pass the exact gate. Both browser-script gates pass. This is local functional evidence; prior deployment/image qualifications retain their own scope.
 
 # QA/QC follow-up — 17 November 2026
 
@@ -133,3 +133,6 @@ Clean gate: 455 tests, zero failures/errors/skips on SQLite/PostgreSQL and Chrom
 ## AI product direction
 
 Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.
+
+
+The completed [20-round batch](auto20-2026-11-17.md#final-packaged-qualification) additionally qualifies the frozen image with byte-for-byte application/runtime comparison, fresh installation, schema 51 restore, schema 36-to-51 upgrade, worker restart, bounded read-load checks and dependency/image/source scans. Container OS risks and external deployment/provider limitations remain explicitly recorded there.

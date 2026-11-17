@@ -218,6 +218,9 @@ if [ "$drill_source_version" -ge 19 ]; then snapshot_approvals source; fi
 snapshot_platform() {
     for drill_table in os_work os_notice os_connector os_calendar os_sla os_saved_report os_publication os_dependency os_operational_event os_identity os_password_policy os_password_corpus; do
         drill_columns='*'
+        if [ "$drill_table" = os_sla ] && [ "$drill_source_version" -lt 41 ]; then
+            drill_columns='sla_id,table_name,record_id,definition,remaining_ms,last_tick,state,owner_id,breached_at'
+        fi
         if [ "$drill_table" = os_operational_event ] && [ "$drill_source_version" -lt 34 ]; then
             drill_columns='event_key,asset_id,severity,summary,occurrences,first_seen,last_seen'
         fi
@@ -263,6 +266,10 @@ if [ "$drill_source_version" -ge 33 ]; then
     api "$drill_address/api/openservice/operations/jobs" | jq -e '.result | any(.state == "queued")' >/dev/null
     api "$drill_address/api/openservice/operations/clocks" | jq -e '.result | any(.state == "paused")' >/dev/null
     echo 'PASS: queued encrypted work/aliases, paused SLA calendars, saved reports, knowledge, identity bindings, audit grants and password corpus survive restore.'
+    if [ "$drill_restored_version" -ge 41 ] && [ "$drill_source_version" -lt 41 ]; then
+        api "$drill_address/api/openservice/operations/clocks" | jq -e '.result | all(.purpose == "general")' >/dev/null
+        echo 'PASS: pre-purpose service clocks retain their values and receive the general-purpose default.'
+    fi
     if [ "$drill_restored_version" -ge 34 ]; then
         drill_event_state=open
         if [ "$drill_source_version" -ge 34 ]; then drill_event_state=acknowledged; fi

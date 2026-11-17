@@ -534,6 +534,9 @@ public class WebController {
             var result=WorkSearch.page(c.db,c.db.viewerId,args);
             return api?json(result,200):view(c,"work-search",map("table","operations","search",result));
         }
+        if(Set.of("/admin/diagnostics","/admin/diagnostics/export","/api/openservice/diagnostics").contains(path)){
+            method(method,"GET");c.admin();c.noQuery();var result=OperatorDiagnostics.inspect(store,c.db);if(path.endsWith("/export")){disposition(c,"openservice-diagnostics.json");return binary(JSON.writeValueAsBytes(result),"application/json",200);}return path.startsWith("/api/")?json(map("result",result),200):view(c,"operator-diagnostics",map("table","operations","diagnostics",result));
+        }
         Matcher migrationRows=Pattern.compile("/(?:admin|api/openservice)/migrations/([0-9a-f]{32})/rows(?:/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32}))?").matcher(path);
         if(migrationRows.matches()){
             method(method,"GET");c.admin();c.uniqueQuery();boolean detail=migrationRows.group(2)!=null,api=path.startsWith("/api/");if(detail)c.noQuery();var result=detail?MigrationRows.inspect(c.db,migrationRows.group(1),migrationRows.group(2),migrationRows.group(3)):MigrationRows.page(c.db,migrationRows.group(1),c.arguments());return api?json(map("result",result),200):view(c,detail?"migration-row":"migration-rows",map("table","migration","inspection",result));
