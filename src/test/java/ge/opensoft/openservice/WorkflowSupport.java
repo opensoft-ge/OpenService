@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void scheduledApprovalRemindersRecheckLiveAuthorityAtDelivery() throws Exception { ScheduledApprovalRemindersAcceptance.run(this); }
     @Test void catalogueEligibilityUsesLiveGroupsAndPreservesOwnedRequests() throws Exception { CatalogueEligibilityAcceptance.run(this); }
     @Test void installedConfigurationHistoryIsAtomicAndRestricted() throws Exception {
         ConfigurationHistoryAcceptance.run(this);

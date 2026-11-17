@@ -32,7 +32,7 @@ final class WorkJobs {
                 "Provide kind, key, payload and optional run_at");
         String kind = text(body.get("kind"), 40), key = text(body.get("key"), 80);
         require(
-                Set.of("notification", "connector.read", "migration.step").contains(kind),
+                Set.of("notification", "connector.read", "migration.step", "approval.reminder").contains(kind),
                 "Unsupported job kind");
         var payload = object(body.get("payload"));
         String serialized = JSON.writeValueAsString(new TreeMap<>(payload));
@@ -66,6 +66,7 @@ final class WorkJobs {
         require(
                 db.count("SELECT COUNT(*) FROM os_work") < 5000,
                 "Work retention limit reached; clean up completed jobs");
+        if(kind.equals("approval.reminder"))ScheduledApprovalReminders.validate(db,actor,payload);
         var user = db.one("SELECT auth_revision FROM os_user WHERE user_id=?", actor);
         String id = id();
         db.update(
@@ -119,6 +120,7 @@ final class WorkJobs {
         Service.requireAccountAdministrator(db, actor);
         var row = db.one("SELECT "+COLUMNS+",result FROM os_work WHERE job_id=?",id);
         if(row==null) throw new Failure(404,"Job not found");
+        row.put("available_at_utc",java.time.Instant.ofEpochMilli(((Number)row.get("available_at")).longValue()).toString());
         String encrypted=row.remove("result").toString();
         row.put("receipt",map());
         row.put("receipt_status","not_available");
@@ -127,6 +129,7 @@ final class WorkJobs {
                 var receipt=object(Outbox.decrypt(store.secret,encrypted).get("receipt"));
                 var allowed=switch(row.get("kind").toString()) {
                     case "notification" -> Set.of("delivered");
+                    case "approval.reminder" -> Set.of("delivered","duplicate");
                     case "connector.read" -> Set.of("alias","revision","bytes","sha256");
                     default -> Set.<String>of();
                 };

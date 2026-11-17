@@ -73,6 +73,7 @@ final class WorkWorker {
                                         Notifications.deliver(
                                                 db, job.get("job_id").toString(), payload, now);
                                 case "connector.read" -> Connectors.read(store, db, payload);
+                                case "approval.reminder" -> ScheduledApprovalReminders.deliver(db,db.viewerId,payload);
                                 case "migration.step" ->
                                         TransferJobs.step(
                                                 db,
