@@ -15,6 +15,13 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void notificationTargetsUpgradePreservesLegacyMessages(boolean postgres) throws Exception {
+        var environment=configuration(postgres);var store=new Store(environment);String notice=Values.id();
+        try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);Notifications.deliver(db,notice,Values.map("username","admin","message","Retained legacy notice"),1);db.update("DROP TABLE os_notice_target");db.update("DELETE FROM os_migration WHERE version>=48");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_notice_target"));db.connection.rollback();assertEquals(47,db.count("SELECT MAX(version) FROM os_migration"));}
+        for(int n=0;n<2;n++)try(var db=new Store(environment).open()){String actor=PlatformFoundationTest.bind(db);assertEquals("Retained legacy notice",db.one("SELECT message FROM os_notice WHERE notice_id=?",notice).get("message"));assertEquals(0,db.count("SELECT COUNT(*) FROM os_notice_target"));assertEquals(0L,((Number)Values.objects(NotificationSearch.page(db,actor,Map.of()).get("result")).getFirst().get("has_target")).longValue());assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void connectorActionUpgradePreservesExistingAliasesAndWork(boolean postgres) throws Exception {
         var environment=configuration(postgres).withProperty("CONNECTOR_ALLOWED_ORIGINS","https://integration.example.invalid");var store=new Store(environment);String job,envelope;
         try(var db=store.open()){

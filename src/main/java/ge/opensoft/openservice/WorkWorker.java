@@ -25,6 +25,7 @@ final class WorkWorker {
                 db.update(
                         "DELETE FROM os_notice WHERE acknowledged=1 AND created_at<?",
                         System.currentTimeMillis() - 30L * 86400000);
+                NoticeTargets.cleanup(db);
                 db.connection.commit();
             }
         } catch (Exception failure) {

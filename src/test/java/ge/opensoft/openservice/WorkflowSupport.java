@@ -17,6 +17,8 @@ import java.util.regex.*;
 
 abstract class WorkflowSupport {
     @Test void conflictResolutionRejectsUnsupportedRowsAndChangedReviewers() throws Exception { MigrationConflictsAcceptance.boundaries(this); }
+    @Test void breachedClocksNotifyCurrentResponsibleStaffAndOpenTheirContext() throws Exception { SlaAlertsAcceptance.run(this); }
+    @Test void breachAlertsRespectCurrentPreferencesAndAuthority() throws Exception { SlaAlertsAcceptance.boundaries(this); }
     @Test void historicalKnowledgeRecoveryPreservesPublicationUntilRelease() throws Exception { KnowledgeDraftsAcceptance.run(this); }
     @Test void knowledgeDraftReviewRejectsStaleOrUnauthorizedActions() throws Exception { KnowledgeDraftsAcceptance.boundaries(this); }
     @Test void conflictReviewBindsSourceSchemaAndAccess() throws Exception { MigrationConflictsAcceptance.contexts(this); }
@@ -144,7 +146,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice", "os_connector", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }

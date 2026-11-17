@@ -76,21 +76,7 @@ final class ServiceClocks {
                 breach ? "breached" : "running",
                 breach ? now : 0,
                 row.get("sla_id"));
-        if (breach) {
-            var user = db.one("SELECT name FROM os_user WHERE user_id=?", row.get("owner_id"));
-            if (user != null)
-                Notifications.deliver(
-                        db,
-                        row.get("sla_id").toString(),
-                        map(
-                                "username",
-                                user.get("name"),
-                                "message",
-                                "Service clock "
-                                        + row.get("sla_id")
-                                        + " has breached its business-time budget."),
-                        now);
-        }
+        if (breach) SlaAlerts.send(db,row,now);
     }
 
     static Map<String,Object> forRecord(Store.Db db,String id,Object input) throws SQLException {

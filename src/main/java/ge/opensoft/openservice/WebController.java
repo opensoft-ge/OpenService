@@ -575,6 +575,10 @@ public class WebController {
             var result=ReferenceSearch.search(c.db,context.get("target").toString(),c.arguments());
             return view(c,"reference-picker",map("table",table,"recordId",id,"field",field,"context",context,"search",result,"query",c.parameter("q",""),"pickerPath",path));
         }
+        Matcher noticeTarget=Pattern.compile("/(?:account|api/openservice)/notifications/([0-9a-f]{32})/context").matcher(path);
+        if(noticeTarget.matches()){
+            method(method,"GET");c.noQuery();c.uniqueQuery();String target=NoticeTargets.open(c.db,noticeTarget.group(1));return path.startsWith("/api/")?json(map("result",map("url",target)),200):redirect(target);
+        }
         Matcher knowledgeDraft=Pattern.compile("/(?:admin|api/openservice)/knowledge/([0-9a-f]{32})/draft").matcher(path);
         if(knowledgeDraft.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=knowledgeDraft.group(1);Map<String,Object> result;

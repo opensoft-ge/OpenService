@@ -16,7 +16,7 @@ final class NotificationSearch {
         String literal="%"+q.toLowerCase(Locale.ROOT).replace("!","!!").replace("%","!%").replace("_","!_")+"%";
         String selection=" FROM os_notice WHERE user_id=? AND (?='all' OR (?='unread' AND acknowledged=0) OR (?='acknowledged' AND acknowledged=1)) AND LOWER(message) LIKE ? ESCAPE '!'";
         long total=db.count("SELECT COUNT(*)"+selection,actor,state,state,state,literal);
-        var rows=db.all("SELECT notice_id,message,created_at,acknowledged"+selection+" ORDER BY created_at DESC,notice_id LIMIT ? OFFSET ?",actor,state,state,state,literal,limit,offset);
+        var rows=db.all("SELECT notice_id,message,created_at,acknowledged,(SELECT COUNT(*) FROM os_notice_target target WHERE target.notice_id=os_notice.notice_id) AS has_target"+selection+" ORDER BY created_at DESC,notice_id LIMIT ? OFFSET ?",actor,state,state,state,literal,limit,offset);
         return map("result",rows,"query",q,"state",state,"offset",offset,"limit",limit,"total",total,
                 "previous_offset",Math.max(0,offset-limit),"next_offset",offset+rows.size()<total?offset+limit:-1);
     }
