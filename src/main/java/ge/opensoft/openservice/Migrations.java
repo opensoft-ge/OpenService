@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 35;
+    static final int VERSION = 36;
 
     private Migrations() {}
 
@@ -463,6 +463,11 @@ final class Migrations {
                     + "duration_ms BIGINT NOT NULL,definition_hash VARCHAR(64) NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_report_run_history ON os_report_run(report_id,viewer_id,executed_at)");
             db.update("INSERT INTO os_migration(version,name) VALUES(35,?)","bounded per-viewer report execution history");
+        }
+        if (version < 36) {
+            addColumn(db,"os_user","display_name","VARCHAR(320) NOT NULL DEFAULT ''");
+            addColumn(db,"os_user","job_title","VARCHAR(320) NOT NULL DEFAULT ''");
+            db.update("INSERT INTO os_migration(version,name) VALUES(36,?)","owner-managed personal profile details");
         }
     }
 

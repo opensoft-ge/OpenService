@@ -586,3 +586,8 @@ Implemented and verified: an administrator can grant/revoke audit journal viewin
 ### OS-N17-08 — saved-report browser management (workstream 14, OS-PARITY-07)
 
 Implemented and verified: staff can create/edit/share/delete owned numeric report definitions in the browser; shared execution always uses the viewer’s current data permissions. Authorized staff owners can repair a definition when calculation becomes unavailable after schema/access changes. [Round 8](paired-cycles-2026-11-17.md#round-8--saved-report-browser-management) records original/repair regressions and gates. User/group/role-specific sharing and natural-language analytics remain missing P2 in the existing reporting/AI backlog (official Brazil Core UI reporting evidence retrieved 2026-11-17); no modern Platform Analytics designer parity claim.
+
+
+### OS-N17-09 — owner-managed profile (workstream 3 / OS-PARITY-08)
+
+Implemented and verified: owner-only `/account/profile` and `/api/openservice/me/profile`, NFC-normalized optional display name/job title, maximum 80 Unicode code points each, no controls, administrator read-only view and migration 36. Login, verified email and role are independent. Changed-key audit excludes values; last-save-wins. No public directory or verified-employment claim. Discovery and acceptance: [round 9](paired-cycles-2026-11-17.md#round-9--personal-profile-details). Configurable edit/audience policy and manager/team relationships remain missing P2, dependent on directory and field authority. Parent area remains partial.

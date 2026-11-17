@@ -187,6 +187,8 @@ public class WebController {
                                         "/api/openservice/me/email",
                                         "/api/openservice/me/notifications",
                                         "/account/notifications",
+                                        "/account/profile",
+                                        "/api/openservice/me/profile",
                                         "/api/openservice/me/password",
                                         "/api/openservice/me/sessions/revoke")
                                 .contains(path)
@@ -288,6 +290,18 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/account/profile") || path.equals("/api/openservice/me/profile")) {
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();
+            boolean api=path.startsWith("/api/");String actor=c.user.get("user_id").toString();
+            if(method.equals("POST")) {
+                var input=api?body(c):new LinkedHashMap<String,Object>(c.arguments());
+                if(!api)object(input).remove("csrf");
+                Profiles.save(c.db,actor,input);
+                if(!api)return redirect("/account/profile");
+            }
+            var profile=Profiles.read(c.db,actor);
+            return api?json(map("result",profile),200):view(c,"profile",map("table","profile","profile",profile));
+        }
         if(path.equals("/reports")) {
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();
             String actor=c.user.get("user_id").toString();
@@ -2654,6 +2668,7 @@ public class WebController {
                                 "accounts",
                                 "account",
                                 account,
+                                "profile",Profiles.read(c.db,id),
                                 "auditViewer", c.db.count("SELECT audit_viewer FROM os_user WHERE user_id=?",id)==1,
                                 "passwordChangeRequired",
                                 PasswordReset.state(c.db, id).get("required"),

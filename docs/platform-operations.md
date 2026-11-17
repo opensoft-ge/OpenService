@@ -100,3 +100,8 @@ Accounts → select a person → Audit access lets administrators enable or disa
 ## Manage saved reports in the browser
 
 Saved reports opens `/reports`. Administrators and agents can create up to 100 owned numeric report definitions using record/field keys from the data dictionary, optional grouping/encoded filters and decimal range bounds. The library lists up to 200 owned/shared definitions. Sharing distributes the definition; every execution recalculates with the current viewer’s record and field permissions and records their own bounded execution history. Only a currently authorized staff owner can edit/delete a definition. If their report can no longer calculate after a schema or permission change, the owner receives an explicit unavailable-results message and can repair or delete it. Other viewers retain the original access denial. Deleting a report removes its execution history, without deleting business records. Concurrent edits use the last accepted save; group-specific sharing, scheduling and graphical report design remain open.
+
+
+### Personal profiles
+
+Use **Your profile** to edit optional display name and job title. Each field accepts at most 80 Unicode characters and is normalized to NFC; empty text clears it. Details are visible to the owner and account administrators, separate from verified email, username and roles. Administrators cannot edit another account through this endpoint. Changes record only changed field names in the security journal. Migration 36 initializes empty values on existing accounts; subsequent upgrades preserve them.

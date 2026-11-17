@@ -14,6 +14,21 @@ import java.util.*;
 import java.util.concurrent.*;
 
 class MigrationsTest {
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void profileUpgradePreservesAccountsAndRepeatsSafely(boolean postgres) throws Exception {
+        var env=configuration(postgres);var store=new Store(env);
+        try(var db=store.open()){
+            db.update("ALTER TABLE os_user DROP COLUMN display_name");db.update("ALTER TABLE os_user DROP COLUMN job_title");db.update("DELETE FROM os_migration WHERE version=36");db.connection.commit();
+        }
+        new Store(env);
+        try(var db=store.open()){
+            assertEquals("",db.one("SELECT display_name FROM os_user WHERE name='admin'").get("display_name"));
+            db.update("UPDATE os_user SET display_name='Retained profile',job_title='Operator' WHERE name='admin'");db.connection.commit();
+        }
+        new Store(env);
+        try(var db=store.open()){assertEquals("Retained profile",db.one("SELECT display_name FROM os_user WHERE name='admin'").get("display_name"));assertEquals(36,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
     @TempDir Path root;
 
     MockEnvironment configuration(boolean postgres) throws Exception {

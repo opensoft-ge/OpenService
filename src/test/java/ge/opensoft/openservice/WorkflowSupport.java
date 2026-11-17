@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void personalProfileEditsPreserveIdentityAndPrivacy() throws Exception { ProfileAcceptance.run(this); }
+
     @Test void browserReportsRetainOwnershipAndViewerPermissions() throws Exception { ReportFormsAcceptance.run(this); }
 
     @Test void browserAuditGrantsPreserveRoleAndRevokeSessions() throws Exception { AuditGrantAcceptance.run(this); }

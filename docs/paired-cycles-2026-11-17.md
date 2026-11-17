@@ -184,3 +184,23 @@ Final gates: 732 tests, zero failures/errors/skips; whole-project Java 6891/6891
 | WebController.java | 2136/2136 | 1103/1103 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Manage and repair saved reports through the browser`. No push.
+
+## Round 9 — personal profile details
+
+Selected `OS-N17-09`, workstream 3 / OS-PARITY-08. Accounts currently have a login name and security settings but no editable personal display name or job title. Add an owner-only browser/API profile with optional NFC-normalized display name and job title, bounded Unicode text, clearing, persistence and audit of changed field names. Keep login identity, roles and verified email separate. Display profile details to the owner and account administrators; do not create a public directory or claim verified employment. Existing accounts upgrade with empty values. Alternatives: reconciliation review and knowledge-version comparison.
+
+Official evidence: [employee profile](https://www.servicenow.com/docs/r/employee-service-management/employee-experience-foundation/update-employee-profile.html) and [HR profile editing](https://www.servicenow.com/docs/r/employee-service-management/hr-service-delivery/t_CreateOrModifyAUserProfile.html), Brazil updated 2026-09-10, retrieved 2026-11-17. Configurable employee-editable fields and profile privacy controls are broader than this local slice. Merge configurable edit allowlists, manager/team relationships and audience-specific profile visibility into the existing profile backlog, missing P2; depend on directory identity and current field permissions. Do not collect HR-sensitive categories merely because the counterpart supports them. Next research: migration verification and reconciliation.
+
+Acceptance: owner edits/clears persisted fields through both surfaces; forbidden target/role/email keys rejected; anonymous/deactivated accounts denied; Unicode normalization, bounds, control characters and escaped HTML; audit identifies changed keys without retaining profile values; restart and upgrade retain data; requester/reader ownership and CSRF; keyboard/light/dark/mobile. Concurrent profile edits are last-save-wins. Targeted acceptance and the clean full verification passed.
+
+The new PostgreSQL endpoint regression first returned 404. Owner/administrator privacy, changed-key audit, normalization, 80-code-point supplementary characters, clearing, deactivation and repeatable migration 36 passed. Light desktop and dark mobile screenshots were inspected; keyboard and accessibility passed. Accumulated-change QA found no new or reopened defect and made no repairs in its final review.
+
+Final gates: 737 tests, zero failures/errors/skips; whole-project Java 6917/6917 lines, 3701/3701 branches, 404/404 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| Migrations.java | 183/183 | 98/98 | 3/3 |
+| Profiles.java | 11/11 | 12/12 | 3/3 |
+| WebController.java | 2147/2147 | 1117/1117 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add private owner-managed personal profiles`. No push.
