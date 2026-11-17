@@ -12,6 +12,7 @@ final class Approvals {
     static Map<String, Object> context(Store.Db db, String table, String id) throws SQLException {
         if (!Set.of("admin", "agent").contains(db.viewerRole))
             throw new Failure(403, "Staff access is required for approvals");
+        RecordPolicy.require(Service.schema(db,table),"read",db.viewerRole);
         var item = Service.record(db, table, id);
         FieldAccess.writing(db, Service.schema(db, table), map("state", ""));
         return item;
@@ -93,6 +94,7 @@ final class Approvals {
             Map<String, Object> definition,
             String target)
             throws SQLException {
+        RecordPolicy.require(definition, "read", db.viewerRole);
         RecordPolicy.require(definition, "update", db.viewerRole);
         FieldAccess.writing(db, definition, map("state", target));
         if (!((List<?>)

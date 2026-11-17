@@ -24,6 +24,8 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void reviewDiagnosticsWorkInBothThemes() throws Exception { ApprovalDiagnosticBrowserAcceptance.browser(this); }
+
  @Test void dependentAssetReviewWorksInBothThemes() throws Exception { AssetImpactBrowserAcceptance.run(this); }
 
  @Test void serviceDeadlinePreviewWorksInBothThemes() throws Exception { BusinessDeadlineBrowserAcceptance.run(this); }

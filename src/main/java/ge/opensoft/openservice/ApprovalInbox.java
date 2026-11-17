@@ -33,7 +33,8 @@ final class ApprovalInbox {
         var schemas = new LinkedHashMap<String, Map<String, Object>>();
         for (var row : db.all("SELECT name,definition FROM os_schema ORDER BY name")) {
             var definition = object(row.get("definition"));
-            if (object(definition.get("fields")).containsKey("state")
+            if (RecordPolicy.allows(definition,"read",db.viewerRole)
+                    && object(definition.get("fields")).containsKey("state")
                     && FieldAccess.allowed(db, definition, "state"))
                 schemas.put(row.get("name").toString(), definition);
         }

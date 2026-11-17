@@ -21,7 +21,7 @@ final class ApprovalReminders {
         if (!row.get("status").equals("requested") || !Approvals.current(row, item, definition))
             throw new Failure(409, "Only a current pending review can be reminded");
         var reviewer = db.one("SELECT * FROM os_user WHERE user_id=? AND active=1 AND role IN ('admin','agent')", row.get("approver_id"));
-        if (reviewer == null) throw new Failure(409, "The reviewer is no longer available");
+        if (reviewer == null || PasswordReset.required(reviewer)) throw new Failure(409, "The reviewer is no longer available");
         String previousId = db.viewerId, previousRole = db.viewerRole;
         try {
             db.viewerId = reviewer.get("user_id").toString();

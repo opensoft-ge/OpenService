@@ -359,3 +359,33 @@ Final gates: 757 tests, zero failures/errors/skips; whole-project Java 7026/7026
 | WebController.java | 2187/2187 | 1159/1159 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Review visible dependent assets from configuration items`. No push.
+
+## Round 17 — explain approval readiness and remind reviewers
+
+Selected `OS-N17-17`, workstream 7 / OS-PARITY-02. Current eligibility diagnostics and deduplicated in-app reminders are API-only. Add an administrator page linked from review history, explain why a review is pending, stale, unavailable, invalidated or qualifying for the current actor, and allow a protected reminder for a currently eligible pending review. Report delivered, already retained or opted-out outcomes honestly. Recheck authority and review state when sending. No automatic escalation, email delivery, reviewer override or transition execution. Alternatives: private report copies and queue search.
+
+Official evidence: [Brazil approval status/history](https://www.servicenow.com/docs/r/order-management/tracking-approval-status.html), Sales CRM Advanced Approval Management, and [Brazil Ask for Approval step](https://www.servicenow.com/docs/r/build-workflows/workflow-studio/ask-approval-action-designer.html), both updated 2026-09-10 and retrieved 2026-11-17. Merge duration/chain diagnostics, configurable due-date outcomes and explicit action error handling into existing approval/workflow gaps, missing P1/P2, dependent on persisted workflow execution and restart-safe scheduling. Native local review states are not vendor wire parity. Next discovery: copying reusable analytics definitions.
+
+Acceptance: navigate from a real review, inspect current reason and source revision, send/duplicate/opt-out reminder, deny non-admin/CSRF/extra fields, reject stale and revoked reviewer authority, restrict source table reads, retain notices/audit atomically; keyboard/light/dark/mobile. Final focused and full gates passed.
+
+QA R17-1/R17-2/R17-3: both databases reproduced diagnostic reads despite excluded actor table-read permission, and reminders returning 200 after reviewer table-read revocation or password-replacement requirement. Repair actor diagnostic lookup, shared approval context/eligibility and reminder availability. Added independent regressions for reviewer revocation and replacement requirements, asserting no additional notice; approval reading/requesting also use the shared read boundary. These are repairs within the browser diagnostics/reminder round, not additional feature rounds.
+
+The first focused run exposed fixture errors: password-required accounts correctly cannot read their inbox (assert the stored notice count instead), invalid reviewer requests use the existing 400 contract, and the direct browser setup must use the full current account row including auth_revision. Corrected these fixtures without relaxing the authority assertions. The repaired focused run passed.
+
+QA R17-4: follow-up review reproduced a remaining read path: My approvals still returned one review after its table excluded the reviewer, despite action denial. Apply table-read policy while selecting eligible schemas, before inbox query/count/cursor selection. Regression asserts zero API results and no browser reference to the hidden approval.
+
+Contract qualification discovered during the final R17 review: Configuration.validate currently permits only create/update/delete in record_roles. The read-role regressions in rounds 12/14/16/17 inject a stored schema fixture directly; a normal configuration promotion cannot create that declaration. The added read guards provide defensive consistency for those stored configurations and existing reference-search semantics, not a complete configurable table-read capability or a reproduced exploit through supported configuration. Current record visibility and field-read rules remain the active supported controls. Broader table-read configuration/navigation/query enforcement is a missing platform capability and must be delivered as one coherent contract. The password-replacement reminder defect is reproducible through supported account administration independently of this qualification.
+
+After the inbox repair, all seven focused acceptance tests passed. Final accumulated review checked shared approval eligibility, diagnostic/inbox/reminder consistency, notice non-disclosure, current password state, prior repairs, browser escaping and the actual configuration contract above. No further confirmed defect within the selected supported journeys; broader table-read promotion remains an explicitly missing capability. Frozen full verification passed.
+
+Final gates: 764 tests, zero failures/errors/skips; whole-project Java 7037/7037 lines, 3803/3803 branches, 412/412 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| ApprovalDiagnostics.java | 31/31 | 24/24 | 2/2 |
+| ApprovalInbox.java | 46/46 | 26/26 | 1/1 |
+| ApprovalReminders.java | 27/27 | 14/14 | 1/1 |
+| Approvals.java | 216/216 | 112/112 | 12/12 |
+| WebController.java | 2194/2194 | 1163/1163 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Explain approval readiness and enforce reminder authority`. No push.

@@ -290,6 +290,14 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher reviewDiagnostic=Pattern.compile("/admin/approvals/([0-9a-f]{32})/diagnostics").matcher(path);
+        if(reviewDiagnostic.matches()) {
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=reviewDiagnostic.group(1);
+            var result=ApprovalDiagnostics.inspect(c.db,c.db.viewerId,id);Map<String,Object> reminder=null;
+            if(method.equals("POST")){TypedFields.require(Set.of("csrf").containsAll(c.arguments().keySet()),"Reminder accepts no extra fields");reminder=ApprovalReminders.send(c.db,c.db.viewerId,id,map());}
+            return view(c,"approval-diagnostics",map("table",result.get("table_name"),"diagnostic",result,"reminder",reminder,"diagnosticPath",path,
+                "reasons",Map.of("proposal_changed","The record or configuration changed. Request a fresh review.","reviewer_unavailable","The assigned reviewer is inactive, must replace their password or no longer has a staff role.","reviewer_credentials_changed","The reviewer’s authority changed after approval. Request a fresh decision.","reviewer_permission_changed","The reviewer no longer has the required record or transition access.","awaiting_decision","The current reviewer is eligible and has not recorded a decision.","review_closed","This review is closed without a qualifying approval.","same_as_actor","Your own approval cannot authorize your transition.","qualifying","This approval currently qualifies for your approval count. Other transition rules still apply.")));
+        }
         Matcher assetImpact=Pattern.compile("/record/cmdb_ci/([0-9a-f]{32})/impact").matcher(path);
         if(assetImpact.matches()) {
             method(method,"GET");c.noQuery();String id=assetImpact.group(1);var result=AssetOperations.impact(c.db,id);

@@ -17,8 +17,9 @@ final class ApprovalDiagnostics {
         String table=stored.get("table").toString();
         var item=Service.record(db,table,row.get("record_id").toString());
         var definition=Service.schema(db,table);
+        RecordPolicy.require(definition,"read",db.viewerRole);
         String reason=reason(db,row,item,definition);
-        return map("approval_id",id,"status",row.get("status"),"reason",reason,
+        return map("approval_id",id,"record_id",item.get("sys_id"),"table_name",table,"status",row.get("status"),"reason",reason,
                 "qualifies_for_actor",reason.equals("qualifying"),
                 "record_revision",item.get("revision"),"schema_version",Approvals.version(definition));
     }

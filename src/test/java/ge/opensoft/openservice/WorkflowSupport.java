@@ -16,6 +16,11 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void reminderRejectsReviewerWithRevokedTableRead() throws Exception { ApprovalDiagnosticBrowserAcceptance.revokedReviewer(this,false); }
+ @Test void reminderRejectsReviewerNeedingPasswordReplacement() throws Exception { ApprovalDiagnosticBrowserAcceptance.revokedReviewer(this,true); }
+
+ @Test void reviewDiagnosticsAndReminderFormsRecheckAuthority() throws Exception { ApprovalDiagnosticBrowserAcceptance.run(this); }
+
  @Test void impactReviewHonorsTableFieldsAndVisiblePaths() throws Exception { AssetImpactAcceptance.run(this); }
 
  @Test void businessDeadlinePreviewExplainsCalendarTime() throws Exception { BusinessDeadlineAcceptance.run(this); }
