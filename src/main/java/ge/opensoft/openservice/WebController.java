@@ -316,7 +316,7 @@ public class WebController {
         if (path.equals("/account/notifications")
                 || path.equals("/api/openservice/me/notifications")) {
             method(method, "GET", "POST");
-            c.noQuery();
+            if(method.equals("POST")) c.noQuery(); else c.uniqueQuery();
             String actor = c.user.get("user_id").toString();
             if (method.equals("POST"))
                 Notifications.update(
@@ -327,15 +327,18 @@ public class WebController {
                                 : c.parameter("operation", "").equals("preference")
                                         ? map("enabled", c.parameter("enabled", "").equals("true"))
                                         : map("acknowledge", c.parameter("notice_id", "")));
-            var rows = Notifications.list(c.db, actor);
+            Map<String,String> selection=method.equals("GET")?c.arguments():path.startsWith("/api/")?Map.of():Map.of("q",c.parameter("return_q",""),"state",c.parameter("return_state","all"),"offset",c.parameter("return_offset","0"),"limit",c.parameter("return_limit","100"));
+            var result=NotificationSearch.page(c.db,actor,selection);
+            var rows=objects(result.get("result"));
             return path.startsWith("/api/")
-                    ? json(map("result", rows), 200)
+                    ? json(result, 200)
                     : view(
                             c,
                             "notifications",
                             map(
                                     "table",
                                     "notifications",
+                                    "search",result,
                                     "notices",
                                     rows,
                                     "enabled",

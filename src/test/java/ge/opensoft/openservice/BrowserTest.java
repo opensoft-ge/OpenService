@@ -25,6 +25,9 @@ import java.util.*;
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
     @Test
+    void notificationHistorySearchWorksInBothThemes() throws Exception { NotificationSearchBrowserAcceptance.run(this); }
+
+    @Test
     void operationalEventSearchAndResponsesWorkInBothThemes() throws Exception { EventSearchBrowserAcceptance.run(this); }
 
     @Test

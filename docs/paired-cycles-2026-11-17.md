@@ -119,3 +119,27 @@ Final gates: 723 tests, zero failures/errors/skips; whole-project Java 6846/6846
 | Approvals.java | 214/214 | 112/112 | 12/12 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Notify reviewers atomically on assignment and delegation`. No push.
+
+## Round 6 — personal notification history search
+
+Selected `OS-N17-06`, workstream 6 / OS-PARITY-02. The existing inbox returns only the latest 100 messages and rejects search arguments. Add personal literal message search, all/unread/acknowledged filters, exact account-scoped totals and bounded pagination through the existing browser/API. Preserve preference and acknowledgement actions and their ownership/CSRF checks; browser forms retain the validated search selection in hidden return fields while posting to a query-free endpoint. No cross-account/admin inbox inspection, full-text ranking, email history or category subscriptions claim. Alternatives: audit-viewer grants and saved-report management.
+
+Research retrieved 2026-11-17: [notification preferences](https://www.servicenow.com/docs/r/platform-administration/set-notification-preferences.html), Brazil, describes global/category/channel controls; [Core UI preferences](https://www.servicenow.com/docs/r/platform-administration/user-notification-preferences.html), search index Australia scope, describes searchable preference definitions and subscriptions. These are broader notification capabilities, not evidence of OpenService message-history endpoint parity. Merge missing category/channel/conditional subscriptions into the existing workstream-6 backlog, P2, dependent on durable delivery policies; acceptance must honor opt-out and current audience permissions at delivery. Next research: delegated audit administration.
+
+Acceptance: more than 100 personal messages, account isolation before counts/paging, literal wildcard search, unread/acknowledged transitions, unknown/duplicate/invalid arguments, unauthorized acknowledgement, browser filtering/paging/acknowledgement, preference changes from filtered pages, safe rendering and both themes. Targeted database/browser acceptance and the final clean full gate passed.
+
+QA R6-1: the browser regression reproduced a 400 when acknowledgement inherited the filtered page query. The preference form had the explicit action, but the acknowledgement form did not. Both now post to the query-free endpoint with validated return fields. Added rollback assertions for malformed return selection; an invalid preference save must not change delivery preference.
+
+The first full run exposed a test-helper assumption: requester login redirects from the staff homepage. The rollback test now signs in and obtains CSRF from the actual requester inbox; product behavior was correct. This failed run is not counted as passing evidence.
+
+Final QA re-review found no new or reopened defects and made no repairs. Light desktop and dark 390px screenshots were inspected; safe text rendering, account isolation, live pagination and preserved form selection passed.
+
+Final gates: 726 tests, zero failures/errors/skips; whole-project Java 6859/6859 lines, 3651/3651 branches, 400/400 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| NotificationSearch.java | 11/11 | 6/6 | 1/1 |
+| Notifications.java | 27/27 | 14/14 | 3/3 |
+| WebController.java | 2108/2108 | 1083/1083 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Search personal notification history with preserved filters`. No push.

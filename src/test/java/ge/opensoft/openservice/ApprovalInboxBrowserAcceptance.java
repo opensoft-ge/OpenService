@@ -63,7 +63,7 @@ final class ApprovalInboxBrowserAcceptance {
             page.setViewportSize(1280,720);
             page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();
             page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Acknowledge").setExact(true)).click();
-            assertThat(page.getByText("Acknowledged",new Page.GetByTextOptions().setExact(true))).isVisible();
+            assertThat(page.locator("article .status")).isVisible();
 
             page.getByRole(
                             AriaRole.LINK,

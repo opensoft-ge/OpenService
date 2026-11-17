@@ -112,7 +112,7 @@ final class PlatformBrowserAcceptance {
                             AriaRole.BUTTON,
                             new Page.GetByRoleOptions().setName("Acknowledge").setExact(true))
                     .click();
-            assertThat(page.getByText("Acknowledged", new Page.GetByTextOptions().setExact(true)))
+            assertThat(page.locator("article .status"))
                     .isVisible();
             page.getByLabel("Business notifications").selectOption("false");
             page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Save preference"))

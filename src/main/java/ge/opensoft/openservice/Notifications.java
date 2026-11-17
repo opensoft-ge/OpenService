@@ -35,10 +35,7 @@ final class Notifications {
     }
 
     static List<Map<String, Object>> list(Store.Db db, String actor) throws SQLException {
-        return db.all(
-                "SELECT notice_id,message,created_at,acknowledged FROM os_notice WHERE user_id=?"
-                    + " ORDER BY created_at DESC,notice_id LIMIT 100",
-                actor);
+        return objects(NotificationSearch.page(db,actor,Map.of()).get("result"));
     }
 
     static void update(Store.Db db, String actor, Object input) throws SQLException {
