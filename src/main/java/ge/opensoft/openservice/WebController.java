@@ -305,6 +305,13 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher recordClocks=Pattern.compile("/record/([a-z][a-z0-9_]*)/([0-9a-f]{32})/clocks").matcher(path);
+        if(recordClocks.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=recordClocks.group(1),id=recordClocks.group(2);
+            if(method.equals("POST")){RecordClocks.submit(c.db,table,id,c.arguments());return redirect(path);}
+            return view(c,"record-clocks",map("table",table,"clockView",RecordClocks.page(c.db,table,id),"recordId",id,"clockWorker",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
+        }
+
         Matcher catalogueAdmin=Pattern.compile("/admin/catalogue(?:/([0-9a-f]{32}))?").matcher(path);
         if(catalogueAdmin.matches()) {
             c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=Objects.toString(catalogueAdmin.group(1),"");

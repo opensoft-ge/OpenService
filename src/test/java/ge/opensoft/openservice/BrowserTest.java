@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void recordClockLaunchWorksInBothThemes() throws Exception { RecordClocksBrowserAcceptance.run(this); }
  @Test void catalogueOrderingWorksInBothThemes() throws Exception { CatalogueBrowserAcceptance.run(this); }
  @Test void databaseBusyRecoveryWorksInBothThemes() throws Exception { SQLiteContentionBrowserAcceptance.run(this); }
 

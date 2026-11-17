@@ -50,3 +50,24 @@ Final gates: 780 tests, zero failures/errors/skips; whole-project Java 7139/7139
 | WebController.java | 2236/2236 | 1231/1231 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add reviewed catalogue offerings and owned service requests`. No push.
+
+## Round 2 — operate service clocks from a record
+
+Selected `OS-N17B-02`, workstream 8 / OS-PARITY-02. The clock engine supports calendars, durable ticks and terminal states, but record pages do not offer a start/control journey. Add a link from an existing record to current clock history and administrator start/pause/resume/complete/cancel forms. Readers can inspect clocks only for currently visible records; controls must verify that the submitted clock belongs to that exact table/record. Preserve existing calendar snapshots, business-time calculation and worker behavior. No conditional SLA attachment, automatic workflow completion, retroactive repair or response/resolution policy claim.
+
+Compared record clocks (8), connector operations (10) and attachment holds (5). Record clocks complete an existing service-owner journey without another catalogue refinement. Acceptance: protected forms, staff versus admin authority, missing/foreign clocks, inactive terminal rejection, strict input, hidden record denial, persisted state and both-theme desktop/mobile keyboard accessibility.
+
+Official evidence retrieved 2026-11-17: Brazil [SLA definitions](https://www.servicenow.com/docs/r/it-service-management/service-level-management/t_CreateAnSLADefinition.html) and [SLA repair](https://www.servicenow.com/docs/r/it-service-management/service-level-management/c_RepairSLAs.html), updated 2026-09-10. Vendor definitions distinguish start/pause/stop/reset conditions; repair reconstructs timing from task history with limits on related-field history. Merge historical SLA reconstruction and before/after repair evidence into existing missing P2 SLA diagnostics, dependent on complete task/clock event history. This native manual-clock slice does not implement vendor repair. Next research: connection aliases and reusable integration execution.
+
+Both database regressions returned 404 before implementation. Initial focused checks exposed a test request missing CSRF before the intended method check; the valid-CSRF PUT now exercises method rejection. Added a visible disabled-worker status while preserving manual clock controls. No claim of active SLA monitoring is made when automatic processing is disabled.
+
+Inspected both-theme screenshots after the final changes; the narrow table is in a labelled, keyboard-focusable horizontal scroll region. Final accumulated review covered current visibility before clock retrieval, record-bound controls, administrator/CSRF checks, terminal behavior, calendar snapshots, worker-disabled wording and all earlier repairs. No new/reopened finding or further repair was required.
+
+Final gates: 783 tests, zero failures/errors/skips; whole-project Java 7157/7157 lines, 3931/3931 branches, 420/420 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| RecordClocks.java | 13/13 | 6/6 | 2/2 |
+| WebController.java | 2241/2241 | 1235/1235 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Start and manage service clocks from their records`. No push.

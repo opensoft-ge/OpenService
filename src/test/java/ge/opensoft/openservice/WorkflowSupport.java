@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void recordClockLaunchAndControlsStayScoped() throws Exception { RecordClocksAcceptance.run(this); }
  @Test void catalogueOrdersPreserveReviewedContentAndOwnership() throws Exception { CatalogueAcceptance.run(this); }
  @Test void retainedWorkSearchAndRecoveryPreserveBoundaries() throws Exception { WorkSearchAcceptance.run(this); }
 
