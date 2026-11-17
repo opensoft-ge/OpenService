@@ -290,6 +290,15 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher jobReceipt=Pattern.compile("/admin/jobs/([0-9a-f]{32})").matcher(path);
+        if(jobReceipt.matches()){method(method,"GET");c.noQuery();return view(c,"job-receipt",map("table","operations","job",WorkJobs.detail(store,c.db,c.db.viewerId,jobReceipt.group(1))));}
+        if(path.equals("/admin/jobs") || path.equals("/api/openservice/job-search")) {
+            boolean api=path.startsWith("/api/");method(method,api?new String[]{"GET"}:new String[]{"GET","POST"});c.admin();c.uniqueQuery();
+            var args=new LinkedHashMap<String,String>(c.arguments());
+            if(method.equals("POST")){c.noQuery();args.remove("csrf");args.remove("job_id");args.remove("operation");TypedFields.require(Set.of("retry","cancel").contains(c.parameter("operation","")),"Choose retry or cancel");WorkSearch.page(c.db,c.db.viewerId,args);WorkJobs.control(c.db,c.db.viewerId,c.parameter("job_id",""),c.parameter("operation",""));}
+            var result=WorkSearch.page(c.db,c.db.viewerId,args);
+            return api?json(result,200):view(c,"work-search",map("table","operations","search",result));
+        }
         Matcher reportCopy=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/copy").matcher(path);
         if(reportCopy.matches()) {
             method(method,"POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");

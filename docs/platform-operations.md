@@ -141,3 +141,7 @@ Open a configuration item and select **Inspect dependent configuration items**. 
 ### Copy a report privately
 
 Open an accessible saved report, enter **New report name**, then choose **Create private copy**. The new definition belongs to you and starts private. The source keeps its original ownership and sharing, and neither cached results nor execution history is copied. Each execution of either report still applies its current viewer's record/field permissions. A source that is no longer shared or whose query is no longer permitted cannot be copied. The staff-only API is `POST /api/openservice/reports/{id}/copy` with `{"name":"My analysis"}`; a successful creation returns 201 and the new report ID.
+
+## Find retained background work
+
+From Operations, choose **Search all retained work**. Administrators can search job IDs/deduplication keys, filter kind and state, page through retained jobs and open a safe receipt. Search excludes encrypted payloads and receipt contents. SQLite case folding is ASCII; pages reflect live data. Retry/cancel are available for queued or failed jobs and recheck current authority and state. Processing jobs cannot be cancelled through this control. Retry preserves the existing payload and execution rules; it is not an automatic business-action rollback.

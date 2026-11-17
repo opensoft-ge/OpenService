@@ -396,7 +396,7 @@ Selected `OS-N17-18`, workstream 14 / OS-PARITY-07. Staff can edit their own rep
 
 Official evidence: [Brazil copy a Core UI report](https://www.servicenow.com/docs/r/now-intelligence/reporting/copy-report.html), updated 2026-09-10, retrieved 2026-11-17, describes duplication without carrying sharing settings. It distinguishes new Brazil Platform Analytics visualizations from legacy Core UI creation, which requires an enabling property. Merge reusable report sources and visualization duplication into the existing reporting backlog, missing P2, dependent on definition/owner boundaries; do not claim the native report format is vendor-compatible. Next: background-work execution history and diagnostics.
 
-Acceptance: shared/own report copies, independent private ownership, source and current field/table permission revocation, strict name/input and CSRF/role checks, retained-history isolation and capacity, copy navigation/editability in keyboard/light/dark/mobile. Results: all selected cases and the clean full gate passed.
+Acceptance: shared/own report copies, independent private ownership, source sharing revocation and current field-read validation, strict name/input and CSRF/role checks, retained-history isolation and capacity, copy navigation/editability in keyboard/light/dark/mobile. Results: all selected cases and the clean full gate passed.
 
 The new service boundary is also tested directly with a reader-bound database, because HTTP rejects that role before dispatch. The old HTTP route regression ran before production was added.
 
@@ -412,3 +412,22 @@ Final gates: 767 tests, zero failures/errors/skips; whole-project Java 7049/7049
 | WebController.java | 2200/2200 | 1171/1171 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Copy authorized report definitions into private ownership`. No push.
+
+## Round 19 — search and recover background work
+
+Selected `OS-N17-19`, workstream 6 / OS-PARITY-02/10. Operations shows only the latest 100 jobs. Add operator search across retained metadata, kind/state filters, exact totals and bounded pages, with query-free protected retry/cancel controls preserving the selected filters. Add a safe receipt detail page linked from each result. Search is literal and ASCII case-insensitive on SQLite; pages are live, not a retained snapshot. Search only job IDs and deduplication keys; encrypted payloads and arbitrary receipt fields are excluded. Current administrator authority and job state are rechecked before control. Existing retry/lease/retention semantics remain unchanged. Alternatives: release contention diagnosis and future integration qualification.
+
+Official evidence: [Brazil scheduled-item inspection](https://www.servicenow.com/docs/r/platform-administration/time-configuration/t_ViewAScheduleItem.html) and [Brazil flow execution details](https://www.servicenow.com/docs/r/build-workflows/workflow-studio/flow-execution-details.html), retrieved 2026-11-17; flow details updated 2026-09-10. Merge configurable diagnostic levels, phase duration and retry-policy detail into the existing workflow/queue backlog, missing P2, dependent on durable telemetry and scoped operations permissions. Native queue receipts do not reproduce vendor flow diagnostics. Next: production contention and release qualification.
+
+Acceptance: more than 100 jobs, stable pages/counts, literal wildcard characters, kind/state selection, payload non-disclosure, receipt allowlists, invalid/duplicate parameters, current authority, CSRF, retry/cancel and invalid-return rollback, processing-state denial, keyboard and both themes/mobile. Results: focused and clean full verification passed.
+
+Both database regressions returned 404 before implementation. Focused SQLite/PostgreSQL and browser cases now pass, including 102-job pagination, literal wildcard handling, payload/receipt non-disclosure, processing denial and failed-job retry state reset. Desktop-light and mobile-dark screenshots were inspected; the labelled, focusable results region provides horizontal scrolling on narrow screens. Accumulated-change QA, including earlier authority and consent repairs, found no new/reopened defect and made no repair. Full final verification passed.
+
+Final gates: 770 tests, zero failures/errors/skips; whole-project Java 7067/7067 lines, 3831/3831 branches, 414/414 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| WebController.java | 2208/2208 | 1183/1183 | 41/41 |
+| WorkSearch.java | 10/10 | 6/6 | 1/1 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Search retained background work and expose safe recovery receipts`. No push.

@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void retainedWorkSearchAndRecoveryPreserveBoundaries() throws Exception { WorkSearchAcceptance.run(this); }
+
  @Test void reportCopiesHaveIndependentPrivateOwnership() throws Exception { ReportCopyAcceptance.run(this); }
 
  @Test void reminderRejectsReviewerWithRevokedTableRead() throws Exception { ApprovalDiagnosticBrowserAcceptance.revokedReviewer(this,false); }
