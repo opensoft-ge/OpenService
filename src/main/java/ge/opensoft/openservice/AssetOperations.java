@@ -48,6 +48,7 @@ final class AssetOperations {
     }
 
     static Map<String, Object> impact(Store.Db db, String id) throws SQLException {
+        RecordPolicy.require(Service.schema(db,"cmdb_ci"),"read",db.viewerRole);
         Service.record(db, "cmdb_ci", id);
         var seen = new LinkedHashSet<String>();
         seen.add(id);

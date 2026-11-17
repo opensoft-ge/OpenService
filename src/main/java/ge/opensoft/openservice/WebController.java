@@ -290,6 +290,11 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher assetImpact=Pattern.compile("/record/cmdb_ci/([0-9a-f]{32})/impact").matcher(path);
+        if(assetImpact.matches()) {
+            method(method,"GET");c.noQuery();String id=assetImpact.group(1);var result=AssetOperations.impact(c.db,id);
+            return view(c,"asset-impact",map("table","cmdb_ci","impact",result,"source",FieldAccess.serialize(c.db,Service.record(c.db,"cmdb_ci",id))));
+        }
         if(path.equals("/admin/calendars/preview") || path.equals("/api/openservice/calendar-preview")) {
             method(method,"GET");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");
             Object result=api || !c.arguments().isEmpty()?BusinessDeadline.preview(c.db,c.db.viewerId,c.arguments()):null;

@@ -133,3 +133,7 @@ Answers are unverified, plain-text drafts linked to the source revision; no tool
 ### Preview a service deadline
 
 In Operations, choose **Preview a service deadline**, select a saved calendar, enter an ISO-8601 start instant with a UTC offset and 1–525600 business minutes. The result explains the UTC/local deadline and counted work windows, including holidays and daylight-saving transitions. It assumes uninterrupted work and changes no clock. At most 3660 local dates are examined; a budget beyond that horizon is rejected, and only the first 100 contributing windows are displayed. Start instants support at most millisecond precision. The administrator-only JSON equivalent is `GET /api/openservice/calendar-preview?calendar=NAME&start=ISO_INSTANT&minutes=N`; URL-encode the instant.
+
+### Review dependency impact
+
+Open a configuration item and select **Inspect dependent configuration items**. The list traverses currently visible dependents, avoids cycles and excludes paths through hidden records. Table read permissions and field visibility are checked on every request; a hidden summary becomes an ID label. More than 100 visible dependents produces an explicit incomplete-list warning. An empty list means no visible dependents were found, not proof of no real-world impact. Dependency ingestion/discovery and a complete service topology remain separate work.

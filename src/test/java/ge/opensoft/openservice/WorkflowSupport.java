@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void impactReviewHonorsTableFieldsAndVisiblePaths() throws Exception { AssetImpactAcceptance.run(this); }
+
  @Test void businessDeadlinePreviewExplainsCalendarTime() throws Exception { BusinessDeadlineAcceptance.run(this); }
 
  @Test void recordQuestionsRequireExactReviewedDataAndConsent() throws Exception { RecordQuestionsAcceptance.run(this); }

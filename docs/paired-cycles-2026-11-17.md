@@ -338,3 +338,24 @@ Final gates: 754 tests, zero failures/errors/skips; whole-project Java 7021/7021
 | WebController.java | 2183/2183 | 1157/1157 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Explain calendar-based service deadlines in the browser`. No push.
+
+## Round 16 — inspect dependent-asset impact
+
+Selected `OS-N17-16`, workstream 13 / OS-PARITY-05. Directed, cycle-safe impact traversal exists in the API, but asset records have no browser impact journey. Add a readable list linked from configuration items, with source, currently visible dependent records, links and an explicit 100-result truncation warning. Hidden intermediate records must not be traversed; redacted summary labels fall back to IDs. This is a bounded list, not discovery, a topology diagram or complete service mapping. Alternatives: approval diagnostics and saved-report cloning.
+
+Official discovery: [Brazil Dependency Views](https://www.servicenow.com/docs/r/servicenow-platform/dependency-views/c_BusinesssServiceManagementMaps.html), updated 2026-09-10, retrieved 2026-11-17, announces deprecation for new Brazil instances and points to Unified Map as the newer experience. Merge current map filters, related alert/incident/outage drilldowns and health indicators into the existing asset-mapping backlog, missing P2, dependent on authorized relationship/event data. The linked Unified Map document was unavailable through the web tool on this refresh, so additional details remain unverified. Next: approval execution diagnostics.
+
+Acceptance: visible cycle-safe dependent list and current source/target labels, no traversal through hidden records, field/table permission changes, source deletion, truncation, reader access, forbidden writes and query validation; browser navigation, keyboard and both themes/mobile. The table-read omission was reproduced and repaired before adding the browser surface. Focused and final full gates passed.
+
+QA R16-1: both database regressions reproduced the existing impact API returning 200 despite a table-read policy excluding the viewer. Added the table check to shared impact lookup before building the new browser surface. The browser and API now share that boundary; focused tests include private intermediates, cycles, field redaction, source deletion and 100-result truncation.
+
+Post-repair accumulated review checked current table/field/record policies across the new impact route, previous summary/publication repairs, hidden-path traversal, bounded result semantics, escaped links/labels and the new read-only deadline preview. No new or reopened finding and no further repair. Desktop/mobile rendering, both-theme accessibility and the frozen full run passed.
+
+Final gates: 757 tests, zero failures/errors/skips; whole-project Java 7026/7026 lines, 3795/3795 branches, 412/412 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| AssetOperations.java | 57/57 | 16/16 | 3/3 |
+| WebController.java | 2187/2187 | 1159/1159 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Review visible dependent assets from configuration items`. No push.
