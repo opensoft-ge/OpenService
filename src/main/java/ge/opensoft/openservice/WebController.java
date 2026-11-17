@@ -290,6 +290,12 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher knowledgeComparison=Pattern.compile("/(?:admin/knowledge/([0-9a-f]{32})/versions|api/openservice/knowledge/([0-9a-f]{32})/compare)").matcher(path);
+        if(knowledgeComparison.matches()) {
+            method(method,"GET");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");
+            var result=KnowledgeComparison.compare(c.db,c.db.viewerId,knowledgeComparison.group(api?2:1),c.arguments());
+            return api?json(map("result",result),200):view(c,"knowledge-comparison",map("table","knowledge","comparison",result));
+        }
         Matcher reconciliation=Pattern.compile("/admin/migrations/([0-9a-f]{32})/reconciliation").matcher(path);
         if(reconciliation.matches()) {
             method(method,"GET");c.admin();c.uniqueQuery();

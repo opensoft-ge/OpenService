@@ -110,3 +110,8 @@ Use **Your profile** to edit optional display name and job title. Each field acc
 ### Migration reconciliation review
 
 Select a job in Migration Studio and open **Review reconciliation**. The page and JSON download compare retained source links/staging with current local destinations; counts cover all detected issues while each list is capped at 100. A local pass is not proof of source completeness or safe live cutover. Source permissions, deletions, unmapped data and configuration require separate qualification.
+
+
+### Compare knowledge publications
+
+Administrators can choose **Compare publication versions** on a published article, then select the two version numbers. The page shows immutable titles/bodies with changed-field indicators; it does not render unpublished draft text or modify either version. Retired snapshots remain available to administrators through the comparison URL while the underlying article exists. A missing version returns 404. This is a field comparison, without word-level highlighting.

@@ -228,3 +228,22 @@ Final gates: 739 tests, zero failures/errors/skips; whole-project Java 6925/6925
 | WebController.java | 2155/2155 | 1121/1121 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Review and download migration reconciliation safely`. No push.
+
+## Round 11 — compare immutable knowledge publications
+
+Selected `OS-N17-11`, workstream 9 / OS-PARITY-04. Publication history and restore exist, but administrators cannot compare selected versions through the browser. Add admin-only browser/API comparison of two explicit immutable versions, defaulting to latest and its predecessor (same version when only one exists), full escaped title/body plus changed-field indicators and retirement metadata. Draft content is excluded, unknown/deleted versions fail, and requester access remains denied. No word-level diff, rich HTML or scoped knowledge-administrator role claim. Alternatives: reference picker and audit evidence review.
+
+Official evidence: [compare article versions](https://www.servicenow.com/docs/r/servicenow-platform/knowledge-management/compare-two-article-versions.html), Brazil updated 2026-09-10, retrieved 2026-11-17, and [Horizon comparison component](https://horizon.servicenow.com/workspace/page-templates/version-compare), Brazil/Knowledge Management Advanced. Merge word-level highlighting, scoped contributor comparison and translation review into the existing knowledge gap, missing P2, dependent on publication/field authority. Native comparison is not vendor UI/API equivalence. Next research: reference selection and qualifiers.
+
+Acceptance: default/same/reversed/unknown versions, changed and unchanged fields, retirement and draft isolation, strict query parameters, denied reader/anonymous/mutation, HTML escaping, keyboard selection and both themes/mobile. Focused and full acceptance passed, including comparison across 103 retained versions.
+
+Final accumulated review checked snapshot lookup, draft isolation, current administrative authority, escaping, bounded numeric parameters and the previous consent, filter and migration interaction repairs. No new or reopened findings; no repair in this final review. Desktop and mobile comparison screenshots were inspected.
+
+Final gates: 742 tests, zero failures/errors/skips; whole-project Java 6940/6940 lines, 3721/3721 branches, 405/405 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| KnowledgeComparison.java | 10/10 | 10/10 | 1/1 |
+| WebController.java | 2160/2160 | 1127/1127 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Compare immutable published knowledge versions`. No push.

@@ -24,6 +24,8 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void knowledgeVersionComparisonWorksInBothThemes() throws Exception { KnowledgeComparisonBrowserAcceptance.run(this); }
+
     @Test void personalProfilesWorkInBothThemes() throws Exception { ProfileBrowserAcceptance.run(this); }
 
     @Test void savedReportManagementWorksInBothThemes() throws Exception { ReportFormsBrowserAcceptance.run(this); }
