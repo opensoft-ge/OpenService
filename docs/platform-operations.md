@@ -195,3 +195,9 @@ Non-administrators no longer see deleted-record journal entries, because those r
 ### Acknowledge the reviewed notification page
 
 Use **Acknowledge this page** after reviewing the displayed messages. The form submits only the unread IDs that were rendered: later deliveries and other pages are unaffected. Your filters remain selected. Native clients may POST `{"acknowledge_many":["32-character-notice-id", "another-notice-id"]}` to `/api/openservice/me/notifications`, with 1–100 distinct IDs belonging to the authenticated account. Any unavailable or foreign ID rejects the entire batch; retrying a valid batch is safe. This does not delete messages, change delivery preferences or certify that the recipient read or acted on them.
+
+## Reviewed operational-event escalation
+
+From **Operational events**, open **Review event case**. Review the current configuration item, severity, occurrence count and summary, then explicitly create a private incident. Its initial priority is 1 for critical, 2 for warning and 3 for information events. Current event details are copied once; later events never overwrite case content. Creation leaves the event state unchanged, and resolving either side does not resolve the other. Review incident visibility before sharing it.
+
+The review is invalidated by event changes before creation. Repeated submission returns the existing accessible incident. The mapping survives case deletion and prevents silently creating a replacement; retained orphan cleanup/relinking is not currently supported. Resolved events must be reopened before first escalation. Administrators still need current table/create permissions. Native clients use `GET /api/openservice/event-cases?key=...` then `POST /api/openservice/event-cases` with exactly `key` and the returned `review`. Browser writes require CSRF. This is a manually reviewed escalation, not automatic remediation or a full alert-management policy engine.

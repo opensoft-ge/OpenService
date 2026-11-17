@@ -306,6 +306,12 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(Set.of("/admin/events/case","/api/openservice/event-cases").contains(path)){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}var result=EventCases.create(c.db,input);return api?json(map("result",result),201):redirect("/record/incident/"+result.get("sys_id"));}
+            TypedFields.require(c.arguments().keySet().equals(Set.of("key")),"Provide key only");var result=EventCases.page(c.db,c.parameter("key",""));return api?json(map("result",result),200):view(c,"event-case",map("table","events","escalation",result));
+        }
+
         Matcher knowledgeFeedback=Pattern.compile("/(knowledge|api/openservice/knowledge)/([0-9a-f]{32})(/feedback)?").matcher(path);
         if(knowledgeFeedback.matches()){
             boolean api=path.startsWith("/api/"),write=knowledgeFeedback.group(3)!=null;method(method,write?"POST":"GET");c.noQuery();c.uniqueQuery();String id=knowledgeFeedback.group(2);Map<String,Object> result;

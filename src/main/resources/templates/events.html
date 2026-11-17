@@ -11,7 +11,7 @@
 <article th:each="event:${search.result}" class="record-form" th:attr="data-event=${event.event_key}">
 <h3 class="account-name" th:text="${event.event_key}"></h3><p class="knowledge-content" th:text="${event.summary}"></p>
 <p><span th:text="${event.severity}"></span> · <span th:text="${event.state}"></span> · <span th:text="${event.occurrences}"></span> occurrences</p>
-<a th:href="@{/record/cmdb_ci/{id}(id=${event.asset_id})}">Open configuration item</a>
+<a th:href="@{/record/cmdb_ci/{id}(id=${event.asset_id})}">Open configuration item</a><a th:href="@{/admin/events/case(key=${event.event_key})}">Review event case</a>
 <form method="post" action="/admin/events" class="record-form"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="key" th:value="${event.event_key}">
 <label>Response reason<textarea name="reason" required maxlength="2000"></textarea></label>
 <button th:if="${event.state=='open'}" class="button" name="operation" value="acknowledge">Acknowledge event</button>

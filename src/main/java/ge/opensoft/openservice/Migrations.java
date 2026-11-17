@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 39;
+    static final int VERSION = 40;
 
     private Migrations() {}
 
@@ -482,6 +482,10 @@ final class Migrations {
         if(version<39){
             db.update("CREATE TABLE IF NOT EXISTS os_knowledge_feedback(feedback_id VARCHAR(32) PRIMARY KEY,article_id VARCHAR(32) NOT NULL,version INTEGER NOT NULL,user_id VARCHAR(32) NOT NULL,helpful INTEGER NOT NULL CHECK(helpful IN(0,1)),details TEXT NOT NULL,updated_at BIGINT NOT NULL,revision INTEGER NOT NULL DEFAULT 1,reviewed INTEGER NOT NULL DEFAULT 0 CHECK(reviewed IN(0,1)),review_note TEXT NOT NULL DEFAULT '',reviewer_id VARCHAR(32) NOT NULL DEFAULT '',UNIQUE(article_id,version,user_id))");
             db.update("INSERT INTO os_migration(version,name) VALUES(39,?)","version-bound personal knowledge feedback and editorial review");
+        }
+        if(version<40){
+            db.update("CREATE TABLE IF NOT EXISTS os_event_case(event_key VARCHAR(160) PRIMARY KEY,record_id VARCHAR(32) NOT NULL UNIQUE,created_at BIGINT NOT NULL,creator_id VARCHAR(32) NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(40,?)","reviewed operational event to private incident correlation");
         }
     }
 

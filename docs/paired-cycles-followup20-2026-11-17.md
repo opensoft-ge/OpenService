@@ -210,3 +210,27 @@ Final gates: 805 tests, zero failures/errors/skips; whole-project Java 7265/7265
 | WebController.java | 2275/2275 | 1287/1287 | 42/42 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Acknowledge only the displayed personal notification page`. No push.
+
+## Round 9 — reviewed event-to-incident escalation
+
+Selected `OS-N17B-09`, workstream 13 / OS-PARITY-05. Operational events can be searched and acknowledged/resolved, but cannot create a correlated service case. Add administrator review of the current event and creation of one linked incident, with an optimistic fingerprint over the event details. Create the incident privately to the administrator and other administrators; an operator must deliberately review sharing before a team sees event data. Repeated creation returns the same currently accessible case. Later event changes do not overwrite its snapshot or synchronize lifecycle states. A deleted linked case remains unavailable rather than silently creating a replacement.
+
+Compared event escalation (13), durable migration cancellation (11) and richer types (12). Choose the event-to-follower case journey before another platform data refinement. Acceptance: review/current-event conflicts, private defaults, field/write authority, same-event idempotency and concurrent calls, retained linkage/restart, resolved event rejection, independent lifecycles, HTTP/CSRF boundaries, upgrade rollback and both-theme keyboard browser escalation. No automatic correlation rules, security-incident product, automatic remediation, bidirectional state synchronization or custom mapping designer claim.
+
+Official evidence retrieved 2026-11-17: Brazil [alert information and incident creation](https://www.servicenow.com/docs/r/it-operations-management/event-management/t_EMViewAlert.html) and [alert correlation rules](https://www.servicenow.com/docs/r/it-operations-management/event-management/t_EMConfigureAnEventCorrelationRule.html), updated 2026-09-10. The separate create-incident article returned 404, so its cached text is not treated as current confirmation. Merge configurable primary/secondary grouping, maintenance/flapping handling and separately governed lifecycle synchronization into existing missing P2 operations work, dependent on event rules, reliable history and explicit change authority. Acceptance must preserve correlation identities and prevent grouped/private events from widening access. Next research: import progress and cancellation controls.
+
+The first test fixture used the wrong existing event-ingestion route. Correct it to `/api/openservice/operations/events`, then rerun against the prior controller: both databases now demonstrate the intended missing event-case route (404), after successful real ingestion. QA R9-1: the new browser form inherited the GET query string, causing the strict write endpoint to reject submission. Set an explicit query-free form action and retain the browser create/revisit journey as regression coverage. Transactional upgrade and simultaneous direct escalation checks also exercise the durable single-case correlation.
+
+QA R9-2: the earlier read-policy qualification still used present-tense wording after round 7 delivered the supported configuration path. Mark that paragraph historical and explicitly link its superseding evidence; preserve the original checkpoint limitations. No production behavior changes for this documentation repair.
+
+Inspected final desktop-light and mobile-dark screenshots. The final accumulated review rechecked current asset/case access, private initial visibility, strict routes and CSRF, event-review invalidation, repeated escalation, deleted links, concurrent creation and migration rollback. It also revisited earlier catalogue, connector, hold, report, publication, table-read, notification, AI-consent, approval and database-acquisition boundaries against the fixed base. R9-1 and R9-2 remain repaired; this final review found no new/reopened issue and required no further repair.
+
+Final gates: 810 tests, zero failures/errors/skips; whole-project Java 7283/7283 lines, 4113/4113 branches, 438/438 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| EventCases.java | 11/11 | 12/12 | 2/2 |
+| Migrations.java | 197/197 | 106/106 | 3/3 |
+| WebController.java | 2279/2279 | 1297/1297 | 42/42 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Create one reviewed private incident from an operational event`. No push.

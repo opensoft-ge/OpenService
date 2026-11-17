@@ -61,6 +61,16 @@ class MigrationsTest {
         for(int i=0;i<2;i++){try(var db=new Store(env).open()){var file=db.one("SELECT * FROM os_attachment WHERE sys_id='retained'");assertArrayEquals(content,(byte[])file.get("content"));assertEquals(0,file.get("quarantined"));assertEquals(0,file.get("hold_revision"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}
     }
 
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void eventCaseUpgradeAndConcurrentEscalationsKeepOneIncident(boolean postgres) throws Exception {
+        var env=configuration(postgres);var store=new Store(env);
+        try(var db=store.open()){db.update("DROP TABLE os_event_case");db.update("DELETE FROM os_migration WHERE version>=40");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_event_case"));db.connection.rollback();assertEquals(39,db.count("SELECT MAX(version) FROM os_migration"));}
+        var upgraded=new Store(env);String review;
+        try(var db=upgraded.open()){String actor=PlatformFoundationTest.bind(db),asset=Service.create(db,"cmdb_ci",Values.map("short_description","Concurrent event asset"),"admin").get("sys_id").toString();AssetOperations.event(db,actor,Values.map("key","concurrent-event","asset_id",asset,"severity","warning","summary","Review retained event"),1);review=EventCases.page(db,"concurrent-event").get("review").toString();db.connection.commit();}
+        try(var executor=Executors.newFixedThreadPool(2)){var start=new CountDownLatch(1);List<Future<String>> outcomes=new ArrayList<>();for(int i=0;i<2;i++)outcomes.add(executor.submit(()->{start.await();try(var db=upgraded.open()){PlatformFoundationTest.bind(db);String result=EventCases.create(db,Values.map("key","concurrent-event","review",review)).get("sys_id").toString();db.connection.commit();return result;}}));start.countDown();assertEquals(outcomes.get(0).get(30,TimeUnit.SECONDS),outcomes.get(1).get(30,TimeUnit.SECONDS));}
+        try(var db=new Store(env).open()){assertEquals(1,db.count("SELECT COUNT(*) FROM os_event_case"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_record WHERE \"table\"='incident'"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));}
+    }
+
     @TempDir Path root;
 
     MockEnvironment configuration(boolean postgres) throws Exception {

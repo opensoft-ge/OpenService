@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void eventEscalationCreatesOneReviewedPrivateCase() throws Exception { EventCasesAcceptance.run(this); }
  @Test void notificationBatchesAcknowledgeOnlyReviewedPersonalIds() throws Exception { NotificationBatchAcceptance.run(this); }
  @Test void configuredTableReadsApplyAcrossAllDataSurfaces() throws Exception { TableReadAcceptance.run(this); }
  @Test void knowledgeFeedbackBindsPublicVersionsAndPrivateEditorialReviews() throws Exception { KnowledgeFeedbackAcceptance.run(this); }
@@ -99,7 +100,7 @@ abstract class WorkflowSupport {
                             "os_transfer_link")) db.update("DELETE FROM " + table);
             for (String table :
                     List.of(
-                            "os_offering", "os_catalog_order", "os_outbox",
+                            "os_event_case", "os_offering", "os_catalog_order", "os_outbox",
                             "os_report_run",
                             "os_recovery_budget",
                             "os_requester_record",
