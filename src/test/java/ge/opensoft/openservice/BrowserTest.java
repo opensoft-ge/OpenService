@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void reportCsvDownloadsWorkInBothThemes() throws Exception { ReportExportBrowserAcceptance.run(this); }
  @Test void attachmentHoldsWorkInBothThemes() throws Exception { AttachmentHoldsBrowserAcceptance.run(this); }
  @Test void connectorConsoleWorksInBothThemes() throws Exception { ConnectorConsoleBrowserAcceptance.run(this); }
  @Test void recordClockLaunchWorksInBothThemes() throws Exception { RecordClocksBrowserAcceptance.run(this); }

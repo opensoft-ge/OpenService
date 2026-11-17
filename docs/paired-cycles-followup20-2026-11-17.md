@@ -115,3 +115,26 @@ Final gates: 791 tests, zero failures/errors/skips; whole-project Java 7193/7193
 | WebController.java | 2255/2255 | 1249/1249 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add reviewed attachment holds across download paths`. No push.
+
+## Round 5 — export current permitted report results
+
+Selected `OS-N17B-05`, workstream 14 / OS-PARITY-07. Saved reports can be viewed, revised and copied, but have no CSV download. Add a browser link and native GET download that reruns the saved query under the downloader's current record/field permissions, never cached author results. Use fixed column names, exact decimal strings, UTF-8, correct quoting, empty nulls and literal protection for formula-like grouping labels. Downloads participate in existing per-viewer execution history. Sharing/permission revocation must affect every fresh download. No scheduled/email exports, XLSX, unrestricted raw-record export, independent export-role policy or universal spreadsheet interoperability claim.
+
+Compared report export (14), article feedback (9) and complete read-policy configuration (4). Report export completes an existing analyst journey with a small, testable boundary; retain the broader policy work for round 7 rather than claiming a partial table-read implementation. Acceptance covers both download paths, admin/staff/requester visibility, sharing and field revocation, formula/control/full-width labels, Unicode, embedded quotes/newlines, negative numeric totals, empty selections, authentication, unsupported methods/query parameters, retained history and an actual keyboard-driven browser download in both themes.
+
+Research retrieved 2026-11-17: official [Australia upgrade notes](https://www.servicenow.com/docs/r/delta-washingtondc-australia/australia-washingtondc-platformanalyticsexperience-release-notes.html) describe CSV/Excel visualization downloads; [Brazil Platform Analytics release notes](https://www.servicenow.com/docs/r/release-notes/platform-analytics-experience-rn.html), updated 2026-09-28, add export enablement/role policies and read-only Explore mode. Merge export-specific authority, controlled scheduling and temporary exploration into existing missing P2 reporting/governance work, dependent on scoped permissions and durable delivery. Acceptance must deny direct download after export-role revocation and ensure temporary exploration never changes a shared definition. [OWASP CSV Injection](https://community.owasp.org/attacks/CSV_Injection) informs literal-cell protection; spreadsheet applications may reinterpret modified/re-saved CSV, so this is not a cross-application safety guarantee. Next research: actionable knowledge feedback.
+
+The pre-implementation regressions returned 404 on both databases. Both API/database journeys then passed, including requester exclusion, sharing and numeric/group-field permission revocation, literal spreadsheet labels and empty results. The first browser run exposed an assumed pre-existing reader fixture; create an isolated named reader and rerun the actual keyboard download successfully. This is a test-fixture correction, not a new product feature.
+
+Checkpoint 5: five completed/intended slices span WS9, WS8, WS10, WS5 and WS14 once each. No workstream concentration exception is needed. Retain the planned feedback journey for WS9 and prioritize the broader WS4 read-policy contract next; release/provider qualifications remain explicitly deferred rather than labelled complete.
+
+Inspected desktop-light and mobile-dark screenshots after the final source changes. The actual downloaded CSV contains the reader's permitted sum, not the private record or administrator total. The accumulated-change review covered both route forms, current sharing/field/record checks, personal execution history, CSV quoting and numeric serialization, Unicode/formula labels, cache/disposition headers, owner repair screens, attachment holds and earlier consent/approval/connector repairs. No new or reopened finding or further repair remained in the final review.
+
+Final gates: 794 tests, zero failures/errors/skips; whole-project Java 7202/7202 lines, 3983/3983 branches, 429/429 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| ReportExport.java | 7/7 | 6/6 | 2/2 |
+| WebController.java | 2257/2257 | 1251/1251 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Export saved reports using current viewer permissions`. No push.

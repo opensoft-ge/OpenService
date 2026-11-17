@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void reportExportsRecheckCurrentViewerAndProtectSpreadsheetLabels() throws Exception { ReportExportAcceptance.run(this); }
  @Test void attachmentHoldsBlockEveryDownloadAndBindRelease() throws Exception { AttachmentHoldsAcceptance.run(this); }
  @Test void connectorConsolePinsReviewedConfigurationAndReceipts() throws Exception { ConnectorConsoleAcceptance.run(this); }
  @Test void recordClockLaunchAndControlsStayScoped() throws Exception { RecordClocksAcceptance.run(this); }

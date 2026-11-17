@@ -305,6 +305,9 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher reportExport=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/export\\.csv").matcher(path);
+        if(reportExport.matches()){method(method,"GET");c.noQuery();String id=reportExport.group(1);byte[] csv=ReportExport.csv(c.db,c.db.viewerId,id);disposition(c,"report-"+id+".csv");return binary(csv,"text/csv; charset=UTF-8",200);}
+
         Matcher attachmentAccess=Pattern.compile("/(admin/attachments|api/openservice/attachment-access)/([0-9a-f]{32})").matcher(path);
         if(attachmentAccess.matches()){
             method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=attachmentAccess.group(2);boolean api=path.startsWith("/api/");
