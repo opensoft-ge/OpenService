@@ -122,7 +122,7 @@ SSO/MFA, inherited roles, multi-organization isolation, attachment malware scann
 
 The read-only `/api/now/stats/{table}` subset now supports filtered counts, grouping and aggregate ordering over the complete selection. Table and Aggregate APIs both support bounded `IN` and `NOT IN` membership filters. See [API details](docs/api.md) and [validation results](docs/validation.md).
 
-Reusable typed tables, workflow policies and atomic configuration promotion are available in the [configuration workspace](docs/configuration.md), with an [installable service operations example](examples/service-operations.configuration.json). The [ten-area parity baseline](docs/roadmap.md#reusable-parity-baseline--14-november-2026) tracks remaining work.
+Reusable typed tables, workflow policies and atomic configuration promotion are available in the [configuration workspace](docs/configuration.md), with an [installable service operations example](examples/service-operations.configuration.json). The [ten-area parity baseline](docs/roadmap.md#reusable-parity-baseline--refreshed-17-november-2026) tracks remaining work.
 
 [Numeric analytics](docs/analytics.md) is available from each workspace for configured integer/decimal fields.
 

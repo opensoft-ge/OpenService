@@ -24,6 +24,9 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void configurationHistoryCanBeReviewedAndDownloadedInBothThemes() throws Exception {
+        ConfigurationHistoryBrowserAcceptance.run(this);
+    }
     @Test void configurationChangesAreReviewableInBothThemes() throws Exception {
         ConfigurationChangesBrowserAcceptance.run(this);
     }

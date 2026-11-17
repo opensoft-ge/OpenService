@@ -15,6 +15,28 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void configurationHistoryUpgradeIsAtomicAndPreservesReceipts(boolean postgres) throws Exception {
+        var environment=configuration(postgres);var store=new Store(environment);
+        try(var db=store.open()) {
+            db.update("DROP TABLE os_configuration_install");db.update("DELETE FROM os_migration WHERE version>=42");db.connection.commit();
+            Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_configuration_install"));
+            db.connection.rollback();assertEquals(41,db.count("SELECT MAX(version) FROM os_migration"));
+        }
+        String receipt;
+        try(var db=new Store(environment).open()) {
+            String actor=PlatformFoundationTest.bind(db);
+            receipt=Configuration.install(db,ConfigurationAcceptance.bundle("u_retained_history",ConfigurationAcceptance.definition()),actor,false).get("installation_id").toString();
+            db.connection.commit();
+        }
+        try(var db=new Store(environment).open()) {
+            PlatformFoundationTest.bind(db);
+            assertEquals(receipt,ConfigurationHistory.detail(db,receipt).get("install_id"));
+            assertEquals(1,Service.schema(db,"u_retained_history").get("version"));
+            assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));
+            assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));
+        }
+    }
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void clockPurposeUpgradeAndConcurrentStartsRemainSafe(boolean postgres) throws Exception {
         var env=configuration(postgres);var store=new Store(env);String record,calendar="purpose-upgrade";
         try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);record=PlatformFoundationTest.record(db,"incident","Retained clock");ServiceClocks.calendar(db,actor,Values.map("name",calendar,"calendar",PlatformFoundationTest.calendar()));ServiceClocks.start(db,actor,Values.map("table","incident","record_id",record,"calendar",calendar,"minutes",120),System.currentTimeMillis());db.update("DROP INDEX ix_os_sla_active_purpose");db.update("ALTER TABLE os_sla DROP COLUMN purpose");db.update("DELETE FROM os_migration WHERE version>=41");db.connection.commit();Migrations.apply(db);assertEquals("general",db.one("SELECT purpose FROM os_sla").get("purpose"));db.connection.rollback();assertEquals(40,db.count("SELECT MAX(version) FROM os_migration"));}

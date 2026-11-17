@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 41;
+    static final int VERSION = 42;
 
     private Migrations() {}
 
@@ -491,6 +491,10 @@ final class Migrations {
             addColumn(db,"os_sla","purpose","VARCHAR(20) NOT NULL DEFAULT 'general' CHECK(purpose IN ('general','response','resolution'))");
             db.update("CREATE UNIQUE INDEX IF NOT EXISTS ix_os_sla_active_purpose ON os_sla(table_name,record_id,purpose) WHERE purpose<>'general' AND state IN ('running','paused')");
             db.update("INSERT INTO os_migration(version,name) VALUES(41,?)","separate response and resolution service clocks");
+        }
+        if(version<42){
+            db.update("CREATE TABLE IF NOT EXISTS os_configuration_install(install_id VARCHAR(32) PRIMARY KEY,actor_id VARCHAR(32) NOT NULL,actor_name VARCHAR(80) NOT NULL,installed_at VARCHAR(26) NOT NULL,table_count INTEGER NOT NULL,detail TEXT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(42,?)","retained configuration promotion receipts");
         }
     }
 

@@ -13,6 +13,9 @@ final class ConfigurationChangesBrowserAcceptance {
     static void run(BrowserTest h) throws Exception {
         String table = "u_review_" + id();
         var definition = ConfigurationAcceptance.definition();
+        object(definition.get("fields")).put("state", "State");
+        definition.put("states", map("new", "New", "closed", "Closed"));
+        definition.put("flow", map("new", List.of("closed"), "closed", List.of("new")));
         var document = ConfigurationAcceptance.bundle(table, definition);
         try (var p = Playwright.create(); var browser = p.chromium().launch(); var context = browser.newContext()) {
             var page = context.newPage();
@@ -31,6 +34,7 @@ final class ConfigurationChangesBrowserAcceptance {
             definition.put("version", 1);
             definition.put("label", "Reviewed <img src=x onerror=alert(1)> & workflow");
             object(object(definition.get("field_rules")).get("quantity")).put("read_roles", List.of("admin"));
+            definition.put("states", map("closed", "Closed", "new", "New"));
             page.getByLabel("Configuration package JSON").fill(JSON.writeValueAsString(document));
             page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Preview package")).press("Enter");
             for (String theme : List.of("light", "dark")) {
@@ -41,6 +45,11 @@ final class ConfigurationChangesBrowserAcceptance {
                 assertThat(page.locator("#configuration-changes")).containsText("/field_rules/quantity/read_roles");
                 assertThat(page.locator("#configuration-changes")).containsText("Reusable service cases");
                 assertThat(page.locator("#configuration-changes")).containsText("Reviewed <img src=x onerror=alert(1)> & workflow");
+                var states = page.locator("#configuration-changes tbody tr").filter(
+                        new Locator.FilterOptions().setHas(page.getByRole(AriaRole.ROWHEADER,
+                                new Page.GetByRoleOptions().setName("/states").setExact(true))));
+                assertThat(states).containsText("{\"new\":\"New\",\"closed\":\"Closed\"}");
+                assertThat(states).containsText("{\"closed\":\"Closed\",\"new\":\"New\"}");
                 assertEquals(0, page.locator("#configuration-changes img").count());
                 page.getByRole(AriaRole.REGION, new Page.GetByRoleOptions().setName(table + " configuration changes")).focus();
                 assertThat(page.getByRole(AriaRole.REGION, new Page.GetByRoleOptions().setName(table + " configuration changes"))).isFocused();

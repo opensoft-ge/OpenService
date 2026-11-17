@@ -1,3 +1,11 @@
+# Automatic development batch — latest verification
+
+Round 1 of the [20-round report](auto20-2026-11-17.md) passes **843 tests**, zero failures/errors/skips, after the final paging repair. Whole Java: **7405/7405 lines, 4283/4283 branches, 452/452 methods**; all 48 Java files changed against the accumulated QA base pass the exact gate. Both browser-script gates pass. This is local functional evidence; prior deployment/image qualifications retain their own scope.
+
+# QA/QC follow-up — 17 November 2026
+
+The [three-round accumulated-change review](qa-qc-2026-11-17.md) resolved configuration-order comparison and documentation-link findings. Clean `sh scripts/verify.sh`: **837 tests**, zero failures/errors/skips; whole-project Java **7372/7372 lines, 4259/4259 branches, 448/448 methods**. Exact gates passed for all 47 changed Java files and both browser scripts. These measurements supersede test/coverage totals below; earlier release-artifact and deployment evidence retains its original scope.
+
 # Twenty paired rounds — 17 November 2026
 
 Final clean `sh scripts/verify.sh`: **775 tests**, zero failures/errors/skips; whole-project Java **7078/7078 lines, 3843/3843 branches, 414/414 methods**. Exact touched-file gates passed for each round; browser migration/theme scripts also retain exact full line/branch/function coverage. The [complete feature and QA report](paired-cycles-2026-11-17.md) records 20 bounded features across 13 workstreams, repairs, discovery, current package/drill/scan evidence and remaining adoption limits. No push or deployment. Earlier counts below are historical.

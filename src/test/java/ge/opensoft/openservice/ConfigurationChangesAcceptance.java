@@ -7,6 +7,30 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 
 final class ConfigurationChangesAcceptance {
+    static void initialStateOrder(WorkflowSupport h) throws Exception {
+        var fixture = new ConfigurationAcceptance(h);
+        try {
+            var definition = ConfigurationAcceptance.definition();
+            object(definition.get("fields")).put("state", "State");
+            definition.put("states", map("new", "New", "closed", "Closed"));
+            definition.put("flow", map("new", List.of("closed"), "closed", List.of("new")));
+            fixture.result(fixture.install(ConfigurationAcceptance.bundle(fixture.table, definition), false), 200);
+            assertEquals("new", fixture.create(fixture.table, map("short_description", "Before promotion"), "admin").get("state"));
+            var next = current(h, fixture.table);
+            next.put("states", map("closed", "Closed", "new", "New"));
+            var update = ConfigurationAcceptance.bundle(fixture.table, next);
+            var preview = first(fixture.result(fixture.install(update, true), 200));
+            assertEquals("updated", preview.get("kind"), "Changing the initial state must be visible");
+            assertEquals("{\"new\":\"New\",\"closed\":\"Closed\"}", difference(preview, "/states").get("before_text"));
+            assertEquals("{\"closed\":\"Closed\",\"new\":\"New\"}", difference(preview, "/states").get("after_text"));
+            assertEquals("new", fixture.create(fixture.table, map("short_description", "After preview"), "admin").get("state"));
+            assertEquals(preview, first(fixture.result(fixture.install(update, false), 200)));
+            assertEquals("closed", fixture.create(fixture.table, map("short_description", "After promotion"), "admin").get("state"));
+        } finally {
+            fixture.cleanup();
+        }
+    }
+
     static void run(WorkflowSupport h) throws Exception {
         var fixture = new ConfigurationAcceptance(h);
         try {
@@ -41,7 +65,8 @@ final class ConfigurationChangesAcceptance {
             assertEquals("changed", difference(changed, "/label").get("kind"));
             assertEquals("Reusable service cases", difference(changed, "/label").get("before"));
             assertEquals("Reviewed <script> & service", difference(changed, "/label").get("after"));
-            assertEquals("added", difference(changed, "/fields/notes").get("kind"));
+            assertEquals("changed", difference(changed, "/fields").get("kind"));
+            assertEquals("Review notes", object(difference(changed, "/fields").get("after")).get("notes"));
             assertEquals(List.of("admin"), difference(changed, "/field_rules/quantity/read_roles").get("after"));
             var removed = difference(changed, "/field_rules/short_description/max_length");
             assertEquals("removed", removed.get("kind"));

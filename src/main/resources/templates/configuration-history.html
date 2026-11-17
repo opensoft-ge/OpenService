@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main>
+<section class="page-heading"><div><span class="eyebrow">CONFIGURATION</span><h1>Installation history</h1><p>Review retained native promotions. Previews and failed installations are not recorded here.</p></div><a class="button" href="/admin/configuration">Configuration packages</a></section>
+<section class="panel report"><div class="panel-heading"><h2>Retained installations</h2><span th:text="${history.total+' installations'}"></span></div>
+<p>History starts when this capability is installed. Pages reflect current retained history; no earlier installation is reconstructed.</p>
+<p class="notice" th:if="${history.result.isEmpty()}">No installations on this page.</p>
+<div th:unless="${history.result.isEmpty()}" class="table-scroll" role="region" aria-label="Configuration installation history" tabindex="0"><table><thead><tr><th scope="col">Installed (UTC)</th><th scope="col">Administrator</th><th scope="col">Tables</th><th scope="col">Receipt</th></tr></thead><tbody><tr th:each="installation:${history.result}"><td th:text="${installation.installed_at}"></td><td th:text="${installation.actor_name}"></td><td th:text="${installation.table_count}"></td><td><a th:href="@{/admin/configuration/history/{id}(id=${installation.install_id})}" th:text="${installation.install_id}"></a></td></tr></tbody></table></div>
+<nav class="form-footer" aria-label="Installation history pages"><a class="button" th:if="${history.offset>0}" th:href="@{/admin/configuration/history(offset=${history.previous_offset},limit=${history.limit})}">Previous installations</a><a class="button" th:if="${history.next_offset>=0}" th:href="@{/admin/configuration/history(offset=${history.next_offset},limit=${history.limit})}">More installations</a></nav></section>
+</main></html>

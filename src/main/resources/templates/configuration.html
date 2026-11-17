@@ -3,6 +3,7 @@
 <main>
   <section class="page-heading"><div><span class="eyebrow">REUSABLE APPLICATIONS</span><h1>Configuration packages</h1><p>Define record types, validation and workflows once, then move them between environments.</p></div><a class="button" href="/api/openservice/configuration">Download current configuration</a></section>
   <section class="panel"><div class="panel-heading"><h2>Preview and install</h2></div>
+    <p><a href="/admin/configuration/history">Review installation history</a></p>
     <p>Preview checks table dependencies and existing records without saving changes. Installation is atomic and requires matching destination versions. New tables start at version 0.</p>
     <div class="notice success" th:if="${report!=null}"><strong th:text="${report.dry_run ? 'Preview passed. No changes saved.' : 'Configuration installed.'}"></strong><p th:text="${'Resulting table versions: '+report.versions}"></p></div>
     <form method="post" class="record-form"><input type="hidden" name="csrf" th:value="${csrf}">

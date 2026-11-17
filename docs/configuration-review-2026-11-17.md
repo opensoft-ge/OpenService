@@ -21,13 +21,13 @@ Configuration differences merge into the existing OS-PARITY-09 comparison gap. P
 
 ## Acceptance contract
 
-The administrator uses the existing Configuration page or `POST /api/openservice/configuration?dry_run=true`. A valid package returns the existing versions and an additive `changes` list explaining each table as created, updated or unchanged. Comparison excludes the automatic root version increment; nested configuration changes remain visible. Map keys are compared recursively in sorted order; arrays are compared as complete ordered values. Missing properties are distinguishable from explicit JSON null. Paths use JSON Pointer escaping.
+The administrator uses the existing Configuration page or `POST /api/openservice/configuration?dry_run=true`. A valid package returns the existing versions and an additive `changes` list explaining each table as created, updated or unchanged. Comparison excludes the automatic root version increment; nested configuration changes remain visible. Map keys are compared recursively in sorted order; arrays are compared as complete ordered values. Changes to the key sequence of native `states` and `fields` are shown as whole ordered objects because they control the initial workflow state and form layout. Missing properties are distinguishable from explicit JSON null. Paths use JSON Pointer escaping.
 
 The browser presents paths, change types and previous/proposed values, including permission changes. All submitted content is escaped. Previews persist neither definitions, versions nor installation audit events. Installation retains existing version conflict checks and atomic validation, and returns the changes actually installed against the current destination. A preview is advisory: it is not a stored authorization token, mandatory approval or reservation of a destination version. A later install reruns all checks.
 
 Verified acceptance: new/changed/unchanged definitions; nested addition/removal and array changes; safe browser rendering; no preview writes; exact installation receipt; stale preview/install rejection; invalid multi-table rollback; denied anonymous/nonadministrator/CSRF attempts; desktop/mobile keyboard journeys and accessibility in light/dark themes.
 
-## Validation
+## Original implementation validation
 
 Implemented; final whole-project gates passed on 2026-11-17. Frozen production scope: `Configuration.java`, `ConfigurationChanges.java` and `templates/configuration.html`. SHA-256 checks confirmed these files were unchanged throughout the final run. Templates are non-executable markup validated by rendered and browser journeys; no client script or CSS changed. No production readiness or complete ServiceNow parity is claimed.
 
@@ -57,3 +57,7 @@ python3 /Users/david/IdeaProjects/opensoft-ge/skills/open-service/scripts/check_
   --file src/main/java/ge/opensoft/openservice/Configuration.java \
   --file src/main/java/ge/opensoft/openservice/ConfigurationChanges.java
 ```
+
+## QA/QC follow-up
+
+The subsequent [three-round QA/QC review](qa-qc-2026-11-17.md) fixed an order-sensitive comparison defect: reordered state keys can change the initial state and reordered field keys change form layout. These differences now show the complete ordered before/after objects. Unit and SQLite HTTP regressions failed before the repair; PostgreSQL and browser acceptance verify the final behavior. The clean final gate passed 837 tests, with ConfigurationChanges at 26/26 lines, 36/36 branches and 2/2 methods, and whole-project Java at 7372/7372 lines, 4259/4259 branches and 448/448 methods. The original implementation counts above are historical.

@@ -306,6 +306,14 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher configurationHistory=Pattern.compile("/(admin|api/openservice)/configuration/history(?:/([0-9a-f]{32})(/download)?)?").matcher(path);
+        if(configurationHistory.matches()){
+            method(method,"GET");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=configurationHistory.group(2);
+            if(id==null){var result=ConfigurationHistory.page(c.db,c.arguments());return api?json(result,200):view(c,"configuration-history",map("table","configuration","history",result));}
+            c.noQuery();var result=ConfigurationHistory.detail(c.db,id);boolean download=configurationHistory.group(3)!=null;
+            if(download)disposition(c,"configuration-installation-"+id+".json");
+            return api || download?json(map("result",result),200):view(c,"configuration-installation",map("table","configuration","installation",result,"receipt",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(result.get("detail"))));
+        }
         Matcher knowledgeAssistant=Pattern.compile("/(?:knowledge|api/openservice/knowledge)/([0-9a-f]{32})/assistant").matcher(path);
         if(knowledgeAssistant.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=knowledgeAssistant.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;

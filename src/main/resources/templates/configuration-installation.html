@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main>
+<section class="page-heading"><div><span class="eyebrow">CONFIGURATION</span><h1>Installation receipt</h1><p class="knowledge-content" th:text="${installation.install_id}"></p></div><a class="button" href="/admin/configuration/history">Installation history</a></section>
+<section class="panel report"><div class="panel-heading"><h2>Promoted configuration</h2></div><p th:text="${'Installed '+installation.installed_at+' UTC by '+installation.actor_name}"></p><p>This historical receipt includes the previous and promoted definitions, versions and changes. It does not describe the current configuration or authorize rollback.</p><a class="button" th:href="@{/admin/configuration/history/{id}/download(id=${installation.install_id})}">Download installation receipt</a><pre class="knowledge-content" th:text="${receipt}"></pre></section>
+</main></html>

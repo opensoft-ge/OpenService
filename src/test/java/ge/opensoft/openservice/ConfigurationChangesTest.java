@@ -8,6 +8,22 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 
 class ConfigurationChangesTest {
+    @Test void reportsFieldAndStateOrderChangesEvenWhenValuesMatch() {
+        var before = map("fields", map("short_description", "Summary", "state", "State"),
+                "states", map("new", "New", "closed", "Closed"));
+        var after = map("fields", map("state", "State", "short_description", "Summary"),
+                "states", map("closed", "Closed", "new", "New"));
+        var change = ConfigurationChanges.describe("u_ordered", before, after);
+        assertEquals("updated", change.get("kind"), "Changing the initial state must be visible");
+        assertEquals("{\"new\":\"New\",\"closed\":\"Closed\"}", difference(change, "/states").get("before_text"));
+        assertEquals("{\"closed\":\"Closed\",\"new\":\"New\"}", difference(change, "/states").get("after_text"));
+        assertEquals("changed", difference(change, "/fields").get("kind"));
+        var removed = ConfigurationChanges.describe("u_ordered", before, map());
+        assertEquals("removed", difference(removed, "/fields").get("kind"));
+        var added = ConfigurationChanges.describe("u_ordered", null, after);
+        assertEquals("added", difference(added, "/states").get("kind"));
+    }
+
     @Test void comparesNestedValuesMissingNullsAndOrderedArraysWithoutMutatingInputs() {
         var before = map("version", 7, "unchanged", "same", "null", null,
                 "rules", map("roles", List.of("admin", "agent"), "remove", true, "version", 1),

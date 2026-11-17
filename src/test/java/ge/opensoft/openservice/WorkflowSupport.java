@@ -16,6 +16,12 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void installedConfigurationHistoryIsAtomicAndRestricted() throws Exception {
+        ConfigurationHistoryAcceptance.run(this);
+    }
+    @Test void configurationPreviewExplainsInitialStateChanges() throws Exception {
+        ConfigurationChangesAcceptance.initialStateOrder(this);
+    }
     @Test void configurationPreviewExplainsExactChangesWithoutWriting() throws Exception {
         ConfigurationChangesAcceptance.run(this);
     }
@@ -109,7 +115,7 @@ abstract class WorkflowSupport {
                             "os_transfer_link")) db.update("DELETE FROM " + table);
             for (String table :
                     List.of(
-                            "os_event_case", "os_offering", "os_catalog_order", "os_outbox",
+                            "os_configuration_install", "os_event_case", "os_offering", "os_catalog_order", "os_outbox",
                             "os_report_run",
                             "os_recovery_budget",
                             "os_requester_record",

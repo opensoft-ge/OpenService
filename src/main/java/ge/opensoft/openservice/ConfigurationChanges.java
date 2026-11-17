@@ -30,9 +30,12 @@ final class ConfigurationChanges {
         for (String key : keys) {
             boolean had = before.containsKey(key), has = after.containsKey(key);
             Object oldValue = before.get(key), newValue = after.get(key);
-            if (had == has && Objects.equals(oldValue, newValue)) continue;
             String path = parent + "/" + key.replace("~", "~0").replace("/", "~1");
-            if (oldValue instanceof Map<?, ?> && newValue instanceof Map<?, ?>) {
+            // State order selects the initial state; field order controls the rendered form.
+            boolean reordered = Set.of("/fields", "/states").contains(path) && had && has
+                    && !new ArrayList<>(object(oldValue).keySet()).equals(new ArrayList<>(object(newValue).keySet()));
+            if (!reordered && had == has && Objects.equals(oldValue, newValue)) continue;
+            if (!reordered && oldValue instanceof Map<?, ?> && newValue instanceof Map<?, ?>) {
                 compare(path, object(oldValue), object(newValue), entries);
             } else {
                 entries.add(map(

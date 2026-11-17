@@ -33,6 +33,8 @@ final class Configuration {
         var checkpoint = db.connection.setSavepoint();
         var versions = new LinkedHashMap<String, Object>();
         var changes = new ArrayList<Map<String, Object>>();
+        var before = new LinkedHashMap<String,Object>();
+        var after = new LinkedHashMap<String,Object>();
         for (var table : tables.entrySet()) {
             var definition = new LinkedHashMap<>(object(table.getValue()));
             validate(definition);
@@ -58,7 +60,9 @@ final class Configuration {
             }
             changes.add(ConfigurationChanges.describe(
                     table.getKey(), previous == null ? null : object(previous.get("definition")), definition));
+            before.put(table.getKey(),previous == null ? null : previous.get("definition"));
             definition.put("version", version + 1);
+            after.put(table.getKey(),definition);
             db.update(
                     "INSERT INTO os_schema(name,definition) VALUES(?,"
                             + db.jsonParameter()
@@ -85,12 +89,15 @@ final class Configuration {
                 TypedFields.check(db, definition, data);
             }
         }
+        String installation = null;
         if (dryRun) db.connection.rollback(checkpoint);
-        else
+        else {
+            installation = ConfigurationHistory.record(db,actor,before,after,versions,changes);
             SecurityEvents.record(
                     db, actor, actor, "configuration.installed", map("versions", versions));
+        }
         db.connection.releaseSavepoint(checkpoint);
-        return map("dry_run", dryRun, "versions", versions, "changes", changes);
+        return map("dry_run", dryRun, "versions", versions, "changes", changes,"installation_id",installation);
     }
 
     static void validate(Map<String, Object> definition) {
