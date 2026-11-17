@@ -376,6 +376,15 @@ public class WebController {
             return view(c,"record-clocks",map("table",table,"clockView",RecordClocks.page(c.db,table,id),"recordId",id,"clockWorker",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
         }
 
+        Matcher catalogueEligibility=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/eligibility").matcher(path);
+        if(catalogueEligibility.matches()){
+            boolean api=path.startsWith("/api/");c.admin();method(method,api?"PUT":"POST");c.noQuery();c.uniqueQuery();String id=catalogueEligibility.group(2);
+            Object input;
+            if(api)input=body(c);
+            else {var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=form;}
+            var result=CatalogueEligibility.save(c.db,c.db.viewerId,id,input);
+            return api?json(map("result",result),200):redirect("/admin/catalogue/"+id);
+        }
         Matcher catalogueAdmin=Pattern.compile("/admin/catalogue(?:/([0-9a-f]{32}))?").matcher(path);
         if(catalogueAdmin.matches()) {
             c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=Objects.toString(catalogueAdmin.group(1),"");
@@ -383,7 +392,8 @@ public class WebController {
                 var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");String active=Objects.toString(form.get("active"),"");TypedFields.require(Set.of("true","false").contains(active),"Choose active or inactive");form.put("active",Boolean.parseBoolean(active));form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));
                 var saved=Catalogue.save(c.db,c.db.viewerId,id,form);return redirect("/admin/catalogue/"+saved.get("offering_id"));
             }
-            return view(c,"catalogue-admin",map("table","catalogue","offerings",Catalogue.list(c.db,true),"offering",id.isEmpty()?map("offering_id","","name","","description","","active",0,"revision",0):Catalogue.find(c.db,id,true)));
+            var offering=id.isEmpty()?map("offering_id","","name","","description","","active",0,"revision",0,"group_id",""):Catalogue.find(c.db,id,true);
+            return view(c,"catalogue-admin",map("table","catalogue","offerings",Catalogue.list(c.db,true),"offering",offering,"groups",RecordAccess.groups(c.db),"eligibleGroupName",CatalogueEligibility.groupName(c.db,offering.get("group_id").toString())));
         }
         if(path.equals("/catalogue") || path.equals("/api/openservice/catalogue")) {
             boolean api=path.startsWith("/api/");method(method,api?new String[]{"GET","POST"}:new String[]{"GET"});c.noQuery();c.uniqueQuery();
@@ -400,7 +410,7 @@ public class WebController {
                 Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=form;}
                 var item=Catalogue.order(c.db,id,input);return api?json(map("result",FieldAccess.serialize(c.db,item)),201):redirect("/record/sc_request/"+item.get("sys_id"));
             }
-            var offering=Catalogue.find(c.db,id,c.role().equals("admin"));return api?json(map("result",offering),200):view(c,"catalogue-item",map("table","catalogue","offering",offering,"orderKey",id()));
+            var offering=Catalogue.find(c.db,id,c.role().equals("admin"));return api?json(map("result",offering),200):view(c,"catalogue-item",map("table","catalogue","offering",offering,"orderKey",id(),"eligible",CatalogueEligibility.eligible(c.db,id)));
         }
 
         Matcher jobReceipt=Pattern.compile("/admin/jobs/([0-9a-f]{32})").matcher(path);

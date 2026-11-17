@@ -11,11 +11,12 @@ final class Catalogue {
     private Catalogue() {}
 
     static List<Map<String,Object>> list(Store.Db db,boolean administration) throws SQLException {
-        return db.all("SELECT * FROM os_offering"+(administration?"":" WHERE active=1")+" ORDER BY name,offering_id LIMIT 200");
+        if(administration)return db.all("SELECT * FROM os_offering ORDER BY name,offering_id LIMIT 200");
+        return db.all("SELECT * FROM os_offering WHERE active=1 AND "+CatalogueEligibility.filter()+" ORDER BY name,offering_id LIMIT 200",db.viewerId);
     }
 
     static Map<String,Object> find(Store.Db db,String id,boolean administration) throws SQLException {
-        var row=db.one("SELECT * FROM os_offering WHERE offering_id=?"+(administration?"":" AND active=1"),id);
+        var row=administration?db.one("SELECT * FROM os_offering WHERE offering_id=?",id):db.one("SELECT * FROM os_offering WHERE offering_id=? AND active=1 AND "+CatalogueEligibility.filter(),id,db.viewerId);
         if(row==null)throw new Failure(404,"Offering not found");
         return row;
     }

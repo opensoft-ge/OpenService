@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 42;
+    static final int VERSION = 43;
 
     private Migrations() {}
 
@@ -495,6 +495,10 @@ final class Migrations {
         if(version<42){
             db.update("CREATE TABLE IF NOT EXISTS os_configuration_install(install_id VARCHAR(32) PRIMARY KEY,actor_id VARCHAR(32) NOT NULL,actor_name VARCHAR(80) NOT NULL,installed_at VARCHAR(26) NOT NULL,table_count INTEGER NOT NULL,detail TEXT NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(42,?)","retained configuration promotion receipts");
+        }
+        if(version<43){
+            addColumn(db,"os_offering","group_id","VARCHAR(32) NOT NULL DEFAULT ''");
+            db.update("INSERT INTO os_migration(version,name) VALUES(43,?)","live group eligibility for catalogue offerings");
         }
     }
 

@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void catalogueEligibilityUsesCurrentMembershipInBothThemes() throws Exception { CatalogueEligibilityBrowserAcceptance.run(this); }
     @Test void configurationHistoryCanBeReviewedAndDownloadedInBothThemes() throws Exception {
         ConfigurationHistoryBrowserAcceptance.run(this);
     }

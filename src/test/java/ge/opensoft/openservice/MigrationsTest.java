@@ -15,6 +15,29 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void catalogueEligibilityUpgradePreservesExistingOfferings(boolean postgres) throws Exception {
+        var environment=configuration(postgres);var store=new Store(environment);String offering,group;
+        try(var db=store.open()) {
+            String actor=PlatformFoundationTest.bind(db);
+            offering=Catalogue.save(db,actor,"",CatalogueAcceptance.offering("Retained offering",0,true)).get("offering_id").toString();
+            group=Service.create(db,"sys_user_group",Values.map("short_description","Required group"),"admin").get("sys_id").toString();
+            db.update("ALTER TABLE os_offering DROP COLUMN group_id");db.update("DELETE FROM os_migration WHERE version>=43");db.connection.commit();
+            Migrations.apply(db);assertEquals("",db.one("SELECT group_id FROM os_offering WHERE offering_id=?",offering).get("group_id"));
+            db.connection.rollback();assertEquals(42,db.count("SELECT MAX(version) FROM os_migration"));
+        }
+        try(var db=new Store(environment).open()) {
+            String actor=PlatformFoundationTest.bind(db);
+            assertEquals("Retained offering",Catalogue.find(db,offering,true).get("name"));
+            CatalogueEligibility.save(db,actor,offering,Values.map("group_id",group,"revision",1));db.connection.commit();
+        }
+        try(var db=new Store(environment).open()) {
+            PlatformFoundationTest.bind(db);assertEquals(group,Catalogue.find(db,offering,true).get("group_id"));
+            assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));
+            assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));
+        }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void configurationHistoryUpgradeIsAtomicAndPreservesReceipts(boolean postgres) throws Exception {
         var environment=configuration(postgres);var store=new Store(environment);
         try(var db=store.open()) {
