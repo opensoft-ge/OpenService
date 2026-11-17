@@ -137,3 +137,7 @@ In Operations, choose **Preview a service deadline**, select a saved calendar, e
 ### Review dependency impact
 
 Open a configuration item and select **Inspect dependent configuration items**. The list traverses currently visible dependents, avoids cycles and excludes paths through hidden records. Table read permissions and field visibility are checked on every request; a hidden summary becomes an ID label. More than 100 visible dependents produces an explicit incomplete-list warning. An empty list means no visible dependents were found, not proof of no real-world impact. Dependency ingestion/discovery and a complete service topology remain separate work.
+
+### Copy a report privately
+
+Open an accessible saved report, enter **New report name**, then choose **Create private copy**. The new definition belongs to you and starts private. The source keeps its original ownership and sharing, and neither cached results nor execution history is copied. Each execution of either report still applies its current viewer's record/field permissions. A source that is no longer shared or whose query is no longer permitted cannot be copied. The staff-only API is `POST /api/openservice/reports/{id}/copy` with `{"name":"My analysis"}`; a successful creation returns 201 and the new report ID.

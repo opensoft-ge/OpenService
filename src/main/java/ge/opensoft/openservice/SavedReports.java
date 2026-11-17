@@ -82,6 +82,15 @@ final class SavedReports {
         return result;
     }
 
+    static Map<String,Object> copy(Store.Db db,String actor,String id,Object input) throws SQLException {
+        if(!Set.of("admin","agent").contains(db.viewerRole))throw new Failure(403,"Staff reporting permission required");
+        var body=object(input);require(body.keySet().equals(Set.of("name")),"Provide the new report name");
+        var source=find(db,actor,id);
+        var result=save(db,actor,map("name",body.get("name"),"table",source.get("table_name"),"query",source.get("definition"),"shared",false));
+        SecurityEvents.record(db,actor,actor,"report.copied",map("source_report_id",id,"report_id",result.get("report_id")));
+        return result;
+    }
+
     static void remove(Store.Db db, String actor, String id) throws SQLException {
         if (db.update("DELETE FROM os_saved_report WHERE report_id=? AND owner_id=?", id, actor)
                 != 1) throw new Failure(404, "Owned report not found");

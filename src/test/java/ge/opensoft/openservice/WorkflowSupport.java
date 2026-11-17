@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void reportCopiesHaveIndependentPrivateOwnership() throws Exception { ReportCopyAcceptance.run(this); }
+
  @Test void reminderRejectsReviewerWithRevokedTableRead() throws Exception { ApprovalDiagnosticBrowserAcceptance.revokedReviewer(this,false); }
  @Test void reminderRejectsReviewerNeedingPasswordReplacement() throws Exception { ApprovalDiagnosticBrowserAcceptance.revokedReviewer(this,true); }
 

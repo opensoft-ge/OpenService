@@ -389,3 +389,26 @@ Final gates: 764 tests, zero failures/errors/skips; whole-project Java 7037/7037
 | WebController.java | 2194/2194 | 1163/1163 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Explain approval readiness and enforce reminder authority`. No push.
+
+## Round 18 — make a private report copy
+
+Selected `OS-N17-18`, workstream 14 / OS-PARITY-07. Staff can edit their own reports or run shared definitions but cannot copy a shared definition into an independently owned private report. Add browser/API copy with an explicit name, live source and analytics permissions, a new owner/ID, private visibility and no copied execution history. Source edits/deletion after copying do not mutate the copy; current data permissions still govern every run. Existing 100-owned-report retention limit applies. Alternatives: searchable work queue and release diagnostics.
+
+Official evidence: [Brazil copy a Core UI report](https://www.servicenow.com/docs/r/now-intelligence/reporting/copy-report.html), updated 2026-09-10, retrieved 2026-11-17, describes duplication without carrying sharing settings. It distinguishes new Brazil Platform Analytics visualizations from legacy Core UI creation, which requires an enabling property. Merge reusable report sources and visualization duplication into the existing reporting backlog, missing P2, dependent on definition/owner boundaries; do not claim the native report format is vendor-compatible. Next: background-work execution history and diagnostics.
+
+Acceptance: shared/own report copies, independent private ownership, source and current field/table permission revocation, strict name/input and CSRF/role checks, retained-history isolation and capacity, copy navigation/editability in keyboard/light/dark/mobile. Results: all selected cases and the clean full gate passed.
+
+The new service boundary is also tested directly with a reader-bound database, because HTTP rejects that role before dispatch. The old HTTP route regression ran before production was added.
+
+Both old API routes returned 404; focused database/browser acceptance now passes. Review confirmed copies are stored independently as private current-owner definitions, source authorization and field/query validation are live, history is not inherited and audits retain IDs only. Existing shared report results remain viewer-specific; the copy survives loss/deletion of its source definition. Accumulated-change review, including previous repairs and their stored-schema qualification, found no new/reopened defect and made no repair. Both-theme desktop/mobile accessibility and screenshots passed. Final full verification passed after the distinct-label repair.
+
+Round-18 full regression finding: the copy label contained “Report name”, making an existing browser locator ambiguous. Renamed it to “Name for your copy” and retained both independent journeys; full gates rerun on the changed tree.
+
+Final gates: 767 tests, zero failures/errors/skips; whole-project Java 7049/7049 lines, 3813/3813 branches, 413/413 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| SavedReports.java | 49/49 | 20/20 | 8/8 |
+| WebController.java | 2200/2200 | 1171/1171 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Copy authorized report definitions into private ownership`. No push.

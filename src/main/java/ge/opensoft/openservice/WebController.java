@@ -290,6 +290,13 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher reportCopy=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/copy").matcher(path);
+        if(reportCopy.matches()) {
+            method(method,"POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");
+            var input=api?body(c):new LinkedHashMap<String,Object>(c.arguments());if(!api)object(input).remove("csrf");
+            var result=SavedReports.copy(c.db,c.db.viewerId,reportCopy.group(1),input);
+            return api?json(map("result",result),201):redirect("/reports/"+result.get("report_id"));
+        }
         Matcher reviewDiagnostic=Pattern.compile("/admin/approvals/([0-9a-f]{32})/diagnostics").matcher(path);
         if(reviewDiagnostic.matches()) {
             method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=reviewDiagnostic.group(1);
