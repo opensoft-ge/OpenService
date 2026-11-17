@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 36;
+    static final int VERSION = 37;
 
     private Migrations() {}
 
@@ -468,6 +468,11 @@ final class Migrations {
             addColumn(db,"os_user","display_name","VARCHAR(320) NOT NULL DEFAULT ''");
             addColumn(db,"os_user","job_title","VARCHAR(320) NOT NULL DEFAULT ''");
             db.update("INSERT INTO os_migration(version,name) VALUES(36,?)","owner-managed personal profile details");
+        }
+        if (version < 37) {
+            db.update("CREATE TABLE IF NOT EXISTS os_offering(offering_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,description TEXT NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_catalog_order(user_id VARCHAR(32) NOT NULL,order_key VARCHAR(32) NOT NULL,offering_id VARCHAR(32) NOT NULL,offering_revision INTEGER NOT NULL,request_id VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,PRIMARY KEY(user_id,order_key))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(37,?)","reusable catalogue offerings and idempotent owned requests");
         }
     }
 

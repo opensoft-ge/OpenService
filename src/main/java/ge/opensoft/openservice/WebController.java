@@ -210,7 +210,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && Set.of("/requests", "/api/openservice/requests").contains(path))
+                                && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:catalogue/[0-9a-f]{32}|api/openservice/catalogue/[0-9a-f]{32}/order)")))
                         && !path.matches(
                                 "/(?:api/openservice/comments/[^/]+/[0-9a-f]{32}|record/[^/]+/[0-9a-f]{32}/comment)"))
                     throw new Failure(403, "Read-only account");
@@ -305,6 +305,33 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher catalogueAdmin=Pattern.compile("/admin/catalogue(?:/([0-9a-f]{32}))?").matcher(path);
+        if(catalogueAdmin.matches()) {
+            c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=Objects.toString(catalogueAdmin.group(1),"");
+            if(method.equals("POST")) {
+                var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");String active=Objects.toString(form.get("active"),"");TypedFields.require(Set.of("true","false").contains(active),"Choose active or inactive");form.put("active",Boolean.parseBoolean(active));form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));
+                var saved=Catalogue.save(c.db,c.db.viewerId,id,form);return redirect("/admin/catalogue/"+saved.get("offering_id"));
+            }
+            return view(c,"catalogue-admin",map("table","catalogue","offerings",Catalogue.list(c.db,true),"offering",id.isEmpty()?map("offering_id","","name","","description","","active",0,"revision",0):Catalogue.find(c.db,id,true)));
+        }
+        if(path.equals("/catalogue") || path.equals("/api/openservice/catalogue")) {
+            boolean api=path.startsWith("/api/");method(method,api?new String[]{"GET","POST"}:new String[]{"GET"});c.noQuery();c.uniqueQuery();
+            if(method.equals("POST"))return json(map("result",Catalogue.save(c.db,c.db.viewerId,"",body(c))),201);
+            var rows=Catalogue.list(c.db,false);return api?json(map("result",rows),200):view(c,"catalogue",map("table","catalogue","offerings",rows));
+        }
+        Matcher catalogueItem=Pattern.compile("/(catalogue|api/openservice/catalogue)/([0-9a-f]{32})(/order)?").matcher(path);
+        if(catalogueItem.matches()) {
+            boolean api=path.startsWith("/api/"),order=catalogueItem.group(3)!=null;c.noQuery();c.uniqueQuery();String id=catalogueItem.group(2);
+            if(order){TypedFields.require(api,"Use the offering form");method(method,"POST");}
+            else method(method,api?new String[]{"GET","PUT"}:new String[]{"GET","POST"});
+            if(method.equals("PUT"))return json(map("result",Catalogue.save(c.db,c.db.viewerId,id,body(c))),200);
+            if(method.equals("POST")) {
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=form;}
+                var item=Catalogue.order(c.db,id,input);return api?json(map("result",FieldAccess.serialize(c.db,item)),201):redirect("/record/sc_request/"+item.get("sys_id"));
+            }
+            var offering=Catalogue.find(c.db,id,c.role().equals("admin"));return api?json(map("result",offering),200):view(c,"catalogue-item",map("table","catalogue","offering",offering,"orderKey",id()));
+        }
+
         Matcher jobReceipt=Pattern.compile("/admin/jobs/([0-9a-f]{32})").matcher(path);
         if(jobReceipt.matches()){method(method,"GET");c.noQuery();return view(c,"job-receipt",map("table","operations","job",WorkJobs.detail(store,c.db,c.db.viewerId,jobReceipt.group(1))));}
         if(path.equals("/admin/jobs") || path.equals("/api/openservice/job-search")) {

@@ -1,0 +1,5 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main class="platform-page">
+<section class="page-heading"><div><span class="eyebrow">REUSABLE SERVICES</span><h1>Service catalogue</h1><p>Choose a service, review its details and submit a request for yourself. Your service team manages fulfilment.</p></div></section>
+<p th:if="${user.role=='admin'}"><a class="button" href="/admin/catalogue">Manage offerings</a></p>
+<section class="panel retention-panel"><h2>Available services</h2><ul><li th:each="offering:${offerings}"><a th:href="@{/catalogue/{id}(id=${offering.offering_id})}" th:text="${offering.name}"></a></li></ul><p th:if="${offerings.isEmpty()}">No services are currently available. You can still <a href="/requests">submit a general request</a>.</p></section>
+</main></html>

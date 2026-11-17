@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void catalogueOrdersPreserveReviewedContentAndOwnership() throws Exception { CatalogueAcceptance.run(this); }
  @Test void retainedWorkSearchAndRecoveryPreserveBoundaries() throws Exception { WorkSearchAcceptance.run(this); }
 
  @Test void reportCopiesHaveIndependentPrivateOwnership() throws Exception { ReportCopyAcceptance.run(this); }
@@ -91,7 +92,7 @@ abstract class WorkflowSupport {
                             "os_transfer_link")) db.update("DELETE FROM " + table);
             for (String table :
                     List.of(
-                            "os_outbox",
+                            "os_offering", "os_catalog_order", "os_outbox",
                             "os_report_run",
                             "os_recovery_budget",
                             "os_requester_record",
