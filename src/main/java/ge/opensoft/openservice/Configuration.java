@@ -182,11 +182,12 @@ final class Configuration {
         for (var entry : transitions.entrySet()) {
             var rule = object(entry.getValue());
             require(
-                    Set.of("roles", "required_fields", "min_approvals").containsAll(rule.keySet()),
+                    Set.of("roles", "required_fields", "min_approvals", "reauthenticate").containsAll(rule.keySet()),
                     "Unsupported transition policy");
             require(
                     rule.getOrDefault("min_approvals", 0) instanceof Integer,
                     "min_approvals must be an integer");
+            require(rule.getOrDefault("reauthenticate",false) instanceof Boolean,"reauthenticate must be boolean");
             int minimum = (int) rule.getOrDefault("min_approvals", 0);
             require(minimum >= 0 && minimum <= 10, "min_approvals must be 0–10");
             require(

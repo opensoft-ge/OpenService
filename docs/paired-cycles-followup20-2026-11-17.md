@@ -305,3 +305,28 @@ Final gates: 819 tests, zero failures/errors/skips; whole-project Java 7322/7322
 | WebController.java | 2290/2290 | 1319/1319 | 42/42 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add consented questions about published knowledge`. No push.
+
+## Round 13 — password confirmation for configured decisions
+
+Selected `OS-N17B-13`, workstream 7 / OS-PARITY-02/08. Reviews bind current actor, record and policy but cannot demand fresh password confirmation. Add optional boolean `transition_rules.<target>.reauthenticate` (default false), enforced on approval/rejection and surfaced in the assigned review form/API. Reuse durable local authentication evidence/throttling, then reacquire the business lock and recheck current authority and proposal after authentication commits. A decision still never executes a transition; minimum approval counts remain a separate policy.
+
+Compared approval assurance (7), separate clock purposes (8) and notification subscriptions (6). Choose the decision boundary before expanding automation. Acceptance: supported policy install and invalid types, missing/wrong/oversized passwords, assigned-reviewer isolation, stale proposal/policy, success/rejection without state execution, durable failure/lockout evidence, unchanged legacy policy, and both-theme keyboard browser correction. No SSO/MFA step-up, legally qualified electronic signature, passwordless factor or proof of identity beyond the existing local password.
+
+Official evidence retrieved 2026-11-17: Brazil [Service Portal decision verification](https://www.servicenow.com/docs/r/platform-user-interface/service-portal/enable-esignature-sp.html), updated 2026-09-10. Its proprietary example code is not copied. Vendor SSO/other-factor and electronic-signature scope remain broader than this native local-password control. Merge federated step-up and recovery-factor governance into existing missing WS2/7 P1 work, dependent on qualified identity-provider integration and actor-bound decision evidence. Next research: distinct service-clock targets and lifecycle conditions.
+
+Both databases rejected the new policy before implementation. QA R13-1: the first focused run exposed PostgreSQL enforcing the authentication-mechanism column length, where SQLite accepted the longer new label. Use the bounded `approval-review` mechanism consistently; retain the real failed-password API path on both databases as the regression.
+
+QA R13-2: password verification commits its audit evidence, releasing the earlier business lock. An individually revoked browser session could therefore pass the original admission check and still commit a decision. A deterministic database-trigger regression revokes that session exactly at verification on both databases and reproduced an incorrect success. Recheck the browser session after decision authority has reacquired the lock and before commit, rolling back the decision/audit while retaining authentication evidence. Basic-auth policy changes already increment account authority revision, which the decision rechecks; API keys cannot access approval endpoints.
+
+Five focused database/browser cases now pass, including failed verification, durable throttling, approval/rejection, stale policy, unchanged ordinary decisions and session revocation at verification. Inspected both-theme screenshots. Final accumulated-change review rechecked the full permission/transition chain, authentication commit/lock ordering, session/account revocation, secret-free history, unchanged minimum-count and delegation behavior, plus earlier AI consent, publication, migration, catalogue and notification boundaries. R13-1/R13-2 remain resolved; no new/reopened finding or further repair was required.
+
+Final gates: 824 tests, zero failures/errors/skips; whole-project Java 7335/7335 lines, 4203/4203 branches, 446/446 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| Approvals.java | 228/228 | 124/124 | 14/14 |
+| AuthenticationEvents.java | 37/37 | 22/22 | 4/4 |
+| Configuration.java | 168/168 | 103/103 | 5/5 |
+| WebController.java | 2290/2290 | 1325/1325 | 42/42 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Require fresh password confirmation for configured approval decisions`. No push.

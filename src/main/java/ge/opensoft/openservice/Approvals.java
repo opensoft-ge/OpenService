@@ -35,6 +35,7 @@ final class Approvals {
         result.remove("sequence");
         result.remove("decision_revision");
         result.put("current", current(row, item, definition));
+        result.put("requires_reauthentication",requiresReauthentication(definition,row.get("target_state").toString()));
         return result;
     }
 
@@ -333,13 +334,32 @@ final class Approvals {
                 "A review was assigned to you. Open My approvals for your current reviews. Reference: "+approval),System.currentTimeMillis());
     }
 
-    static Map<String, Object> decide(
+    static boolean requiresReauthentication(Map<String,Object> definition,String target) {
+        return Boolean.TRUE.equals(object(object(definition.getOrDefault("transition_rules",map())).getOrDefault(target,map())).get("reauthenticate"));
+    }
+
+    static Map<String,Object> decide(Store.Db db,String table,String id,String approval,Map<String,Object> actor,Object input) throws Exception {
+        var value=new LinkedHashMap<String,Object>(object(input));boolean verified=false;
+        if(value.containsKey("current_password")){
+            Object candidate=value.remove("current_password");
+            TypedFields.require(candidate instanceof String && Passwords.withinLimit((String)candidate),"Provide your current password");
+            TypedFields.require(value.keySet().equals(Set.of("decision","comment")),"Provide decision, comment and current_password only");
+            Authentication.requireCurrent(db,actor);
+            if(Authentication.verify(db,actor.get("name").toString(),(String)candidate,"approval-review")==null)throw new Failure(400,"Current password is incorrect");
+            verified=true;
+        }
+        // Authentication commits its evidence. Reacquire the business lock and recheck every
+        // authority, proposal and policy in decideVerified before recording a decision.
+        return decideVerified(db,table,id,approval,actor,value,verified);
+    }
+
+    private static Map<String, Object> decideVerified(
             Store.Db db,
             String table,
             String id,
             String approval,
             Map<String, Object> actor,
-            Object body)
+            Object body, boolean verified)
             throws SQLException {
         if (db.postgres) db.all("SELECT pg_advisory_xact_lock(18439,4)");
         Authentication.requireCurrent(db, actor);
@@ -364,6 +384,7 @@ final class Approvals {
         if (!current(row, item, definition))
             throw new Failure(409, "Proposal changed; request a new review");
         eligible(db, table, item, definition, row.get("target_state").toString());
+        if(requiresReauthentication(definition,row.get("target_state").toString()) && !verified)throw new Failure(400,"Confirm your current password for this decision");
         db.update(
                 "UPDATE os_approval SET status=?,comment=?,decided_at=?,decision_revision=? WHERE"
                         + " approval_id=?",
@@ -377,7 +398,7 @@ final class Approvals {
                 item,
                 actor.get("name").toString(),
                 "approval.decided",
-                map("approval_id", approval, "decision", value.get("decision")));
+                map("approval_id", approval, "decision", value.get("decision"),"reauthenticated",verified));
         return publicRow(
                 db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
                 item,

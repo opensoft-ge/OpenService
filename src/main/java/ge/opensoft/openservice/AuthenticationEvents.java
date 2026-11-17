@@ -42,7 +42,7 @@ final class AuthenticationEvents {
                     "password-change",
                     "Password change",
                     "recovery-issue",
-                    "Administrator recovery verification");
+                    "Administrator recovery verification", "approval-review", "Approval decision verification");
 
     /** Own-account projection: caller identity comes only from the authenticated request. */
     static Map<String, Object> mine(Store.Db db, String userId, Map<String, String> args)

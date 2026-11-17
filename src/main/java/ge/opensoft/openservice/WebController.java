@@ -2535,14 +2535,10 @@ public class WebController {
                 if (!Set.of("csrf", "withdrawal_reason").containsAll(c.arguments().keySet()))
                     throw new Failure(400, "Provide only a withdrawal reason");
                 payload = map("comment", c.parameter("withdrawal_reason", ""));
-            } else if (decision != null)
-                payload =
-                        map(
-                                "decision",
-                                c.parameter("decision", ""),
-                                "comment",
-                                c.parameter("comment", ""));
-            else {
+            } else if (decision != null) {
+                payload=map("decision",c.parameter("decision",""),"comment",c.parameter("comment",""));
+                if(c.arguments().containsKey("current_password"))object(payload).put("current_password",c.parameter("current_password",""));
+            } else {
                 String revision = c.parameter("expected_revision", "");
                 if (!revision.matches("0|[1-9][0-9]{0,9}")
                         || Long.parseLong(revision) > Integer.MAX_VALUE)
@@ -2565,6 +2561,11 @@ public class WebController {
                             : withdraw
                                     ? Approvals.withdraw(c.db, table, id, decision, c.user, payload)
                                     : Approvals.decide(c.db, table, id, decision, c.user, payload);
+            // Password verification committed its audit evidence and released the write lock.
+            // The decision reacquired it; a browser session revoked in that interval must
+            // still prevent this transaction from committing the decision.
+            if(object(payload).containsKey("current_password") && Objects.toString(c.http.getHeader("Authorization"),"").isEmpty())
+                BrowserSessions.requireCurrent(c.db,c.user,c.session.getId(),System.currentTimeMillis());
             return api
                     ? json(map("result", result), decision == null ? 201 : 200)
                     : redirect(location);
