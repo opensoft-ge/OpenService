@@ -210,7 +210,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:catalogue/[0-9a-f]{32}|api/openservice/catalogue/[0-9a-f]{32}/order)")))
+                                && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
                         && !path.matches(
                                 "/(?:api/openservice/comments/[^/]+/[0-9a-f]{32}|record/[^/]+/[0-9a-f]{32}/comment)"))
@@ -443,6 +443,23 @@ public class WebController {
             boolean api=path.startsWith("/api/");method(method,api?new String[]{"GET","POST"}:new String[]{"GET"});c.noQuery();c.uniqueQuery();
             if(method.equals("POST"))return json(map("result",Catalogue.save(c.db,c.db.viewerId,"",body(c))),201);
             var rows=Catalogue.list(c.db,false);return api?json(map("result",rows),200):view(c,"catalogue",map("table","catalogue","offerings",rows));
+        }
+        Matcher catalogueAssist=Pattern.compile("/(?:catalogue|api/openservice/catalogue)/([0-9a-f]{32})/assistant").matcher(path);
+        if(catalogueAssist.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=catalogueAssist.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){
+                Object input;if(api)input=body(c);else{
+                    var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");String operation=Objects.toString(form.get("operation"),"");
+                    for(String flag:List.of("allow_external","confirm"))if(form.containsKey(flag)){TypedFields.require(form.get(flag).equals("true"),"Confirm the reviewed action");form.put(flag,true);}
+                    if(Set.of("review","edit","submit").contains(operation)){
+                        var envelope=map("operation",form.remove("operation"));for(String key:List.of("action_token","confirm"))if(form.containsKey(key))envelope.put(key,form.remove(key));
+                        form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));CatalogueQuestions.form(form);form.putIfAbsent("answers",map());envelope.put("order",form);input=envelope;
+                    }else input=form;
+                }
+                result=CatalogueAssist.submit(store,c.db,id,input);
+            }else result=CatalogueAssist.context(store,c.db,id);
+            if(result.get("request")!=null)return api?json(map("result",result.get("request")),201):redirect("/record/sc_request/"+object(result.get("request")).get("sys_id"));
+            return api?json(map("result",result),200):view(c,"catalogue-assist",map("table","catalogue","assistance",result,"orderKey",result.get("order_key")));
         }
         Matcher catalogueItem=Pattern.compile("/(catalogue|api/openservice/catalogue)/([0-9a-f]{32})(/order)?").matcher(path);
         if(catalogueItem.matches()) {

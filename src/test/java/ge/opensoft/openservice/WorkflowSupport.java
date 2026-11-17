@@ -18,6 +18,8 @@ import java.util.regex.*;
 abstract class WorkflowSupport {
     @Test void migrationFetchContinuesThroughReviewAcrossRestarts() throws Exception { MigrationFetchAcceptance.run(this); }
     @Test void migrationFetchHonorsCancellationLeasesAndRetryLimits() throws Exception { MigrationFetchAcceptance.boundaries(this); }
+    @Test void catalogueAssistanceRequiresReviewedDataAndExplicitCreation() throws Exception { CatalogueAssistAcceptance.run(this); }
+    @Test void catalogueAssistanceRechecksCurrentPolicyAndExactOrder() throws Exception { CatalogueAssistAcceptance.policies(this); }
     @Test void proposedCreationChecksMatchNativeJourneysWithoutWrites() throws Exception { CreationPreviewAcceptance.run(this); }
     @Test void proposedCreationChecksReevaluateConfiguredPoliciesAndReferences() throws Exception { CreationPreviewAcceptance.policies(this); }
     @Test void jobAttemptHistoryRetainsOutcomesWithoutPayloads() throws Exception { WorkAttemptsAcceptance.run(this); }

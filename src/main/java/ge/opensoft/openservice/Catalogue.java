@@ -42,6 +42,10 @@ final class Catalogue {
         return find(db,id,true);
     }
 
+    static Map<String,Object> requestData(Map<String,Object> offering,List<Map<String,Object>> submitted,String details) {
+        return map("short_description",offering.get("name"),"description",offering.get("description")+"\n\nRequest details:\n"+details+CatalogueQuestions.description(submitted));
+    }
+
     static Map<String,Object> order(Store.Db db,String id,Object input) throws SQLException {
         if(!Set.of("admin","agent","requester").contains(db.viewerRole))throw new Failure(403,"Request creation permission required");
         if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");
@@ -58,7 +62,7 @@ final class Catalogue {
         var offering=find(db,id,false);
         if(!offering.get("revision").equals(body.get("revision")))throw new Failure(409,"Offering changed; review it again");
         var submitted=CatalogueQuestions.snapshot(db,offering,answers);
-        var item=Requests.create(db,Service.account(db,db.viewerId).get("name").toString(),map("short_description",offering.get("name"),"description",offering.get("description")+"\n\nRequest details:\n"+details+CatalogueQuestions.description(submitted)));
+        var item=Requests.create(db,Service.account(db,db.viewerId).get("name").toString(),requestData(offering,submitted,details));
         CatalogueRouting.create(db,offering,item);
         db.update("INSERT INTO os_catalog_order(user_id,order_key,offering_id,offering_revision,request_id,fingerprint,answers) VALUES(?,?,?,?,?,?,?)",db.viewerId,key,id,body.get("revision"),item.get("sys_id"),fingerprint,JSON.writeValueAsString(submitted));
         SecurityEvents.record(db,db.viewerId,db.viewerId,"catalogue.ordered",map("offering_id",id,"request_id",item.get("sys_id"),"revision",body.get("revision")));
