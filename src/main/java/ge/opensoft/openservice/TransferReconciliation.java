@@ -22,7 +22,7 @@ final class TransferReconciliation {
             }
         }
         String state=object(job.get("detail")).get("status").toString();
-        return map("job_id",id,"state",state,"compared_links",links.size(),
+        return map("job_id",id,"state",state,"can_resolve_records",state.equals("review") && object(job.get("detail")).containsKey("previous_job"),"compared_links",links.size(),
                 "missing_source_items",missing.size(),"missing",missing.stream().limit(100).toList(),
                 "changed_destinations",changed,"conflicts",conflicts,
                 "truncated",missing.size()>100 || changed>100,

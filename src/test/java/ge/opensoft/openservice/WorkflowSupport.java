@@ -16,6 +16,10 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void conflictResolutionRejectsUnsupportedRowsAndChangedReviewers() throws Exception { MigrationConflictsAcceptance.boundaries(this); }
+    @Test void conflictReviewBindsSourceSchemaAndAccess() throws Exception { MigrationConflictsAcceptance.contexts(this); }
+    @Test void synchronizedRecordConflictsHaveReviewedAtomicResolution() throws Exception { MigrationConflictsAcceptance.run(this); }
+    @Test void conflictDecisionsRejectStaleContextAndAuthority() throws Exception { MigrationConflictsAcceptance.stale(this); }
     @Test void connectorActionsRequireReviewedCurrentIntent() throws Exception { ConnectorActionsAcceptance.run(this); }
     @Test void connectorWritesNeverReplayAmbiguousOutcomes() throws Exception { ConnectorActionsAcceptance.boundaries(this); }
     @Test void migrationFetchContinuesThroughReviewAcrossRestarts() throws Exception { MigrationFetchAcceptance.run(this); }

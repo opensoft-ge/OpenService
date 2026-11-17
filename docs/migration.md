@@ -108,3 +108,11 @@ No connector credentials or real customer data are bundled. The demo records in 
 ## AI product direction
 
 Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.
+
+### Review synchronized record conflicts
+
+From a review-state synchronization, open **Review reconciliation → Review record conflict decisions**. Compare the retained destination baseline, current record/access and mapped source. Choose **Keep current destination** or **Use mapped source**, supply a reason and confirm. Saving changes only the retained decision. Return to Migration Studio for preview and atomic apply; unresolved or stale conflicts stop the entire application. Preview rolls back record and correlation changes. Current source, mapping/schema, destination/access, migration generation and reviewer authority are rechecked.
+
+The administrator API is `GET /api/openservice/migrations/{job}/conflicts?limit=100&offset=0`, then `GET /api/openservice/migrations/{job}/conflicts/{source_table}/{source_id}`. Submit `POST` to the detail path with exactly `decision` (`keep_destination` or `use_source`), a nonblank `reason` (up to 2000 characters), returned `review` and integer `revision`, and `confirm: true`. Browser forms require CSRF. Applied/cancelled jobs retain read-only decision history. No source credentials or writes are involved.
+
+This resolves existing correlated, nondeleted business-record conflicts. Identity, membership, attachment, missing/deleted records and identifier collisions retain separate reconciliation requirements. Keeping a destination accepts its current state as the new baseline during apply; it is not permanent source ownership, so later changed source data can update it. No field merge or live vendor conformance is implied.

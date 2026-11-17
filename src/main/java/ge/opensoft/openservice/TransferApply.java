@@ -60,31 +60,9 @@ final class TransferApply {
                 var link = link(db, job, table.getKey(), text(data, "sys_id"), signature, "record");
                 if (link == null) continue;
                 String target = mapping.get("target").toString();
-                var definition = Service.schema(db, target);
-                var values = new LinkedHashMap<String, Object>();
-                for (String field : object(definition.get("fields")).keySet())
-                    values.put(field, "");
-                var translations = object(mapping.get("values"));
-                for (var field : object(mapping.get("fields")).entrySet()) {
-                    String value = text(data, field.getValue().toString());
-                    values.put(
-                            field.getKey(),
-                            object(translations.getOrDefault(field.getKey(), map()))
-                                    .getOrDefault(value, value));
-                }
-                Service.validate(definition, values);
-                require(
-                        !values.get("short_description").toString().isBlank(),
-                        "Mapped records need a summary");
-                TypedFields.writing(definition, map(), values, "admin");
-                String recordId = text(data, "sys_id");
-                var existing = db.one("SELECT * FROM os_record WHERE sys_id=?", recordId);
-                values.put(
-                        "number",
-                        data.getOrDefault(
-                                "number",
-                                definition.get("prefix")
-                                        + recordId.substring(0, 8).toUpperCase(Locale.ROOT)));
+                var values = mapped(db,mapping,data);
+                String recordId = text(data,"sys_id");
+                var existing = db.one("SELECT * FROM os_record WHERE sys_id=?",recordId);
                 if (existing == null) {
                     Service.insert(
                             db,
@@ -170,6 +148,12 @@ final class TransferApply {
         return result;
     }
 
+    static Map<String,Object> mapped(Store.Db db,Map<String,Object> mapping,Map<String,Object> data) throws SQLException {
+        var definition=Service.schema(db,mapping.get("target").toString());var values=new LinkedHashMap<String,Object>();for(String field:object(definition.get("fields")).keySet())values.put(field,"");var translations=object(mapping.get("values"));
+        for(var field:object(mapping.get("fields")).entrySet()){String value=text(data,field.getValue().toString());values.put(field.getKey(),object(translations.getOrDefault(field.getKey(),map())).getOrDefault(value,value));}
+        Service.validate(definition,values);require(!values.get("short_description").toString().isBlank(),"Mapped records need a summary");TypedFields.writing(definition,map(),values,"admin");String recordId=text(data,"sys_id");values.put("number",data.getOrDefault("number",definition.get("prefix")+recordId.substring(0,8).toUpperCase(Locale.ROOT)));return values;
+    }
+
     static Map<String, Object> snapshot(Store.Db db, String kind, String id) throws SQLException {
         var value =
                 switch (kind) {
@@ -240,6 +224,7 @@ final class TransferApply {
                 throw new Failure(409, "Destination identifier already exists: " + sourceId);
         } else {
             var detail = object(previous.get("detail"));
+            if(MigrationConflicts.decided(job,table,sourceId))return MigrationConflicts.consume(db,job,table,sourceId,source,kind);
             if (!Objects.equals(detail.get("destination"), current))
                 throw new Failure(409, "Destination changed since migration: " + sourceId);
             if (Objects.equals(detail.get("source"), source)) return null;

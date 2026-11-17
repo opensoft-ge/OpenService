@@ -581,6 +581,14 @@ public class WebController {
             var result=KnowledgeComparison.compare(c.db,c.db.viewerId,knowledgeComparison.group(api?2:1),c.arguments());
             return api?json(map("result",result),200):view(c,"knowledge-comparison",map("table","knowledge","comparison",result));
         }
+        Matcher migrationConflicts=Pattern.compile("/(?:admin|api/openservice)/migrations/([0-9a-f]{32})/conflicts(?:/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32}))?").matcher(path);
+        if(migrationConflicts.matches()){
+            boolean api=path.startsWith("/api/"),detail=migrationConflicts.group(2)!=null;method(method,detail?new String[]{"GET","POST"}:new String[]{"GET"});c.admin();c.uniqueQuery();String job=migrationConflicts.group(1);Map<String,Object> result;
+            if(detail){c.noQuery();String table=migrationConflicts.group(2),sourceId=migrationConflicts.group(3);if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");TypedFields.require("true".equals(form.get("confirm")),"Confirm the reviewed conflict decision");form.put("confirm",true);form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));input=form;}result=MigrationConflicts.save(c.db,job,table,sourceId,input);if(!api)return redirect("/admin/migrations/"+job+"/conflicts");}else result=MigrationConflicts.inspect(c.db,job,table,sourceId);}
+            else result=MigrationConflicts.page(c.db,job,c.arguments());
+            return api?json(map("result",result),200):view(c,detail?"migration-conflict":"migration-conflicts",map("table","migration","review",result));
+        }
+
         Matcher reconciliation=Pattern.compile("/admin/migrations/([0-9a-f]{32})/reconciliation").matcher(path);
         if(reconciliation.matches()) {
             method(method,"GET");c.admin();c.uniqueQuery();
