@@ -10,7 +10,7 @@ Start with [the service operations package](../examples/service-operations.confi
 
 Packages contain 1–50 tables. New table names match `u_[a-z][a-z0-9_]{0,60}` and start at version 0. Existing tables require their **destination's current version**; successful installation increments it. Replaying a stale package returns 409. Export and reconcile the destination before promotion between environments: a source revision is not automatically a destination revision. Concurrent installs of the same version yield one success and one conflict. Preview reports proposed versions but changes neither configuration nor audit history. Installation records a security event with affected versions. It does not retain a complete version history or automatically roll back business data.
 
-Each definition has `version`, `label`, `prefix`, `fields`, `states` and `flow`; optional properties are `field_rules`, `transition_rules` and `assignment`. `fields` maps safe lowercase identifiers to labels and must include `short_description`. There are at most 100 fields and 50 states; system fields and generated numbers are reserved. Removing existing fields is rejected. Existing records are validated before an altered definition can be installed. Dependent tables can appear in any order within one package. Missing dependencies or invalid persisted data reject the whole installation.
+Each definition has `version`, `label`, `prefix`, `fields`, `states` and `flow`; optional properties are `field_rules`, `transition_rules`, `record_roles` and `assignment`. `fields` maps safe lowercase identifiers to labels and must include `short_description`. There are at most 100 fields and 50 states; system fields and generated numbers are reserved. Removing existing fields is rejected. Existing records are validated before an altered definition can be installed. Dependent tables can appear in any order within one package. Missing dependencies or invalid persisted data reject the whole installation.
 
 ## Typed values and relationships
 
@@ -27,6 +27,8 @@ Each definition has `version`, `label`, `prefix`, `fields`, `states` and `flow`;
 | `choice` | One of the rule's explicit string `choices`. |
 | `reference` | The ID of an existing record in the rule's `target` table that the acting user can access. |
 | `account` | A stable ID of an active local account. |
+| `email` | Bounded ASCII dot-atom address with a dotted domain; see the detailed syntax below. |
+| `url` | Absolute HTTP(S) URL without embedded credentials; up to 2048 characters. |
 
 Optional blank values represent no value. The existing nonblank summary, 65536-character wire-value bound, priority 1–5 and configured-state constraints still apply. Rules are enforced on create/update and on imports into versioned tables. Imports may load any declared state; they validate the destination state's required fields, but do not replay transition history. Target records must already exist before a referencing record is imported; forward references within a record import are not resolved. Existing unversioned tables retain their legacy import behavior until explicitly configured.
 
@@ -56,7 +58,7 @@ Submitting the stored value unchanged is permitted, so full forms can save edits
 
 ### Table record operations
 
-Optional `record_roles` maps `create`, `update` and `delete` to unique lists of `admin` and/or `agent`. Omitted operations preserve the existing role rules; empty lists deny that operation, including for administrators. These are additional restrictions: they cannot grant readers field mutations or grant agents deletion. For example, `{"create":["admin"],"update":["admin"],"delete":[]}` provides administrator-maintained records protected from deletion.
+Optional `record_roles` maps `create`, `update` and `delete` to unique lists of `admin` and/or `agent`. Its `read` operation accepts the four existing roles and must retain `admin`; omitted read policy preserves prior visibility. Current table-read permission is cumulative with record visibility and field-read rules across records, queries, reports/exports, attachments, counts and navigation. Public knowledge snapshots use a separate explicit publication grant. Omitted operations preserve the existing role rules; empty lists deny that operation, including for administrators. These are additional restrictions: they cannot grant readers field mutations or grant agents deletion. For example, `{"create":["admin"],"update":["admin"],"delete":[]}` provides administrator-maintained records protected from deletion.
 
 Server checks cover Table API create/update/delete, record forms and imports (`create` policy, including preview). The workspace and forms hide forbidden mutation controls; forged requests still fail with 403. Read visibility, comments, internal notes, attachments and membership administration retain their separate existing permissions. This policy controls record rows/fields, not all related resources or arbitrary ServiceNow ACL scripts.
 
@@ -69,3 +71,11 @@ The shared policy removes unreadable fields from rendered forms, dictionaries, T
 ## AI product direction
 
 Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.
+
+## Email and URL fields
+
+Use `{"type":"email"}` or `{"type":"url"}` in a field rule. The normal `required`, `max_length`, `read_roles` and `write_roles` rules remain available. Optional blank values follow the existing field contract; required fields cannot be blank. Values remain strings with their original spelling, including email case and URL escaping. Validation is shared by forms, APIs, imports and schema promotion over existing records.
+
+Email syntax is deliberately bounded: ASCII dot-atom local parts of 1–64 characters, DNS-style dotted labels up to 63 characters, an alphabetic 2–63-character final label, and at most 254 characters overall. Quoted local parts, display names, Unicode/EAI addresses and domain literals are unsupported. This validates syntax only and neither sends email nor establishes ownership or deliverability.
+
+URLs must be absolute HTTP or HTTPS URLs with a parseable host, no embedded username/password, optional ports 1–65535, and at most 2048 characters. Loopback/private hosts can be stored because this field never fetches a URL. Values appear as URL inputs, not automatically followed links. This does not classify a website as safe or replace outbound-connector restrictions. Use punycode for international hostnames; URI-valid path/query/fragment text is preserved.

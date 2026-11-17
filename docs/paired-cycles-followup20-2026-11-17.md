@@ -259,3 +259,26 @@ Final gates: 813 tests, zero failures/errors/skips; whole-project Java 7297/7297
 | WebController.java | 2285/2285 | 1309/1309 | 42/42 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add durable cancellation for unapplied migration jobs`. No push.
+
+## Round 11 — typed email and URL record fields
+
+Selected `OS-N17B-11`, workstream 12 / OS-PARITY-01. Configurable records support basic types and references, but email/URL rules are currently rejected and forms use generic text inputs. Add bounded native email and URL types to the shared validator and matching browser inputs. Preserve string wire values and original spelling. Email supports ASCII dot-atom local parts (up to 64 characters), dotted DNS-style labels and alphabetic TLDs, 254 characters total. URLs support absolute HTTP(S), a host, no embedded credentials, valid optional ports and a 2048-character bound. Optional blanks retain existing field semantics; required and field/record permissions remain cumulative. This is syntax validation, not mailbox verification, safe-site classification, DNS resolution or server fetching. No EAI/quoted-local-address/full RFC or vendor-specific normalization equivalence.
+
+Compared data-model types (12), knowledge assistance (15) and stronger decisions (7); choose this shared form/API/import prerequisite before conversational intake. Acceptance uses real configuration preview/install, create/update/import, existing-data validation on schema promotion, persistence, field visibility and role rejection, boundary/invalid inputs and both-theme browser configuration → record entry.
+
+Official evidence retrieved 2026-11-17: Brazil [field types reference](https://www.servicenow.com/docs/r/platform-administration/r_FieldTypes.html), updated 2026-09-10. The current page lists email, URL, currency, phone and structured types; search excerpts still labelled Australia are not used as the current-release contract. Merge E164 phone, currency/precision and structured-value types into existing missing P2 data-model work, dependent on explicit native serialization, locale and migration contracts. Acceptance must preserve exact values across import/export and reject unsupported formats without coercion. Next research: current source-linked knowledge answers and conversational follow-up.
+
+Both database tests rejected the new type declarations before implementation. After adding the shared validators and browser input types, the focused database/browser journeys pass. The first compile identified a missing nested exception import, corrected before execution; no validation rule or test was weakened. Invalid imports leave no record, required-policy promotion refuses incompatible retained rows, and values/field visibility persist after reopening storage.
+
+QA R11-1: the central configuration guide still omitted the round 7 read policy and the optional `record_roles` package key. Update the contract and main type table while adding the new contact-type documentation; no production change or altered earlier test evidence.
+
+Inspected desktop-light and mobile-dark field-entry screenshots. Final accumulated-change review rechecked shared validation on every write path, retained original values, optional/required semantics, type-promotion atomicity, URL non-execution, hidden-field and record-role boundaries, and the existing catalogue/migration/event/AI/approval repairs. R11-1 is resolved; no new/reopened finding or further repair was required.
+
+Final gates: 816 tests, zero failures/errors/skips; whole-project Java 7305/7305 lines, 4155/4155 branches, 442/442 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| ContactFields.java | 6/6 | 14/14 | 2/2 |
+| TypedFields.java | 87/87 | 61/61 | 7/7 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add typed email and URL fields across record workflows`. No push.

@@ -20,7 +20,7 @@ final class TypedFields {
                     "datetime",
                     "choice",
                     "reference",
-                    "account");
+                    "account", "email", "url");
 
     static Map<String, Object> rules(Map<String, Object> definition) {
         return object(definition.getOrDefault("field_rules", map()));
@@ -49,6 +49,8 @@ final class TypedFields {
             String type = (String) rule.get("type");
             try {
                 switch (type) {
+                    case "email" -> ContactFields.email(value);
+                    case "url" -> ContactFields.url(value);
                     case "integer" -> Long.parseLong(value);
                     case "decimal" ->
                             require(
