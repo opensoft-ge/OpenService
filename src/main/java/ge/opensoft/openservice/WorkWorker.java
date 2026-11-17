@@ -56,6 +56,7 @@ final class WorkWorker {
             if (current != null) {
                 var owner = db.one("SELECT * FROM os_user WHERE user_id=?", job.get("owner_id"));
                 String state = "succeeded", error = "", result = "";
+                boolean continuing = false;
                 var savepoint = db.connection.setSavepoint();
                 try {
                     if (owner == null
@@ -74,6 +75,7 @@ final class WorkWorker {
                                                 db, job.get("job_id").toString(), payload, now);
                                 case "connector.read" -> Connectors.read(store, db, payload);
                                 case "approval.reminder" -> ScheduledApprovalReminders.deliver(db,db.viewerId,payload);
+                                case "migration.fetch" -> MigrationFetch.step(db,payload,store.migrationOrigins);
                                 case "migration.step" ->
                                         TransferJobs.step(
                                                 db,
@@ -82,6 +84,8 @@ final class WorkWorker {
                                                 store.migrationOrigins);
                                 default -> throw new Failure(400, "Unsupported job kind");
                             };
+                    continuing=job.get("kind").equals("migration.fetch") && Boolean.TRUE.equals(object(output).get("continue"));
+                    if(continuing)state="queued";
                     // Keep bounded receipts only. Migration details remain in the migration
                     // journal.
                     result =
@@ -90,7 +94,7 @@ final class WorkWorker {
                                     JSON.writeValueAsString(
                                             map(
                                                     "completed",
-                                                    true,
+                                                    !continuing,
                                                     "kind",
                                                     job.get("kind"),
                                                     "receipt",
@@ -99,6 +103,7 @@ final class WorkWorker {
                                                             : output)));
                 } catch (Exception failure) {
                     db.connection.rollback(savepoint);
+                    continuing=false;
                     boolean permanent = failure instanceof Failure f && f.status < 500;
                     state =
                             permanent
@@ -110,16 +115,17 @@ final class WorkWorker {
                 }
                 boolean terminal = Set.of("succeeded", "cancelled").contains(state);
                 db.update(
-                        "UPDATE os_work SET state=?,error=?,result=?,envelope="
+                        "UPDATE os_work SET state=?,attempts=?,error=?,result=?,envelope="
                                 + (terminal ? "''" : "envelope")
                                 + ",lease='',available_at=? WHERE job_id=? AND lease=?",
                         state,
+                        continuing?0:job.get("attempts"),
                         error,
                         result,
-                        now + Math.min(300000L, 1000L << ((Number) job.get("attempts")).intValue()),
+                        now + (continuing?1000:Math.min(300000L, 1000L << ((Number) job.get("attempts")).intValue())),
                         job.get("job_id"),
                         job.get("lease"));
-                WorkAttempts.finish(db,job.get("job_id"),job.get("lease"),Math.max(now,System.currentTimeMillis()),state.equals("queued")?"retry_scheduled":state,error);
+                WorkAttempts.finish(db,job.get("job_id"),job.get("lease"),Math.max(now,System.currentTimeMillis()),continuing?"continued":state.equals("queued")?"retry_scheduled":state,error);
                 db.connection.commit();
             }
         }

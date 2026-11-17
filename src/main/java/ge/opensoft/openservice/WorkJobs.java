@@ -32,7 +32,7 @@ final class WorkJobs {
                 "Provide kind, key, payload and optional run_at");
         String kind = text(body.get("kind"), 40), key = text(body.get("key"), 80);
         require(
-                Set.of("notification", "connector.read", "migration.step", "approval.reminder").contains(kind),
+                Set.of("notification", "connector.read", "migration.step", "migration.fetch", "approval.reminder").contains(kind),
                 "Unsupported job kind");
         var payload = object(body.get("payload"));
         String serialized = JSON.writeValueAsString(new TreeMap<>(payload));
@@ -66,6 +66,7 @@ final class WorkJobs {
         require(
                 db.count("SELECT COUNT(*) FROM os_work") < 5000,
                 "Work retention limit reached; clean up completed jobs");
+        if(kind.equals("migration.fetch"))MigrationFetch.validate(db,actor,payload);
         if(kind.equals("approval.reminder"))ScheduledApprovalReminders.validate(db,actor,payload);
         var user = db.one("SELECT auth_revision FROM os_user WHERE user_id=?", actor);
         String id = id();
@@ -133,6 +134,7 @@ final class WorkJobs {
                     case "notification" -> Set.of("delivered");
                     case "approval.reminder" -> Set.of("delivered","duplicate");
                     case "connector.read" -> Set.of("alias","revision","bytes","sha256");
+                    case "migration.fetch" -> Set.of("migration_id","status","phase","staged_rows");
                     default -> Set.<String>of();
                 };
                 var safe=new LinkedHashMap<>(receipt);

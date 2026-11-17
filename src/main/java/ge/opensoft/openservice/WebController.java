@@ -321,6 +321,15 @@ public class WebController {
             return api?json(map("result",result),200):view(c,"knowledge-assistant",map("table","knowledge","articleId",id,"assistant",result,"assistantPath","/knowledge/"+id+"/assistant"));
         }
 
+        Matcher migrationFetch=Pattern.compile("/(?:admin/migrations/([0-9a-f]{32})/fetch|api/openservice/migrations/([0-9a-f]{32})/fetch-jobs)").matcher(path);
+        if(migrationFetch.matches()){
+            c.admin();c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");method(method,api?new String[]{"POST"}:new String[]{"GET","POST"});String id=api?migrationFetch.group(2):migrationFetch.group(1);
+            if(method.equals("POST")){
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}
+                var job=MigrationFetch.queue(store,c.db,c.db.viewerId,id,input);return api?json(map("result",job),201):redirect("/admin/jobs/"+job.get("job_id"));
+            }
+            return view(c,"migration-fetch",map("table","migration","migration",TransferJobs.describe(c.db,id),"queueKey",id(),"workerEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
+        }
         if(path.equals("/admin/migration-stops")){method(method,"GET");c.admin();c.noQuery();return view(c,"migration-stops",map("table","migration","directory",MigrationStops.directory(c.db)));}
         Matcher stopMigration=Pattern.compile("/(?:admin/migrations|api/openservice/migrations)/([0-9a-f]{32})/cancel").matcher(path);
         if(stopMigration.matches()){
