@@ -282,3 +282,26 @@ Final gates: 816 tests, zero failures/errors/skips; whole-project Java 7305/7305
 | TypedFields.java | 87/87 | 61/61 | 7/7 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add typed email and URL fields across record workflows`. No push.
+
+## Round 12 — consented assistance from published knowledge
+
+Selected `OS-N17B-12`, workstream 15 / OS-PARITY-06. Current conversational assistance is administrator-only and record-based. Add an explicitly enabled requester/reader journey from a published article: ask → review exact question and published source → consent → provider answer or honest failure, with a fixed source citation. Use current publication access, exclude unpublished drafts and feedback, and bind consent to current identity, source version, question and provider configuration. No action tools, conversation memory or automatic retries.
+
+Compared knowledge assistance (15), decision reauthentication (7) and clock purposes (8). Select the user-facing AI prerequisite, then return to approvals and time management. Acceptance covers current publication/role boundaries, changed source/identity/provider consent, disabled/unavailable states, prompt/output escaping, attempt accounting, restart and both-theme keyboard browser completion.
+
+Predeclared limits: 16,000-character serialized source, 2,000-character question, 800 output tokens, 8,000-character displayed answer, existing 30-second provider timeout and 64-KiB response limit; at most 20 committed provider attempts per account in a rolling hour. Provider failures count when the transaction commits. This is a bounded completed-attempt guard, not a monetary cap or crash-proof reservation; audit retention, crash/commit failure after egress and other applications using the provider account affect accounting. Synchronous execution still holds the write transaction. Deterministic synthetic-provider qualification requires zero unauthorized egress/actions and exact source/consent assertions. Real-model answer accuracy, latency, cost and advantage over manual reading remain unmeasured and require held-out provider evaluation; no superiority claim.
+
+Official evidence retrieved 2026-11-17: Brazil [Summary Genius Results](https://www.servicenow.com/docs/r/platform-administration/ai-search/now-assist-multi-content-qna-genius-results.html), updated 2026-09-10, describes cited answers across multiple sources and follow-up conversations. Deduplicate its earlier multi-content Q&A name into existing OS-AI-001/004/005 missing P2 retrieval, multi-turn and evaluation work. Dependencies include permission-aware indexing, conversation retention and qualified provider adapters; acceptance must revoke hidden sources and preserve source-level citations. Next research: approval decision reauthentication.
+
+Both databases returned 404 for the new assistance route before implementation. The focused SQLite/PostgreSQL/browser acceptance now passes, covering published-only context, no egress on previews/denials, explicit consent, escaped answers, changed publication visibility, provider failures counted without storing private text, separate account budgets and retained budget after restart.
+
+Inspected desktop-light and mobile-dark consent screenshots. Final accumulated-change QA rechecked published-source isolation, reader/requester admission, strict inputs/CSRF, identity/source/provider-bound consent, bounded provider execution, no tools, escaped outputs, committed failure accounting and the documented crash/retention limits. Earlier table-read, report, catalogue, migration, attachment, notification, connector and approval repairs remain intact. No new/reopened finding or further repair was required.
+
+Final gates: 819 tests, zero failures/errors/skips; whole-project Java 7322/7322 lines, 4185/4185 branches, 444/444 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| KnowledgeQuestions.java | 12/12 | 20/20 | 2/2 |
+| WebController.java | 2290/2290 | 1319/1319 | 42/42 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add consented questions about published knowledge`. No push.

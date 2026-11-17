@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void publishedKnowledgeAnswersRespectConsentBoundariesAndUsage() throws Exception { KnowledgeQuestionsAcceptance.run(this); }
  @Test void typedContactFieldsValidateAllWritePaths() throws Exception { ContactFieldsAcceptance.run(this); }
  @Test void migrationStopsRetainStagingAndRejectStaleWorkers() throws Exception { MigrationStopsAcceptance.run(this); }
  @Test void eventEscalationCreatesOneReviewedPrivateCase() throws Exception { EventCasesAcceptance.run(this); }

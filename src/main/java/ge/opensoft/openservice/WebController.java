@@ -211,7 +211,7 @@ public class WebController {
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
                                 && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:catalogue/[0-9a-f]{32}|api/openservice/catalogue/[0-9a-f]{32}/order)")))
-                        && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/feedback")
+                        && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
                         && !path.matches(
                                 "/(?:api/openservice/comments/[^/]+/[0-9a-f]{32}|record/[^/]+/[0-9a-f]{32}/comment)"))
                     throw new Failure(403, "Read-only account");
@@ -306,6 +306,13 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher knowledgeAssistant=Pattern.compile("/(?:knowledge|api/openservice/knowledge)/([0-9a-f]{32})/assistant").matcher(path);
+        if(knowledgeAssistant.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=knowledgeAssistant.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");if(form.containsKey("allow_external")){TypedFields.require(form.get("allow_external").equals("true"),"Confirm the external request");form.put("allow_external",true);}input=form;}result=KnowledgeQuestions.submit(store,c.db,id,input);}else result=KnowledgeQuestions.context(store,c.db,id);
+            return api?json(map("result",result),200):view(c,"knowledge-assistant",map("table","knowledge","articleId",id,"assistant",result,"assistantPath","/knowledge/"+id+"/assistant"));
+        }
+
         if(path.equals("/admin/migration-stops")){method(method,"GET");c.admin();c.noQuery();return view(c,"migration-stops",map("table","migration","directory",MigrationStops.directory(c.db)));}
         Matcher stopMigration=Pattern.compile("/(?:admin/migrations|api/openservice/migrations)/([0-9a-f]{32})/cancel").matcher(path);
         if(stopMigration.matches()){
