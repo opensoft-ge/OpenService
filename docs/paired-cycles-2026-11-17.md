@@ -204,3 +204,27 @@ Final gates: 737 tests, zero failures/errors/skips; whole-project Java 6917/6917
 | WebController.java | 2147/2147 | 1117/1117 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add private owner-managed personal profiles`. No push.
+
+## Round 10 — migration reconciliation review and download
+
+Selected `OS-N17-10`, workstream 11 / OS-PARITY-03. Local reconciliation already compares retained staging/link snapshots through the API; Migration Studio has no human-readable reconciliation page or download action. Add an administrator-only page linked to the currently selected migration, showing state, compared links, missing staged items, changed destinations and truncation. Provide an authenticated JSON download containing the same bounded diagnostic contract. Preserve the distinction between local checks and source completeness/cutover qualification. No new source extraction, schema translation or automatic rollback claim. Alternatives: article-version comparison and reference pickers.
+
+Official research: [import run details](https://www.servicenow.com/docs/r/integrate-applications/system-import-sets/import-run-details.html), Brazil Workflow Data Fabric updated 2026-09-10, retrieved 2026-11-17. Run counts, row status, target linkage and diagnostic logs are established vendor capabilities. Merge richer per-row transform outcomes and run-level reconciliation evidence into the existing migration diagnostics backlog, missing P2, dependent on durable staging/provenance. Acceptance must distinguish ignored/skipped/error outcomes and never equate retained local rows with complete source export. Next research: knowledge version comparison.
+
+Acceptance: authenticated administrator review/download; anonymous/non-admin/unknown job/invalid query/method denial; download and browser counts agree for clean and changed/missing data; no embedded source credentials or record content; explicit source-completeness warning and truncated lists; selected-job link, keyboard and both themes. All focused checks and the final full gate passed.
+
+Round 10 QA evidence: initial route regressions returned 404 on both databases, then the selected-job browser and database journeys passed. A subsequently added truncation fixture omitted the required `target_id` column; the first full run failed in fixture construction and was stopped. The corrected large-volume fixture passed on both databases before the final full rerun. Rendered light/dark review screens and download contents were inspected. Review continued to the in-flight selector/link interaction before final qualification.
+
+QA R10-1: a browser regression confirmed that the job selector stayed enabled during a blocked source fetch. Because concurrent change handlers are suppressed by the busy guard, a changed selection could leave the displayed reconciliation link for a previous job. The guard now disables selection and hides the review link throughout in-flight work, restoring selection on success or failure; successful refresh exposes the link for the reviewed job. The regression exercises a real delayed source response. The previous passing full gate predates this repair and is superseded by the final run.
+
+Final post-repair QA review of the accumulated change found no new/reopened defects and made no repairs. Browser-script exact scope: migrations.js 79/79 lines, 49/49 branches, 12/12 functions; theme.js 36/36, 15/15, 6/6.
+
+Rebalance checkpoint 10: rounds 1–10 cover workstreams 9, 15, 8, 13, 7, 6, 4, 14, 3 and 11, one each. Actual feature allocation matches the revised plan; QA repairs are included within their feature round. Continue with knowledge comparison (9), reference selection (12), audit checkpoints (5), governed conversation (15) and deadline previews (8), then the remaining five planned rounds. No concentration exception; shared deployment, enterprise identity and integration-provider qualification remain explicitly deferred.
+
+Final gates: 739 tests, zero failures/errors/skips; whole-project Java 6925/6925 lines, 3705/3705 branches, 404/404 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| WebController.java | 2155/2155 | 1121/1121 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Review and download migration reconciliation safely`. No push.

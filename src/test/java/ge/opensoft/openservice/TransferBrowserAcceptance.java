@@ -63,6 +63,7 @@ final class TransferBrowserAcceptance {
             page.locator("#migration-create button").click();
             saved(page);
             String original = page.locator("#migration-jobs").inputValue();
+            assertThat(page.locator("#migration-jobs")).isEnabled();
             assertThat(page.locator("#migration-report")).containsText("fetching");
             page.locator("#migration-fetch").click();
             assertThat(page.locator("#migration-message"))
@@ -72,6 +73,8 @@ final class TransferBrowserAcceptance {
             MigrationSource.release = new CountDownLatch(1);
             page.locator("#migration-fetch").click();
             assertTrue(MigrationSource.entered.await(10, TimeUnit.SECONDS));
+            assertThat(page.locator("#migration-jobs")).isDisabled();
+            assertThat(page.locator("#migration-reconciliation")).isHidden();
             page.locator("#migration-fetch").click();
             page.locator("#migration-stop").click();
             MigrationSource.release.countDown();
@@ -144,6 +147,17 @@ final class TransferBrowserAcceptance {
                             Path.of("target/migration-browser-v8.json"), report.toString());
                 }
             assertTrue(Files.exists(Path.of("target/migration-browser-v8.json")));
+            assertThat(page.locator("#migration-reconciliation")).hasAttribute("href","/admin/migrations/"+original+"/reconciliation");
+            page.locator("#migration-reconciliation").press("Enter");
+            for(String theme:List.of("light","dark")) {
+                if(theme.equals("dark")){page.getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();page.setViewportSize(390,844);}
+                assertThat(page.locator("main")).containsText("Source completeness is not verified");
+                assertThat(page.locator("main")).containsText("Local checks passed");
+                ReleaseBrowserAcceptance.accessible(page);page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/reconciliation-"+theme+".png")).setFullPage(true));
+            }
+            var download=page.waitForDownload(()->page.getByRole(com.microsoft.playwright.options.AriaRole.LINK,new Page.GetByRoleOptions().setName("Download reconciliation JSON")).click());
+            assertEquals("migration-reconciliation-"+original+".json",download.suggestedFilename());
+            assertEquals(false,object(object(JSON.readValue(Files.readString(download.path()),Object.class)).get("result")).get("source_completeness_verified"));
         } finally {
             MigrationSource.reset();
         }

@@ -105,3 +105,8 @@ Saved reports opens `/reports`. Administrators and agents can create up to 100 o
 ### Personal profiles
 
 Use **Your profile** to edit optional display name and job title. Each field accepts at most 80 Unicode characters and is normalized to NFC; empty text clears it. Details are visible to the owner and account administrators, separate from verified email, username and roles. Administrators cannot edit another account through this endpoint. Changes record only changed field names in the security journal. Migration 36 initializes empty values on existing accounts; subsequent upgrades preserve them.
+
+
+### Migration reconciliation review
+
+Select a job in Migration Studio and open **Review reconciliation**. The page and JSON download compare retained source links/staging with current local destinations; counts cover all detected issues while each list is capped at 100. A local pass is not proof of source completeness or safe live cutover. Source permissions, deletions, unmapped data and configuration require separate qualification.

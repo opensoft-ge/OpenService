@@ -591,3 +591,8 @@ Implemented and verified: staff can create/edit/share/delete owned numeric repor
 ### OS-N17-09 — owner-managed profile (workstream 3 / OS-PARITY-08)
 
 Implemented and verified: owner-only `/account/profile` and `/api/openservice/me/profile`, NFC-normalized optional display name/job title, maximum 80 Unicode code points each, no controls, administrator read-only view and migration 36. Login, verified email and role are independent. Changed-key audit excludes values; last-save-wins. No public directory or verified-employment claim. Discovery and acceptance: [round 9](paired-cycles-2026-11-17.md#round-9--personal-profile-details). Configurable edit/audience policy and manager/team relationships remain missing P2, dependent on directory and field authority. Parent area remains partial.
+
+
+### OS-N17-10 — migration reconciliation review (workstream 11 / OS-PARITY-03)
+
+Implemented and verified: selected-job Migration Studio link to administrator-only reconciliation page and JSON download. Shows retained-local checks, current destination conflicts, missing staging and first-100 truncation. Source completeness is always explicitly unverified. [Round 10](paired-cycles-2026-11-17.md#round-10--migration-reconciliation-review-and-download) records official discovery, acceptance and limits. Per-row transform outcomes remain missing P2; live source qualification, cutover and translation remain partial.

@@ -290,6 +290,15 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher reconciliation=Pattern.compile("/admin/migrations/([0-9a-f]{32})/reconciliation").matcher(path);
+        if(reconciliation.matches()) {
+            method(method,"GET");c.admin();c.uniqueQuery();
+            TypedFields.require(Set.of("download").containsAll(c.arguments().keySet()),"Use download only");
+            String download=c.parameter("download","false");TypedFields.require(Set.of("true","false").contains(download),"Download must be true or false");
+            var result=TransferReconciliation.inspect(c.db,c.db.viewerId,reconciliation.group(1));
+            if(download.equals("true")){disposition(c,"migration-reconciliation-"+reconciliation.group(1)+".json");return json(map("result",result),200);}
+            return view(c,"reconciliation",map("table","migration","checks",result));
+        }
         if(path.equals("/account/profile") || path.equals("/api/openservice/me/profile")) {
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();
             boolean api=path.startsWith("/api/");String actor=c.user.get("user_id").toString();
