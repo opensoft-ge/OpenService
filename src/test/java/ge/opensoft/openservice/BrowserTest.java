@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void failureNoticeLeadsThroughAttemptReviewToRecovery() throws Exception { WorkFailureAlertsBrowserAcceptance.run(this); }
     @Test void attachmentUploadReachesScanReviewAndProtectedRelease() throws Exception { AttachmentScanningBrowserAcceptance.run(this); }
     @Test void directRelationshipAdministrationReachesImpactReview() throws Exception { AssetRelationshipsBrowserAcceptance.run(this); }
     @Test void slaBreachNotificationLeadsToAuthorizedClockReview() throws Exception { SlaAlertsBrowserAcceptance.run(this); }

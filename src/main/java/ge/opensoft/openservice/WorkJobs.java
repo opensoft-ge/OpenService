@@ -92,6 +92,7 @@ final class WorkJobs {
         for(var expired:db.all("SELECT job_id,lease FROM os_work WHERE state='processing' AND attempts>=5 AND available_at<=?"+(db.postgres?" FOR UPDATE SKIP LOCKED":""),now)){
             WorkAttempts.finish(db,expired.get("job_id"),expired.get("lease"),now,"failed","LEASE_EXHAUSTED");
             db.update("UPDATE os_work SET state='failed',lease='',error='LEASE_EXHAUSTED' WHERE job_id=?",expired.get("job_id"));
+            WorkFailureAlerts.send(db,expired.get("job_id").toString(),"failed",now);
         }
         var job =
                 db.one(

@@ -1,0 +1,28 @@
+package ge.opensoft.openservice;
+import static ge.opensoft.openservice.Values.*;
+import static ge.opensoft.openservice.WorkflowSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.*;
+final class WorkFailureAlertsAcceptance {
+    static String notice(Store store,String job)throws Exception{try(var db=store.open()){var row=db.one("SELECT notice_id FROM os_notice_target WHERE kind='work' AND target_id=? ORDER BY notice_id",job);return row==null?"":row.get("notice_id").toString();}}
+    static long count(Store store,String job)throws Exception{try(var db=store.open()){return db.count("SELECT COUNT(*) FROM os_notice_target WHERE kind='work' AND target_id=?",job);}}
+    static String breakJob(Store store,String key)throws Exception{String id=WorkSearchAcceptance.seed(store,key);try(var db=store.open()){db.update("UPDATE os_work SET envelope='invalid-ciphertext',created_at=? WHERE job_id=?",Long.MIN_VALUE,id);db.connection.commit();}return id;}
+    static void fail(Store store,String id)throws Exception{for(int i=0;i<5;i++){try(var db=store.open()){db.update("UPDATE os_work SET available_at=0 WHERE job_id=?",id);db.connection.commit();}assertTrue(new WorkWorker(store).runOne(System.currentTimeMillis()));}}
+    static void run(WorkflowSupport h)throws Exception{
+        h.account("AlertOther","admin");String job=breakJob(h.store,"SECRET FAILURE KEY");assertTrue(new WorkWorker(h.store).runOne(System.currentTimeMillis()));assertEquals(0,count(h.store,job));for(int i=1;i<5;i++){try(var db=h.store.open()){db.update("UPDATE os_work SET available_at=0 WHERE job_id=?",job);db.connection.commit();}assertTrue(new WorkWorker(h.store).runOne(System.currentTimeMillis()));}assertEquals(1,count(h.store,job));String notice=notice(h.store,job);String text=html(h.get(SlaAlertsAcceptance.NOTICES,auth("admin")));assertTrue(text.contains(job));assertFalse(text.contains("SECRET FAILURE KEY"));assertFalse(text.contains("invalid-ciphertext"));assertFalse(text.contains("PAYLOAD SECRET"));
+        assertEquals("/admin/jobs/"+job,TransferAcceptance.result(h.get(SlaAlertsAcceptance.context(notice),auth("admin")),200).get("url"));assertEquals(404,h.get(SlaAlertsAcceptance.context(notice),auth("AlertOther")).statusCode());new Store(h.environment);try(var db=h.store.open()){WorkFailureAlerts.send(db,job,"failed",System.currentTimeMillis());db.connection.commit();}assertEquals(1,count(h.store,job));
+        try(var db=h.store.open()){String actor=PlatformFoundationTest.bind(db);WorkJobs.control(db,actor,job,"retry");db.connection.commit();}fail(h.store,job);assertEquals(2,count(h.store,job));try(var db=h.store.open()){assertEquals(10,db.count("SELECT MAX(ordinal) FROM os_work_attempt WHERE job_id=?",job));String actor=PlatformFoundationTest.bind(db);WorkJobs.control(db,actor,job,"cancel");db.connection.commit();}assertEquals(2,count(h.store,job));
+        String cancelled;try(var db=h.store.open()){String actor=PlatformFoundationTest.bind(db);cancelled=WorkJobs.enqueue(h.store,db,actor,map("kind","notification","key","invalid recipient","payload",map("username","nonexistent-recipient","message","private payload"))).get("job_id").toString();db.connection.commit();}assertTrue(new WorkWorker(h.store).runOne(System.currentTimeMillis()+1000));assertEquals(1,count(h.store,cancelled));assertTrue(html(h.get(SlaAlertsAcceptance.NOTICES,auth("admin"))).contains("cancelled"));
+        String lease=WorkSearchAcceptance.seed(h.store,"Lease exhaustion");long now=System.currentTimeMillis()+10000;for(int i=0;i<5;i++)try(var db=h.store.open()){assertEquals(lease,WorkJobs.claim(db,now+i*120001L).get("job_id"));db.connection.commit();}try(var db=h.store.open()){assertNull(WorkJobs.claim(db,now+5*120001L));db.connection.commit();}assertEquals(1,count(h.store,lease));
+        try(var db=h.store.open()){db.update("UPDATE os_user SET role='reader' WHERE name='admin'");db.connection.commit();}assertEquals(403,h.get(SlaAlertsAcceptance.context(notice),auth("admin")).statusCode());try(var db=h.store.open()){db.update("UPDATE os_user SET role='admin' WHERE name='admin'");db.update("DELETE FROM os_work_attempt WHERE job_id=?",job);db.update("DELETE FROM os_work WHERE job_id=?",job);db.connection.commit();}assertEquals(404,h.get(SlaAlertsAcceptance.context(notice),auth("admin")).statusCode());
+    }
+    static void boundaries(WorkflowSupport h)throws Exception{
+        long revision;try(var db=h.store.open()){revision=db.count("SELECT auth_revision FROM os_user WHERE name='admin'");}
+        for(String setting:List.of("active=0","role='agent'","auth_revision=auth_revision+1","password_reset_required=1","notifications=0")){
+            String job=breakJob(h.store,"Suppressed "+setting);try(var db=h.store.open()){db.update("UPDATE os_user SET "+setting+" WHERE name='admin'");db.connection.commit();}
+            try{for(int i=0;i<5;i++){try(var db=h.store.open()){db.update("UPDATE os_work SET available_at=0 WHERE job_id=? AND state='queued'",job);db.connection.commit();}new WorkWorker(h.store).runOne(System.currentTimeMillis());}assertEquals(0,count(h.store,job));}
+            finally{try(var db=h.store.open()){db.update("UPDATE os_user SET active=1,role='admin',auth_revision=?,password_reset_required=0,notifications=1 WHERE name='admin'",revision);db.connection.commit();}}
+        }
+        String legacy=WorkSearchAcceptance.seed(h.store,"No invented legacy failures");try(var db=h.store.open()){WorkFailureAlerts.send(db,legacy,"failed",1);WorkFailureAlerts.send(db,id(),"failed",1);WorkFailureAlerts.send(db,legacy,"succeeded",1);String actor=PlatformFoundationTest.bind(db);WorkJobs.control(db,actor,legacy,"cancel");db.connection.commit();}assertEquals(0,count(h.store,legacy));
+    }
+}

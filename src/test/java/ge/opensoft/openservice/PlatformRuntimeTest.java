@@ -370,7 +370,8 @@ class PlatformRuntimeTest {
         assertTrue(new WorkWorker(new Store(env)).runOne(now + 300000));
         try (var db = store.open()) {
             bind(db);
-            assertEquals(1, db.count("SELECT COUNT(*) FROM os_notice"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_notice WHERE message='Exactly one inbox insertion'"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_notice_target WHERE kind='work'"));
             db.update("UPDATE os_notice SET acknowledged=1,created_at=0");
             WorkJobs.enqueue(
                     store,
@@ -412,7 +413,9 @@ class PlatformRuntimeTest {
         env.setProperty("WORK_ENABLED", "true");
         worker.tick();
         try (var db = store.open()) {
-            assertEquals(0, db.count("SELECT COUNT(*) FROM os_notice"));
+            assertEquals(0, db.count("SELECT COUNT(*) FROM os_notice WHERE acknowledged=1"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_notice n JOIN os_notice_target t ON t.notice_id=n.notice_id JOIN os_work w ON w.job_id=t.target_id WHERE n.acknowledged=0 AND w.dedupe='unknown-kind'"));
+            assertEquals(1, db.count("SELECT COUNT(*) FROM os_notice"));
             db.update("DROP TABLE os_work");
             db.connection.commit();
         }

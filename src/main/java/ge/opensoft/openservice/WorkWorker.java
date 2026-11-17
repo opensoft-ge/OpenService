@@ -131,6 +131,7 @@ final class WorkWorker {
                         job.get("job_id"),
                         job.get("lease"));
                 WorkAttempts.finish(db,job.get("job_id"),job.get("lease"),Math.max(now,System.currentTimeMillis()),continuing?"continued":state.equals("queued")?"retry_scheduled":state,error);
+                WorkFailureAlerts.send(db,job.get("job_id").toString(),state,Math.max(now,System.currentTimeMillis()));
                 db.connection.commit();
             }
         }

@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void failedWorkNotifiesItsCurrentOwnerAndLinksRecovery() throws Exception { WorkFailureAlertsAcceptance.run(this); }
+    @Test void failureAlertsRespectCurrentOwnerAuthorityAndPreferences() throws Exception { WorkFailureAlertsAcceptance.boundaries(this); }
     @Test void attachmentScansQuarantineUntilCurrentCleanEvidence() throws Exception { AttachmentScanningAcceptance.run(this); }
     @Test void scanReviewAndImportedFilesRetainCurrentBoundaries() throws Exception { AttachmentScanningAcceptance.boundaries(this); }
     @Test void conflictResolutionRejectsUnsupportedRowsAndChangedReviewers() throws Exception { MigrationConflictsAcceptance.boundaries(this); }
