@@ -32,6 +32,7 @@ final class Configuration {
         require(!tables.isEmpty() && tables.size() <= 50, "Provide 1–50 table definitions");
         var checkpoint = db.connection.setSavepoint();
         var versions = new LinkedHashMap<String, Object>();
+        var changes = new ArrayList<Map<String, Object>>();
         for (var table : tables.entrySet()) {
             var definition = new LinkedHashMap<>(object(table.getValue()));
             validate(definition);
@@ -55,6 +56,8 @@ final class Configuration {
                                 .containsAll(object(old.get("fields")).keySet()),
                         "Removing existing fields requires a separate data migration");
             }
+            changes.add(ConfigurationChanges.describe(
+                    table.getKey(), previous == null ? null : object(previous.get("definition")), definition));
             definition.put("version", version + 1);
             db.update(
                     "INSERT INTO os_schema(name,definition) VALUES(?,"
@@ -87,7 +90,7 @@ final class Configuration {
             SecurityEvents.record(
                     db, actor, actor, "configuration.installed", map("versions", versions));
         db.connection.releaseSavepoint(checkpoint);
-        return map("dry_run", dryRun, "versions", versions);
+        return map("dry_run", dryRun, "versions", versions, "changes", changes);
     }
 
     static void validate(Map<String, Object> definition) {

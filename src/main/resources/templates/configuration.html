@@ -11,5 +11,25 @@
       <div class="form-footer"><button class="button" name="operation" value="preview">Preview package</button><button class="button primary" name="operation" value="install">Install package</button></div>
     </form>
   </section>
+  <section id="configuration-changes" class="panel report" th:if="${report!=null}">
+    <div class="panel-heading"><h2>Configuration changes</h2></div>
+    <p th:text="${report.dry_run ? 'Compare the current destination with the proposed package below. Nothing has been saved.' : 'The changes below were applied together.'}"></p>
+    <p>Version numbers advance automatically on installation. A preview does not reserve a version; installation rechecks the current configuration and existing records.</p>
+    <section th:each="change : ${report.changes}">
+      <div class="panel-heading"><h3 class="knowledge-content" th:text="${change.table}"></h3><span class="status" th:text="${change.kind}"></span></div>
+      <p class="notice" th:if="${#lists.isEmpty(change.entries)}">No definition changes. Installation still advances the version.</p>
+      <div class="table-scroll" th:unless="${#lists.isEmpty(change.entries)}" role="region" tabindex="0" th:aria-label="${change.table+' configuration changes'}">
+        <table>
+          <thead><tr><th scope="col">Configuration path</th><th scope="col">Change</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
+          <tbody><tr th:each="entry : ${change.entries}">
+            <th scope="row"><pre th:text="${entry.path}"></pre></th>
+            <td th:text="${entry.kind}"></td>
+            <td><pre th:text="${entry.before_text}"></pre></td>
+            <td><pre th:text="${entry.after_text}"></pre></td>
+          </tr></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
 </main>
 </html>

@@ -16,6 +16,9 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void configurationPreviewExplainsExactChangesWithoutWriting() throws Exception {
+        ConfigurationChangesAcceptance.run(this);
+    }
  @Test void responseAndResolutionClocksRemainIndependent() throws Exception { ClockPurposesAcceptance.run(this); }
  @Test void passwordConfirmedDecisionsRecheckRevokedSessions() throws Exception { DecisionReauthenticationAcceptance.revokedSession(this); }
  @Test void configuredDecisionsRequireFreshPasswordVerification() throws Exception { DecisionReauthenticationAcceptance.run(this); }

@@ -24,6 +24,9 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void configurationChangesAreReviewableInBothThemes() throws Exception {
+        ConfigurationChangesBrowserAcceptance.run(this);
+    }
  @Test void separateClockPurposesAreAccessible() throws Exception { ClockPurposesBrowserAcceptance.run(this); }
  @Test void decisionPasswordConfirmationIsAccessible() throws Exception { DecisionReauthenticationBrowserAcceptance.run(this); }
  @Test void readerKnowledgeAssistantIsAccessibleAndHonestAboutFailure() throws Exception { KnowledgeQuestionsBrowserAcceptance.run(this); }

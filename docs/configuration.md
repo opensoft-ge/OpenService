@@ -12,6 +12,20 @@ Packages contain 1–50 tables. New table names match `u_[a-z][a-z0-9_]{0,60}` a
 
 Each definition has `version`, `label`, `prefix`, `fields`, `states` and `flow`; optional properties are `field_rules`, `transition_rules`, `record_roles` and `assignment`. `fields` maps safe lowercase identifiers to labels and must include `short_description`. There are at most 100 fields and 50 states; system fields and generated numbers are reserved. Removing existing fields is rejected. Existing records are validated before an altered definition can be installed. Dependent tables can appear in any order within one package. Missing dependencies or invalid persisted data reject the whole installation.
 
+## Review configuration changes
+
+Successful previews and installations include an additive `result.changes` array, in package table order. Each item has `table`, `kind` (`created`, `updated`, or `unchanged`) and `entries`. The browser shows the same comparison below the package form. Entries are ordered by sorted map keys and have:
+
+- `path`: a JSON Pointer into the table definition, such as `/field_rules/quantity/read_roles`.
+- `kind`: `added`, `removed`, or `changed`.
+- `before_present` and `after_present`: distinguish an absent property from a present JSON null.
+- `before` and `after`: original JSON values; the absent side is null.
+- `before_text` and `after_text`: JSON representations for display, or `Not present` for an absent property. Render these as text, never HTML.
+
+Existing nested objects are compared recursively; additions/removals of whole objects and ordered array changes are shown as complete values. Only the root automatic `version` is excluded from comparison. An unchanged definition has no entries, but installing it still increments its version under the existing contract.
+
+Preview is advisory, not a stored approval or reservation. Editing the package after preview changes the proposed installation; install always revalidates against the current destination version and data. Successful installation reports the changes actually applied. Invalid packages return existing errors rather than a partial diff; neither failed installation nor preview retains configuration or installation audit changes. This comparison does not add package history, selective merging, permission-impact simulation or rollback. [Acceptance and evidence](configuration-review-2026-11-17.md).
+
 ## Typed values and relationships
 
 `field_rules` maps declared field names to rules. Every rule specifies a `type`, optional boolean `required` and optional `max_length` from 1–65536. Table API wire values remain strings:
