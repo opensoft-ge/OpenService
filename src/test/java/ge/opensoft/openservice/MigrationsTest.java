@@ -15,6 +15,23 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void catalogueQuestionsUpgradePreservesLegacyOrdersAndNewAnswers(boolean postgres) throws Exception {
+        var environment=configuration(postgres);var store=new Store(environment);String offering,legacy;
+        try(var db=store.open()){
+            String actor=PlatformFoundationTest.bind(db);offering=Catalogue.save(db,actor,"",CatalogueAcceptance.offering("Retained questions",0,true)).get("offering_id").toString();legacy=Catalogue.order(db,offering,Values.map("revision",1,"details","Legacy order","key",Values.id())).get("sys_id").toString();
+            db.update("ALTER TABLE os_offering DROP COLUMN questions");db.update("ALTER TABLE os_catalog_order DROP COLUMN answers");db.update("DELETE FROM os_migration WHERE version>=45");db.connection.commit();Migrations.apply(db);assertEquals("[]",db.one("SELECT answers FROM os_catalog_order WHERE request_id=?",legacy).get("answers"));db.connection.rollback();assertEquals(44,db.count("SELECT MAX(version) FROM os_migration"));
+        }
+        String request;
+        try(var db=new Store(environment).open()){
+            String actor=PlatformFoundationTest.bind(db);assertTrue(CatalogueQuestions.answers(db,legacy).isEmpty());assertTrue(Values.objects(Catalogue.find(db,offering,true).get("questions")).isEmpty());
+            CatalogueQuestions.save(db,actor,offering,CatalogueQuestionsAcceptance.schema(1,List.of(CatalogueQuestionsAcceptance.question("reason","string",true,List.of()))));request=Catalogue.order(db,offering,Values.map("revision",2,"details","","key",Values.id(),"answers",Values.map("reason","Retained answer"))).get("sys_id").toString();db.connection.commit();
+        }
+        try(var db=new Store(environment).open()){
+            PlatformFoundationTest.bind(db);assertEquals("Retained answer",CatalogueQuestions.answers(db,request).getFirst().get("value"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));
+        }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void routedFulfilmentUpgradeIsAtomicAndRetainsTasks(boolean postgres) throws Exception {
         var environment=configuration(postgres);var store=new Store(environment);
         try(var db=store.open()){

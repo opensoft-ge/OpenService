@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void questionSnapshotsRespectFieldAccessAndAtomicRouting() throws Exception { CatalogueQuestionsBoundariesAcceptance.run(this); }
+    @Test void catalogueQuestionsValidateAndRetainReviewedAnswers() throws Exception { CatalogueQuestionsAcceptance.run(this); }
     @Test void fulfilmentPreservesOrdinaryPolicyAndTransactionBoundaries() throws Exception { FulfilmentBoundariesAcceptance.run(this); }
     @Test void routedOrdersReachARevisionProtectedRequesterOutcome() throws Exception { FulfilmentAcceptance.run(this); }
     @Test void scheduledApprovalRemindersRecheckLiveAuthorityAtDelivery() throws Exception { ScheduledApprovalRemindersAcceptance.run(this); }

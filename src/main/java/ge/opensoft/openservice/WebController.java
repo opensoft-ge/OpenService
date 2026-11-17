@@ -390,6 +390,21 @@ public class WebController {
             }
             var result=Fulfilment.detail(c.db,id);return api?json(map("result",result),200):view(c,"fulfilment",map("table","sc_request","task",result,"groups",c.role().equals("admin")?RecordAccess.groups(c.db):List.of()));
         }
+        Matcher submittedAnswers=Pattern.compile("/api/openservice/requests/([0-9a-f]{32})/answers").matcher(path);
+        if(submittedAnswers.matches()){
+            method(method,"GET");c.noQuery();return json(map("result",CatalogueQuestions.answers(c.db,submittedAnswers.group(1))),200);
+        }
+        Matcher catalogueQuestions=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/questions").matcher(path);
+        if(catalogueQuestions.matches()){
+            c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");method(method,api?new String[]{"PUT"}:new String[]{"GET","POST"});String id=catalogueQuestions.group(2);
+            if(method.equals("GET")){
+                TypedFields.require(Set.of("question").containsAll(c.arguments().keySet()),"Use question only");var offering=Catalogue.find(c.db,id,true);return view(c,"catalogue-questions",map("table","catalogue","offering",offering,"question",CatalogueQuestions.editor(offering,c.arguments().getOrDefault("question",""))));
+            }
+            c.noQuery();Map<String,Object> result;
+            if(api)result=CatalogueQuestions.save(c.db,c.db.viewerId,id,body(c));
+            else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));result=CatalogueQuestions.edit(c.db,c.db.viewerId,id,form);}
+            return api?json(map("result",result),200):redirect("/admin/catalogue/"+id+"/questions");
+        }
         Matcher catalogueRouting=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/routing").matcher(path);
         if(catalogueRouting.matches()){
             boolean api=path.startsWith("/api/");c.admin();method(method,api?"PUT":"POST");c.noQuery();c.uniqueQuery();String id=catalogueRouting.group(2);Object input;
@@ -412,7 +427,7 @@ public class WebController {
                 var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");String active=Objects.toString(form.get("active"),"");TypedFields.require(Set.of("true","false").contains(active),"Choose active or inactive");form.put("active",Boolean.parseBoolean(active));form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));
                 var saved=Catalogue.save(c.db,c.db.viewerId,id,form);return redirect("/admin/catalogue/"+saved.get("offering_id"));
             }
-            var offering=id.isEmpty()?map("offering_id","","name","","description","","active",0,"revision",0,"group_id","","fulfilment_group_id",""):Catalogue.find(c.db,id,true);
+            var offering=id.isEmpty()?map("offering_id","","name","","description","","active",0,"revision",0,"group_id","","fulfilment_group_id","","questions",List.of()):Catalogue.find(c.db,id,true);
             return view(c,"catalogue-admin",map("table","catalogue","offerings",Catalogue.list(c.db,true),"offering",offering,"groups",RecordAccess.groups(c.db),"eligibleGroupName",CatalogueEligibility.groupName(c.db,offering.get("group_id").toString()),"routingGroupName",CatalogueRouting.name(c.db,offering.get("fulfilment_group_id").toString())));
         }
         if(path.equals("/catalogue") || path.equals("/api/openservice/catalogue")) {
@@ -427,7 +442,7 @@ public class WebController {
             else method(method,api?new String[]{"GET","PUT"}:new String[]{"GET","POST"});
             if(method.equals("PUT"))return json(map("result",Catalogue.save(c.db,c.db.viewerId,id,body(c))),200);
             if(method.equals("POST")) {
-                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=form;}
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=CatalogueQuestions.form(form);}
                 var item=Catalogue.order(c.db,id,input);return api?json(map("result",FieldAccess.serialize(c.db,item)),201):redirect("/record/sc_request/"+item.get("sys_id"));
             }
             var offering=Catalogue.find(c.db,id,c.role().equals("admin"));return api?json(map("result",offering),200):view(c,"catalogue-item",map("table","catalogue","offering",offering,"orderKey",id(),"eligible",CatalogueEligibility.eligible(c.db,id)));
@@ -2731,6 +2746,7 @@ public class WebController {
                         table,
                         "definition",
                         definition,
+                        "submittedAnswers",item!=null && table.equals("sc_request") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"description")?CatalogueQuestions.answers(c.db,id):List.of(),
                         "hasFulfilment",item!=null && table.equals("sc_request") && Fulfilment.readable(c.db) && c.db.count("SELECT COUNT(*) FROM os_fulfilment WHERE request_id=?",id)>0,
                         "canWriteRecord",
                         !Set.of("reader", "requester").contains(c.role())
