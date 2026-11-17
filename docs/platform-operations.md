@@ -123,3 +123,9 @@ On an existing record, use **Choose [reference field]** to search readable summa
 ### Retain audit evidence
 
 From **Security events**, open **Retain or verify an audit checkpoint**. Save the JSON outside this installation in a trusted location. Later enter its algorithm/count/last sequence/hash fields to compare that retained prefix. A match covers only those retained events; a mismatch requires investigation. This hash does not authenticate the downloaded file or prevent a database administrator from changing the journal. The page requires administrator or separately granted audit-viewer authority and contains no event bodies.
+
+### Ask about a record
+
+Administrators can open **Ask about this record** from an existing record. Configure `AI_ENABLED`, `AI_CONNECTOR_ALIAS`, `AI_MODEL`, `AI_ALLOWED_FIELDS` and an allowed connector origin first. Write a question, preview the selected fields/provider/model, then explicitly confirm sending. Cancel before sending to avoid egress. Each request is independent; OpenService stores only safe audit metadata, not conversation text. Provider retention and inference charges remain provider-specific; `store=false` is a request parameter, not a retention guarantee.
+
+Answers are unverified, plain-text drafts linked to the source revision; no tools or business actions run. A changed question, record, authority or provider setting requires a fresh preview. Requests are synchronous, bounded to 30 seconds/800 completion tokens/8,000 answer characters, and hold the existing request transaction. A repeat submission can make another provider call; no automatic retry or global spending/cancellation control is claimed. Multi-turn history, human handoff, real-provider evaluation and deployment latency qualification remain open.

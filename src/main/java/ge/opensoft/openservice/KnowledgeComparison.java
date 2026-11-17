@@ -7,7 +7,7 @@ import java.util.*;
 final class KnowledgeComparison {
  private KnowledgeComparison() {}
  static Map<String,Object> compare(Store.Db db,String actor,String id,Map<String,String> args) throws SQLException {
-  Service.requireAccountAdministrator(db,actor);Service.record(db,"kb_knowledge",id);
+  Service.requireAccountAdministrator(db,actor);RecordPolicy.require(Service.schema(db,"kb_knowledge"),"read",db.viewerRole);Service.record(db,"kb_knowledge",id);
   require(Set.of("left","right").containsAll(args.keySet()),"Use left and right versions only");
   long latest=db.count("SELECT COALESCE(MAX(version),0) FROM os_publication WHERE article_id=?",id);
   if(latest==0)throw new Failure(404,"No publication versions found");

@@ -292,3 +292,28 @@ Final gates: 748 tests, zero failures/errors/skips; whole-project Java 6969/6969
 | WebController.java | 2174/2174 | 1143/1143 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Retain and verify audit checkpoints through the browser`. No push.
+
+## Round 14 — previewed questions about a record
+
+Selected `OS-N17-14`, workstream 15 / OS-PARITY-06. Existing administrator summary APIs do not offer a contextual browser question-and-answer journey. Add a record-linked assistant: ask one question, inspect exactly the selected record fields, question, provider alias and model, then explicitly send for a read-only answer. The ten-minute consent binds the precise question, record revision/content, actor authority and provider configuration. Render escaped draft text with a server-controlled source link/revision and no action tools. Reject unavailable configuration, changed consent, excessive input/output and provider failures. No transcript is persisted; each new question starts afresh. Repeated valid submissions may incur another provider call; no automatic retries, global spending cap or in-flight cancellation. This narrower slice replaces the drafted persistent-conversation proposal so retention, revocation and multi-turn memory are not silently introduced without their complete lifecycle. Alternatives: deadline explanation and asset impact review.
+
+Official evidence: [Brazil conversational help](https://www.servicenow.com/docs/r/intelligent-experiences/now-assist-skills/conversational-help-skills.html), updated 2026-09-10, retrieved 2026-11-17, explicitly says the legacy skill is hidden on new instances starting Australia; successor synthesized search/document connectors must be tracked separately. [Brazil AI security/privacy](https://www.servicenow.com/docs/r/intelligent-experiences/ai-control-tower/security-privacy-tab.html), same dates, adds access maps and privileged/dormant-agent oversight. Merge these into OS-AI-001/004/005, missing P1/P2 according to authority/evaluation prerequisites; no claim to replicate vendor retrieval or agent governance. Next discovery: schedule-aware deadline explanations.
+
+Acceptance budgets: one provider call per explicit send, question <=2,000 characters, selected record JSON <=16,000 characters, request timeout 30 seconds, maximum 800 completion tokens, response <=64 KiB and draft <=8,000 characters; zero business actions. Synthetic local-provider tests establish transport/authority/escaping contracts, not grounded-answer accuracy, time saved or commercial cost. Real-provider quality/cost/latency qualification remains required before an AI advantage claim. Tested both databases, current role/table access, question/config/record token substitution, CSRF, no egress during preview, failure visibility, no prompt values in security audit, and keyboard/light/dark/mobile. All focused and final full gates passed.
+
+The old browser route returned 404 on both databases. Focused tests now cover preview/no egress, consent substitution between actors/questions/summary actions, source changes, forbidden table reads, disabled/missing provider configuration, failure/size boundaries, escaped output, duplicate sends and metadata-only audit. Visual review found the confirmation checkbox inherited full-width input layout; the existing confirmation-panel treatment fixes its alignment without new theme code. A browser assertion checks the checkbox remains compact. Final gates passed.
+
+QA R14-1/R14-2: accumulated review reproduced missing table-read enforcement in the earlier summary grounding and publication comparison paths: both databases returned 200 after a table policy excluded the administrator role. The new assistant itself denied this case. Moved the assistant guard into shared provider grounding and added the comparison guard. Regression tests cover preview, execution and browser/API comparison; no separate feature is counted for these repairs. The first full run was stopped before completion and is superseded by the final repaired-tree run.
+
+Final review rechecked the accumulated routes, data/role boundaries, input escaping, consent fingerprints, retention limits, migration and previously repaired browser flows. No new or reopened finding remained after the two table-policy repairs. Frozen final source matched the five-minute full verification.
+
+Final gates: 751 tests, zero failures/errors/skips; whole-project Java 7000/7000 lines, 3765/3765 branches, 410/410 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| KnowledgeComparison.java | 10/10 | 10/10 | 1/1 |
+| ProviderAssist.java | 96/96 | 18/18 | 4/4 |
+| RecordQuestions.java | 25/25 | 10/10 | 3/3 |
+| WebController.java | 2179/2179 | 1147/1147 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add previewed record questions with governed provider consent`. No push.

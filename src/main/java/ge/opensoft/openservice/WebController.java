@@ -290,6 +290,12 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher questions=Pattern.compile("/record/([a-z0-9_]{1,80})/([0-9a-f]{32})/assistant").matcher(path);
+        if(questions.matches()) {
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=questions.group(1),id=questions.group(2);
+            var result=method.equals("GET")?RecordQuestions.context(store,c.db,table,id):RecordQuestions.submit(store,c.db,table,id,c.arguments());
+            return view(c,"record-assistant",map("table",table,"recordId",id,"assistant",result,"assistantPath",path));
+        }
         if(path.equals("/audit/checkpoint")) {
             method(method,"GET");c.uniqueQuery();AuditGovernance.requireViewer(c.db,c.db.viewerId);
             var args=new LinkedHashMap<String,String>(c.arguments());String download=args.getOrDefault("download","false");args.remove("download");

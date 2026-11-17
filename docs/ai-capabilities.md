@@ -12,7 +12,7 @@ Measure: Time to accurate triage and resolution; citation correctness; accepted 
 
 ## Current delivery status
 
-Partial: the existing implementation provides explicitly enabled administrator summaries and permission-filtered grounding previews with ten-minute version/configuration-bound summary consent. It has no general conversational support experience or autonomous tool/action execution. Content de-identification, provider qualification and broader agent evaluations remain open. See the existing OS-PARITY-06, OS-DISC-02 and OS-DISC-AI-CONTAINMENT entries; preserve their unresolved limits.
+Partial: the existing implementation provides explicitly enabled administrator summaries and permission-filtered grounding previews with ten-minute version/configuration-bound summary consent. OS-N17-14 adds a stateless administrator browser question-and-answer journey with exact-question preview/consent, source revision and escaped draft text. General multi-turn support and autonomous tool/action execution remain missing. Content de-identification, provider qualification and broader agent evaluations remain open. See the existing OS-PARITY-06, OS-DISC-02 and OS-DISC-AI-CONTAINMENT entries; preserve their unresolved limits.
 
 ## Required capabilities
 

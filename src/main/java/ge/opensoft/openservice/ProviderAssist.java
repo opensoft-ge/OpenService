@@ -15,6 +15,7 @@ final class ProviderAssist {
 
     static Map<String, Object> grounding(Store store, Store.Db db, String table, String id)
             throws Exception {
+        RecordPolicy.require(Service.schema(db,table),"read",db.viewerRole);
         var record = Service.record(db, table, id);
         var visible = FieldAccess.serialize(db, record);
         var fields = new LinkedHashMap<String, Object>();
