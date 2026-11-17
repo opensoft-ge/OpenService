@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 50;
+    static final int VERSION = 51;
 
     private Migrations() {}
 
@@ -530,6 +530,10 @@ final class Migrations {
         if(version<50){
             db.update("CREATE TABLE IF NOT EXISTS os_support_conversation(conversation_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id) ON DELETE CASCADE,article_id VARCHAR(32) NOT NULL,article_version INTEGER NOT NULL,revision INTEGER NOT NULL,state VARCHAR(20) NOT NULL,envelope TEXT NOT NULL,request_id VARCHAR(32) NOT NULL,updated_at BIGINT NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(50,?)","owned support conversations and reviewed request handoff");
+        }
+        if(version<51){
+            db.update("CREATE TABLE IF NOT EXISTS os_report_measurement(sequence "+(db.postgres?"BIGSERIAL PRIMARY KEY":"INTEGER PRIMARY KEY AUTOINCREMENT")+",measurement_id VARCHAR(32) NOT NULL UNIQUE,report_id VARCHAR(32) NOT NULL REFERENCES os_saved_report(report_id) ON DELETE CASCADE,viewer_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id) ON DELETE CASCADE,captured_at BIGINT NOT NULL,definition_hash VARCHAR(64) NOT NULL,result TEXT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(51,?)","retained numeric report measurements");
         }
     }
 

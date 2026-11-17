@@ -15,6 +15,13 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void measurementUpgradePreservesReportDefinitions(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String table=ReportFormsAcceptance.seed(store),id=ReportMeasurementsAcceptance.save(store,table,Values.map("field","amount"),false);
+        try(var db=store.open()){db.update("DROP TABLE os_report_measurement");db.update("DELETE FROM os_migration WHERE version>=51");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_report_measurement"));db.connection.rollback();assertEquals(50,db.count("SELECT MAX(version) FROM os_migration"));}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){String actor=PlatformFoundationTest.bind(db);assertEquals("Measured history",SavedReports.find(db,actor,id).get("name"));assertEquals(0,db.count("SELECT COUNT(*) FROM os_report_measurement"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void supportConversationUpgradePreservesPublishedKnowledge(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String article;
         try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);article=KnowledgeSearchAcceptance.article(db,actor,"Retained article","Published source");db.update("DROP TABLE os_support_conversation");db.update("DELETE FROM os_migration WHERE version>=50");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_support_conversation"));db.connection.rollback();assertEquals(49,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -604,6 +611,7 @@ class MigrationsTest {
                             db.one("SELECT password FROM os_user WHERE name='admin'")
                                     .get("password");
             db.update("DROP TABLE os_support_conversation");
+            db.update("DROP TABLE os_report_measurement");
             db.update("DROP INDEX ix_os_user_identity");
             db.update("ALTER TABLE os_user DROP COLUMN user_id");
             db.update("DELETE FROM os_migration WHERE version>=2");

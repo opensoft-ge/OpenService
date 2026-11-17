@@ -95,5 +95,6 @@ final class SavedReports {
         if (db.update("DELETE FROM os_saved_report WHERE report_id=? AND owner_id=?", id, actor)
                 != 1) throw new Failure(404, "Owned report not found");
         db.update("DELETE FROM os_report_run WHERE report_id=?",id);
+        db.update("DELETE FROM os_report_measurement WHERE report_id=?",id);
     }
 }

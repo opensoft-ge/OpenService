@@ -534,6 +534,12 @@ public class WebController {
             var result=WorkSearch.page(c.db,c.db.viewerId,args);
             return api?json(result,200):view(c,"work-search",map("table","operations","search",result));
         }
+        Matcher measurements=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/measurements").matcher(path);
+        if(measurements.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=measurements.group(1);
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}var result=ReportMeasurements.capture(c.db,id,input);return api?json(map("result",result),201):redirect("/reports/"+id+"/measurements");}
+            var result=ReportMeasurements.page(c.db,id,c.arguments());return api?json(map("result",result),200):view(c,"report-measurements",map("table","reports","measurements",result,"captureKey",id()));
+        }
         Matcher reportCopy=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/copy").matcher(path);
         if(reportCopy.matches()) {
             method(method,"POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");

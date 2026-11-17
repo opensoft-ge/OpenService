@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void reportMeasurementsRetainExactChanges() throws Exception { ReportMeasurementsAcceptance.run(this); }
+    @Test void reportMeasurementsRespectCurrentAccessAndBounds() throws Exception { ReportMeasurementsAcceptance.boundaries(this); }
     @Test void supportConversationRetainsContextAndHandsOffReviewedWork() throws Exception { SupportConversationsAcceptance.run(this); }
     @Test void supportConversationRejectsUnauthorizedOrUnreviewedActions() throws Exception { SupportConversationsAcceptance.boundaries(this); }
     @Test void supportConversationRechecksSourceAndHandoffPolicy() throws Exception { SupportConversationsAcceptance.contexts(this); }
@@ -135,7 +137,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

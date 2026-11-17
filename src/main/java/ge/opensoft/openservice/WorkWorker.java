@@ -28,6 +28,7 @@ final class WorkWorker {
                         System.currentTimeMillis() - 30L * 86400000);
                 NoticeTargets.cleanup(db);
                 SupportConversations.cleanup(db);
+                ReportMeasurements.cleanup(db);
                 db.connection.commit();
             }
         } catch (Exception failure) {
