@@ -32,14 +32,14 @@ final class FieldAccess {
 
     static Map<String, Object> serialize(Store.Db db, Map<String, Object> item)
             throws SQLException {
-        return visible(
-                db, Service.schema(db, item.get("table").toString()), Service.serialize(item));
+        var definition=Service.schema(db,item.get("table").toString());RecordPolicy.read(db,definition);
+        return visible(db,definition,Service.serialize(item));
     }
 
     static Map<String, Object> schema(Store.Db db, Map<String, Object> definition) {
         var result = new LinkedHashMap<>(definition);
         result.put("fields", visible(db, definition, object(definition.get("fields"))));
-        result.put("field_rules", visible(db, definition, TypedFields.rules(definition)));
+        if(definition.containsKey("field_rules"))result.put("field_rules", visible(db, definition, TypedFields.rules(definition)));
         return result;
     }
 

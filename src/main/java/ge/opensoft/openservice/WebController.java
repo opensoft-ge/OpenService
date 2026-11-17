@@ -1922,6 +1922,7 @@ public class WebController {
             if (analytics.group(1).startsWith("api/"))
                 return json(map("result", Analytics.report(c.db, table, c.arguments())), 200);
             var definition = Service.schema(c.db, table);
+            RecordPolicy.read(c.db,definition);
             definition = FieldAccess.schema(c.db, definition);
             var fields = Analytics.fields(definition);
             var args = new LinkedHashMap<>(c.arguments());
@@ -1982,7 +1983,7 @@ public class WebController {
             method(method, "GET");
             var result = new LinkedHashMap<String, Object>();
             for (var table : c.db.all("SELECT * FROM os_schema ORDER BY name"))
-                result.put((String) table.get("name"), table.get("definition"));
+                if(RecordPolicy.allows(object(table.get("definition")),"read",c.role()))result.put((String) table.get("name"), FieldAccess.schema(c.db,object(table.get("definition"))));
             return json(map("result", result), 200);
         }
         if (path.equals("/api/openservice/me")) {
@@ -2328,6 +2329,7 @@ public class WebController {
             method(method, "GET");
             String table = path.equals("/") ? "incident" : path.substring(11);
             var definition = Service.schema(c.db, table);
+            if(path.equals("/") && !RecordPolicy.allows(definition,"read",c.role()))return view(c,"workspace-limited",map("table","overview"));
             var page =
                     Service.page(
                             c.db,
@@ -2409,7 +2411,7 @@ public class WebController {
         if (export.matches()) {
             method(method, "GET");
             String table = export.group(1);
-            Service.schema(c.db, table);
+            RecordPolicy.read(c.db,Service.schema(c.db,table));
             if (c.parameter("source", "").equals("true")) c.admin();
             var data = new ArrayList<Map<String, Object>>();
             var parameters = new ArrayList<Object>(List.of(table));
@@ -2582,6 +2584,7 @@ public class WebController {
     private ModelAndView record(Request c, String table, String id, String action, String method)
             throws Exception {
         var definition = Service.schema(c.db, table);
+        RecordPolicy.read(c.db,definition);
         var item = id.equals("new") ? null : Service.record(c.db, table, id);
         String location = "/record/" + table + "/" + id;
         if (action != null) {
@@ -3167,6 +3170,7 @@ public class WebController {
                         parameters.toArray()))
             counts.put((String) count.get("table"), count.get("total"));
         var tables = c.db.all("SELECT * FROM os_schema ORDER BY name");
+        tables.removeIf(schema->!RecordPolicy.allows(object(schema.get("definition")),"read",c.role()));
         for (var schema : tables)
             schema.put("definition", FieldAccess.schema(c.db, object(schema.get("definition"))));
         if (c.role().equals("requester")) tables.removeIf(t -> !t.get("name").equals("sc_request"));

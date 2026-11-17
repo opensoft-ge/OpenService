@@ -9,9 +9,13 @@ import java.util.*;
 final class RecordAccess {
     private RecordAccess() {}
 
-    static String filter(Store.Db db, String recordId, List<Object> parameters) {
+    static String filter(Store.Db db, String recordId, List<Object> parameters) throws SQLException {
         // Unbound connections are internal setup/test transactions; HTTP binds every principal.
         if (db.viewerId == null || "admin".equals(db.viewerRole)) return "1=1";
+        var readable=new ArrayList<Object>();
+        for(var row:db.all("SELECT name,definition FROM os_schema"))if(RecordPolicy.allows(object(row.get("definition")),"read",db.viewerRole))readable.add(row.get("name"));
+        parameters.addAll(readable);
+        String tableAccess="EXISTS (SELECT 1 FROM os_record readable_record WHERE readable_record.sys_id="+recordId+" AND readable_record.\"table\" IN (''"+String.join("",Collections.nCopies(readable.size(),",?"))+")) AND ";
         String requester = "";
         if ("requester".equals(db.viewerRole)) {
             requester =
@@ -22,7 +26,7 @@ final class RecordAccess {
         }
         parameters.add(db.viewerId);
         parameters.add(db.viewerId);
-        return requester
+        return tableAccess + requester
                 + "NOT EXISTS (SELECT 1 FROM os_record_access access WHERE access.record_id="
                 + recordId
                 + " AND NOT (access.visibility='workspace' OR (access.visibility='private' AND"

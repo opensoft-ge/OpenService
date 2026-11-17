@@ -48,6 +48,7 @@ public final class Service {
 
     public static Map<String, Object> record(Store.Db db, String table, String id)
             throws SQLException {
+        RecordPolicy.read(db,schema(db,table));
         var parameters = new ArrayList<Object>(List.of(table, id));
         String access = RecordAccess.filter(db, "os_record.sys_id", parameters);
         var item =
@@ -98,6 +99,7 @@ public final class Service {
     public static Map<String, Object> create(Store.Db db, String table, Object body, String actor)
             throws SQLException {
         var definition = schema(db, table);
+        RecordPolicy.read(db,definition);
         RecordPolicy.require(definition, "create", db.viewerRole);
         var payload = object(body);
         FieldAccess.writing(db, definition, payload);
@@ -208,6 +210,7 @@ public final class Service {
             String revision)
             throws SQLException {
         var definition = schema(db, table);
+        RecordPolicy.read(db,definition);
         RecordPolicy.require(definition, "update", role);
         var payload = object(body);
         FieldAccess.writing(db, definition, payload);
@@ -295,7 +298,8 @@ public final class Service {
 
     static Selection selection(Store.Db db, String table, String encoded, String search)
             throws SQLException {
-        var columns = columns(db, schema(db, table));
+        var definition=schema(db,table);RecordPolicy.read(db,definition);
+        var columns = columns(db, definition);
         var where = new StringBuilder("\"table\"=?");
         var values = new ArrayList<Object>(List.of(table));
         where.append(" AND ").append(RecordAccess.filter(db, "os_record.sys_id", values));
@@ -591,6 +595,7 @@ public final class Service {
             Store.Db db, String table, Object body, String actor, boolean dryRun)
             throws SQLException {
         var definition = schema(db, table);
+        RecordPolicy.read(db,definition);
         RecordPolicy.require(definition, "create", db.viewerRole);
         Object input = body instanceof Map<?, ?> wrapper ? wrapper.get("result") : body;
         if (!(input instanceof List<?> rows) || rows.size() > 10000)

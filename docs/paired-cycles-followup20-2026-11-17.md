@@ -162,3 +162,30 @@ Final gates: 799 tests, zero failures/errors/skips; whole-project Java 7236/7236
 | WebController.java | 2269/2269 | 1277/1277 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add versioned knowledge feedback and private editorial review`. No push.
+
+## Round 7 — configurable table-read boundaries
+
+Selected `OS-N17B-07`, workstream 4 / OS-PARITY-08. Table configuration accepts create/update/delete policies but cannot install a read policy, and generic record/query surfaces lack a shared read guard. Add optional `record_roles.read` over the four existing roles, requiring administrator access to remain. Enforce current read policy before record and field serialization, selection, exports, analytics, attachments, navigation and current-record audit projections. Role/policy changes take effect on the next request. A user without access to the default incident table receives a usable account/knowledge landing page. Public published knowledge remains a separate deliberate publication grant. Without retained table classification, deleted-record history is restricted to administrators; retained evidence is not deleted.
+
+Compared permissions (4), personal notification controls (6) and event-to-case correlation (13). Select the permission prerequisite before adding more cross-record journeys. Acceptance: administrator configuration preview/install; API/UI read denial and allowed restoration; no table/count/attachment disclosure; record/field/requester boundaries remain cumulative; current role changes; invalid policy rejection; deleted-record audit exclusion; restart and both-theme keyboard accessibility. No inherited/custom roles, tenant isolation, deny-administrator configuration, scripted ACLs or vendor ACL wire compatibility claim.
+
+Official evidence retrieved 2026-11-17: Brazil [ACL types](https://www.servicenow.com/docs/r/platform-security/access-control/acl-rule-types.html), updated 2026-09-10, documents separate table and field checks. [Access Management release notes](https://www.servicenow.com/docs/r/release-notes/access-management-rn.html), same update, describe access analysis for agentic assets and strict denial of nonexistent roles. Merge agent/tool access simulation and unknown-role checks into existing missing WS4/15 P1/P2 policy work, dependent on scoped roles/tool registry; acceptance must explain the actual current principal and fail closed on unknown authority. The page also contains future-labelled Brazil Patch 5 material, which is not treated as currently qualified behavior. Next research: personal notification acknowledgment controls.
+
+Both database regressions first returned 400 for an unsupported read operation. The new supported configuration path and focused SQLite/PostgreSQL/browser journeys now pass, including immediate revoke/restore, role changes, file/report exclusion, empty permitted-table selection and the usable restricted landing page.
+
+QA R7-1: full contract fixtures reproduced an added empty `field_rules` property in legacy schema responses. Preserve absence of optional rules while filtering configured fields, without changing the historical fixtures. Extend acceptance for cumulative field denial, deliberately published knowledge despite draft-table denial, and safe sanitization if a record disappears after an audit event is fetched. Re-freeze and rerun all gates after repair.
+
+Inspected final desktop-light/mobile-dark restricted-workspace screenshots. Final accumulated-change review rechecked configured policy validation, current principal binding, shared SQL filtering for records/attachments/audit/counts/reference validation, field projection, requester/private/group constraints, retained administrator evidence, deliberate publication grants, legacy schema shape and earlier feedback/connector/approval repairs. No new or reopened defect remained and this review required no further repair.
+
+Final gates: 802 tests, zero failures/errors/skips; whole-project Java 7254/7254 lines, 4069/4069 branches, 435/435 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| Configuration.java | 167/167 | 103/103 | 5/5 |
+| FieldAccess.java | 36/36 | 26/26 | 7/7 |
+| RecordAccess.java | 52/52 | 40/40 | 6/6 |
+| RecordPolicy.java | 7/7 | 8/8 | 3/3 |
+| Service.java | 487/487 | 274/274 | 35/35 |
+| WebController.java | 2273/2273 | 1285/1285 | 42/42 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Enforce configured table read permissions across data surfaces`. No push.

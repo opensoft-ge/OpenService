@@ -198,9 +198,12 @@ final class Configuration {
         }
         var recordRoles = object(definition.getOrDefault("record_roles", map()));
         require(
-                Set.of("create", "update", "delete").containsAll(recordRoles.keySet()),
+                Set.of("read", "create", "update", "delete").containsAll(recordRoles.keySet()),
                 "Unsupported record operation");
-        for (Object roles : recordRoles.values()) choices(roles, Set.of("admin", "agent"));
+        for (var rule : recordRoles.entrySet()) {
+            choices(rule.getValue(),rule.getKey().equals("read")?Service.ROLES.keySet():Set.of("admin","agent"));
+            if(rule.getKey().equals("read"))require(((List<?>)rule.getValue()).contains("admin"),"Table read policy must retain administrator access");
+        }
         var assignment = object(definition.getOrDefault("assignment", map()));
         if (!assignment.isEmpty()) {
             require(

@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+ @Test void configuredTableReadsApplyAcrossAllDataSurfaces() throws Exception { TableReadAcceptance.run(this); }
  @Test void knowledgeFeedbackBindsPublicVersionsAndPrivateEditorialReviews() throws Exception { KnowledgeFeedbackAcceptance.run(this); }
  @Test void reportExportsRecheckCurrentViewerAndProtectSpreadsheetLabels() throws Exception { ReportExportAcceptance.run(this); }
  @Test void attachmentHoldsBlockEveryDownloadAndBindRelease() throws Exception { AttachmentHoldsAcceptance.run(this); }
