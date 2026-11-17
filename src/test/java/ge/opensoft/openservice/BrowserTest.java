@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+ @Test void migrationCancellationJourneyIsAccessibleAndPersistent() throws Exception { MigrationStopsBrowserAcceptance.run(this); }
  @Test void eventCaseReviewAndEscalationAreAccessible() throws Exception { EventCasesBrowserAcceptance.run(this); }
  @Test void notificationPageAcknowledgmentIsAccessibleAndBounded() throws Exception { NotificationBatchBrowserAcceptance.run(this); }
  @Test void tableReadConfigurationAndLandingAreAccessible() throws Exception { TableReadBrowserAcceptance.run(this); }

@@ -165,6 +165,7 @@ final class TransferJobs {
 
     static Map<String, Object> step(Store.Db db, String id, String token, String allowed)
             throws Exception {
+        if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");
         var job = job(db, id);
         var state = object(job.get("detail"));
         expect(state, "fetching");

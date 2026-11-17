@@ -306,6 +306,14 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/admin/migration-stops")){method(method,"GET");c.admin();c.noQuery();return view(c,"migration-stops",map("table","migration","directory",MigrationStops.directory(c.db)));}
+        Matcher stopMigration=Pattern.compile("/(?:admin/migrations|api/openservice/migrations)/([0-9a-f]{32})/cancel").matcher(path);
+        if(stopMigration.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=stopMigration.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}result=MigrationStops.cancel(c.db,id,input);if(!api)return redirect(path);}else result=TransferJobs.describe(c.db,id);
+            return api?json(map("result",result),200):view(c,"migration-stop",map("table","migration","migration",result));
+        }
+
         if(Set.of("/admin/events/case","/api/openservice/event-cases").contains(path)){
             method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");
             if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}var result=EventCases.create(c.db,input);return api?json(map("result",result),201):redirect("/record/incident/"+result.get("sys_id"));}

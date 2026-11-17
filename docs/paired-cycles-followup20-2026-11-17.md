@@ -234,3 +234,28 @@ Final gates: 810 tests, zero failures/errors/skips; whole-project Java 7283/7283
 | WebController.java | 2279/2279 | 1297/1297 | 42/42 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Create one reviewed private incident from an operational event`. No push.
+
+## Round 10 — durable cancellation of unapplied migrations
+
+Selected `OS-N17B-10`, workstream 11 / OS-PARITY-03/09. Migration jobs can fetch, review, apply, synchronize and prepare cutover, but lack an explicit durable stop. Add an administrator directory and reasoned cancellation for fetching/review jobs. Retain staged data and archives, reject further processing, preserve the first cancellation reason on retry, and reject cancellation after application. Serialize a finishing fetch/apply against cancellation on both databases. A queued stale worker must observe the stopped job before source egress and clear its encrypted token when it records a permanent cancellation. This is not rollback, immediate interruption of an in-flight network read, automatic credential purging while workers are disabled, or resumable cancellation.
+
+Compared migration controls (11), richer field types (12) and grounded knowledge help (15); select the operator recovery prerequisite before expanding more authoring/AI surfaces. Acceptance covers real staged source pages, queued and in-flight work, retries, audit, no destination mutation, retained archives/restart, applied-job rejection, roles/CSRF/input boundaries and both-theme browser cancellation.
+
+Official evidence refreshed 2026-11-17: Brazil [scheduled imports](https://www.servicenow.com/docs/r/integrate-applications/system-import-sets/t_ScheduleADataImport.html) and [import run details](https://www.servicenow.com/docs/r/integrate-applications/system-import-sets/import-run-details.html), updated 2026-09-10. Vendor run states include cancellation and run/row diagnostics; scheduled imports also describe execution identity and concurrency. Merge bounded row diagnostics and governed schedules into existing missing P2 migration/integration work, dependent on durable execution, scoped credentials and reconciliation. Acceptance must identify rejected rows without silently applying partial mappings and preserve explicit execution authority. Native stop semantics are narrower; no vendor lifecycle/wire equivalence. Next research: data dictionary contact types.
+
+Both database regressions returned 404 before implementation. Focused tests now pass: real source staging, stale claimed work with no further source request, encrypted-token removal on worker cancellation, retained archives/restart, and direct simultaneous fetch/stop on both databases. The cancellation waits for the admitted page and remains terminal afterward. The browser completes review → reason → cancel → reload with escaped text and both-theme accessibility.
+
+Checkpoint 10: nine workstreams covered, with only WS9 used twice and no adjacent repetition. Keep the remaining allocation: WS12 types, WS15 knowledge assistance, WS7 approval reauthentication, WS8 clock purposes, WS6 subscriptions, WS12 configuration comparison, WS13 dependency editing, WS14 trends, WS15 reviewed agent intake, WS16 release qualification. External deployment/identity qualification remains deferred because it requires actual operator/provider setup; no concentration exception. Reassess at 15 against delivered journeys and any concrete release blocker.
+
+Inspected both-theme cancellation screenshots. Final accumulated-change QA rechecked administrator/CSRF/input boundaries, terminal status handling across every migration operation, archive retention, first-reason idempotency, in-flight serialization and worker credential clearing. Earlier event/case, permissions, notification, report, publication, connector, AI/approval and contention repairs remain in scope and unchanged. No new or reopened finding, no further repair, and no unresolved round-specific issue was found.
+
+Final gates: 813 tests, zero failures/errors/skips; whole-project Java 7297/7297 lines, 4139/4139 branches, 440/440 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| MigrationStops.java | 6/6 | 10/10 | 2/2 |
+| TransferApply.java | 252/252 | 116/116 | 10/10 |
+| TransferJobs.java | 179/179 | 92/92 | 13/13 |
+| WebController.java | 2285/2285 | 1309/1309 | 42/42 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add durable cancellation for unapplied migration jobs`. No push.
