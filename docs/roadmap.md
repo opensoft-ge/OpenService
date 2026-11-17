@@ -582,3 +582,7 @@ Implemented and verified: personal literal message search, unread/acknowledged f
 ### OS-N17-07 — account browser audit grants (workstream 4, OS-PARITY-08)
 
 Implemented and verified: an administrator can grant/revoke audit journal viewing from an account page while preserving the account role. The existing service records security evidence and revokes sessions; separate journal authority does not grant account or business-record administration. [Round 7 evidence](paired-cycles-2026-11-17.md#round-7--audit-access-from-account-administration). Official Brazil granular-role/process-administration discovery (2026-11-17) merges domain policy inheritance and separate agent-role configuration viewing into existing WS4/WS15 missing P1 gaps; organization isolation and accountable execution identities remain dependencies.
+
+### OS-N17-08 — saved-report browser management (workstream 14, OS-PARITY-07)
+
+Implemented and verified: staff can create/edit/share/delete owned numeric report definitions in the browser; shared execution always uses the viewer’s current data permissions. Authorized staff owners can repair a definition when calculation becomes unavailable after schema/access changes. [Round 8](paired-cycles-2026-11-17.md#round-8--saved-report-browser-management) records original/repair regressions and gates. User/group/role-specific sharing and natural-language analytics remain missing P2 in the existing reporting/AI backlog (official Brazil Core UI reporting evidence retrieved 2026-11-17); no modern Platform Analytics designer parity claim.

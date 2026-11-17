@@ -288,6 +288,32 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/reports")) {
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();
+            String actor=c.user.get("user_id").toString();
+            if(method.equals("POST")) return redirect("/reports/"+ReportForms.save(c.db,actor,"",c.arguments()));
+            return view(c,"reports",map("table","reports","reports",SavedReports.list(c.db,actor),"canManage",Set.of("admin","agent").contains(c.role()),
+                    "reportDef",map("name","","table_name","incident","shared",0),"query",Map.of()));
+        }
+        Matcher savedReport=Pattern.compile("/reports/([0-9a-f]{32})").matcher(path);
+        if(savedReport.matches()) {
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();
+            String actor=c.user.get("user_id").toString(),id=savedReport.group(1);
+            if(method.equals("POST")) {
+                String operation=c.parameter("operation","");
+                TypedFields.require(Set.of("save","delete").contains(operation),"Choose save or delete");
+                if(operation.equals("delete")){SavedReports.remove(c.db,actor,id);return redirect("/reports");}
+                ReportForms.save(c.db,actor,id,c.arguments());return redirect("/reports/"+id);
+            }
+            var definition=SavedReports.find(c.db,actor,id);
+            boolean canManage=actor.equals(definition.get("owner_id")) && Set.of("admin","agent").contains(c.role());
+            Map<String,Object> metrics=null;String reportError=null;
+            try {metrics=SavedReports.run(c.db,actor,id);}
+            catch(Failure unavailable){if(!canManage)throw unavailable;reportError=unavailable.getMessage();}
+            return view(c,"saved-report",map("table","reports","reportDef",definition,"query",definition.get("definition"),
+                    "canManage",canManage,"reportError",reportError,
+                    "report",metrics,"history",ReportRuns.history(c.db,actor,id)));
+        }
         if(path.equals("/admin/events") || path.equals("/api/openservice/event-search")) {
             boolean api=path.startsWith("/api/");
             method(method,api?new String[]{"GET"}:new String[]{"GET","POST"});

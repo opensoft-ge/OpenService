@@ -1,0 +1,11 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org"><body><form th:fragment="editor" method="post" class="record-form">
+<input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="save">
+<label>Report name<input name="name" required maxlength="160" th:value="${reportDef.name}"></label>
+<label>Record type<input name="table" required maxlength="80" th:value="${reportDef.table_name}"></label><p>Use the record type key from the data dictionary, such as incident.</p>
+<label>Numeric field<input name="field" required maxlength="80" th:value="${query.getOrDefault('field','')}"></label><p>Choose a configured integer or decimal field key. See the <a href="/dictionary">data dictionary</a> for available fields.</p>
+<label>Group field<input name="group_by" maxlength="80" th:value="${query.getOrDefault('group_by','')}"></label>
+<label>Filter query<input name="q" th:value="${query.getOrDefault('q','')}"></label><p>Optional encoded record filters, such as category=service. Leave the group field empty to total all matching records.</p>
+<label>Minimum value<input name="minimum" inputmode="decimal" maxlength="128" th:value="${query.getOrDefault('minimum','')}"></label>
+<label>Maximum value<input name="maximum" inputmode="decimal" maxlength="128" th:value="${query.getOrDefault('maximum','')}"></label>
+<label for="report-sharing">Report visibility</label><select id="report-sharing" name="shared"><option value="false" th:selected="${reportDef.shared==0}">Only me</option><option value="true" th:selected="${reportDef.shared==1}">Everyone in this workspace</option></select>
+<p>Sharing makes the definition available. Each reader sees only data permitted by their current access.</p><button class="button primary">Save report</button></form></body></html>

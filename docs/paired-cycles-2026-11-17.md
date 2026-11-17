@@ -163,3 +163,24 @@ Final gates: 729 tests, zero failures/errors/skips; whole-project Java 6864/6864
 | WebController.java | 2113/2113 | 1087/1087 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Manage separate audit access from account administration`. No push.
+
+## Round 8 — saved-report browser management
+
+Selected `OS-N17-08`, workstream 14 / OS-PARITY-07. Saved-report create/update/run/delete and viewer-specific execution history exist only in the native API. Add browser list, creation, execution and owner-only editing/deletion, with ordinary labelled name/table/measure/group/filter/range/sharing fields. Staff can manage their own definitions; other signed-in users can execute shared definitions using current record/field permissions. Existing limits (100 owned reports; list up to 200) remain explicit. No dashboards, scheduled delivery, report-specific sharing groups or graphical designer claim. Alternatives: profile editing and migration reconciliation review.
+
+Official research: [create Core UI reports](https://www.servicenow.com/docs/r/now-intelligence/reporting/t_CreateYourOwnReport.html), Brazil updated 2026-09-17, and [share Core UI reports](https://www.servicenow.com/docs/r/now-intelligence/reporting/t_ShareASetting.html), Brazil updated 2026-09-24, retrieved 2026-11-17. Legacy Core UI and current Platform Analytics visualizations differ; this is native OpenService management, not vendor wire parity. Merge user/group/role-targeted sharing and natural-language analytics into existing reporting/AI gaps, missing P2, with permission-filtered definitions/results and explicit edit authority. Next research: user profiles and locale preferences.
+
+Acceptance: create/update/delete persistence and owner boundaries on both databases; sharing does not cache the author's private results; revoked field access blocks execution; invalid forms, CSRF and unauthorized mutation fail; keyboard/browser journey and both themes/mobile; shared viewers have no owner controls. Targeted SQLite/PostgreSQL/browser acceptance, stale-definition repair and the final clean full gate passed.
+
+QA R8-1: both database regressions reproduced a 400 that hid the owner's repair/delete controls after a numeric-field permission change. The browser detail now catches calculation failure only for a currently authorized staff owner, shows an explicit unavailable-results message and retains editing/deletion; shared non-owners still receive the original denial. Tests repair the definition to another allowed numeric field. The browser additionally reproduces a field-type change and repairs it. An initial unsupported-PUT assertion was corrected to the existing CSRF-before-routing 403 contract.
+
+Final UI copy review clarified that only successful calculations enter execution history; failed owner-repair views do not. The in-progress full run was stopped and superseded before changing the template; the final gate below measures the corrected tree.
+
+Final gates: 732 tests, zero failures/errors/skips; whole-project Java 6891/6891 lines, 3673/3673 branches, 401/401 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| ReportForms.java | 4/4 | 2/2 | 1/1 |
+| WebController.java | 2136/2136 | 1103/1103 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Manage and repair saved reports through the browser`. No push.

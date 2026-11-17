@@ -1,0 +1,4 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main class="platform-page">
+<section class="page-heading"><div><span class="eyebrow">MEASURE YOUR WORK</span><h1>Saved reports</h1><p>Reusable numeric metrics evaluated with your current data access.</p></div></section>
+<section class="panel retention-panel"><h2>Available reports</h2><p th:if="${reports.isEmpty()}">No saved reports are available.</p><ul><li th:each="item:${reports}"><a th:href="@{/reports/{id}(id=${item.report_id})}" th:text="${item.name}"></a> <span th:text="${item.shared==1 ? 'Shared' : 'Private'}"></span></li></ul><p>Up to 200 available definitions are listed. You may own up to 100 reports.</p></section>
+<section class="panel" th:if="${canManage}"><div class="panel-heading"><h2>Create a report</h2></div><form th:replace="~{report-editor :: editor}"></form></section></main></html>
