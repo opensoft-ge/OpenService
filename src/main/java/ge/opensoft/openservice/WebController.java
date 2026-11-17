@@ -543,6 +543,13 @@ public class WebController {
             return view(c,"approval-diagnostics",map("table",result.get("table_name"),"diagnostic",result,"reminder",reminder,"diagnosticPath",path,"reminderKey",id(),"reminderTime",java.time.Instant.now().plusSeconds(3600).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString(),"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false),
                 "reasons",Map.of("proposal_changed","The record or configuration changed. Request a fresh review.","reviewer_unavailable","The assigned reviewer is inactive, must replace their password or no longer has a staff role.","reviewer_credentials_changed","The reviewer’s authority changed after approval. Request a fresh decision.","reviewer_permission_changed","The reviewer no longer has the required record or transition access.","awaiting_decision","The current reviewer is eligible and has not recorded a decision.","review_closed","This review is closed without a qualifying approval.","same_as_actor","Your own approval cannot authorize your transition.","qualifying","This approval currently qualifies for your approval count. Other transition rules still apply.")));
         }
+        Matcher assetRelationships=Pattern.compile("/(?:record/cmdb_ci|api/openservice/assets)/([0-9a-f]{32})/relationships(/choose)?").matcher(path);
+        if(assetRelationships.matches()){
+            method(method,"GET","POST");c.uniqueQuery();boolean api=path.startsWith("/api/"),choosing=assetRelationships.group(2)!=null;String id=assetRelationships.group(1);Map<String,Object> result;
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");TypedFields.require(Set.of("true","false").contains(form.getOrDefault("remove","")),"Remove must be true or false");form.put("remove",Boolean.parseBoolean(form.get("remove").toString()));input=form;}AssetRelationships.change(c.db,id,input);String direction=object(input).get("direction").toString();if(!api)return redirect("/record/cmdb_ci/"+id+"/relationships?direction="+direction);result=AssetRelationships.page(c.db,id,Map.of("direction",direction),false);}
+            else result=AssetRelationships.page(c.db,id,c.arguments(),choosing);
+            return api?json(map("result",result),200):view(c,choosing?"asset-relationship-choose":"asset-relationships",map("table","cmdb_ci","relations",result));
+        }
         Matcher assetImpact=Pattern.compile("/record/cmdb_ci/([0-9a-f]{32})/impact").matcher(path);
         if(assetImpact.matches()) {
             method(method,"GET");c.noQuery();String id=assetImpact.group(1);var result=AssetOperations.impact(c.db,id);

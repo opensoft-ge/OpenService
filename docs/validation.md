@@ -1,6 +1,6 @@
 # Automatic development batch — latest verification
 
-Round 13 of the [20-round report](auto20-2026-11-17.md) passes **915 tests**, zero failures/errors/skips. Whole Java: **7866/7866 lines, 4949/4949 branches, 525/525 methods**; all 67 Java files changed against the accumulated QA base pass the exact gate. Both browser-script gates pass. This is local functional evidence; prior deployment/image qualifications retain their own scope.
+Round 14 of the [20-round report](auto20-2026-11-17.md) passes **920 tests**, zero failures/errors/skips. Whole Java: **7880/7880 lines, 4981/4981 branches, 529/529 methods**; all 68 Java files changed against the accumulated QA base pass the exact gate. Both browser-script gates pass. This is local functional evidence; prior deployment/image qualifications retain their own scope.
 
 # QA/QC follow-up — 17 November 2026
 

@@ -17,6 +17,8 @@ import java.util.regex.*;
 
 abstract class WorkflowSupport {
     @Test void conflictResolutionRejectsUnsupportedRowsAndChangedReviewers() throws Exception { MigrationConflictsAcceptance.boundaries(this); }
+    @Test void directAssetRelationshipsAreVisiblePagedAndMutable() throws Exception { AssetRelationshipsAcceptance.run(this); }
+    @Test void assetRelationshipChangesRequireCurrentAuthority() throws Exception { AssetRelationshipsAcceptance.boundaries(this); }
     @Test void breachedClocksNotifyCurrentResponsibleStaffAndOpenTheirContext() throws Exception { SlaAlertsAcceptance.run(this); }
     @Test void breachAlertsRespectCurrentPreferencesAndAuthority() throws Exception { SlaAlertsAcceptance.boundaries(this); }
     @Test void historicalKnowledgeRecoveryPreservesPublicationUntilRelease() throws Exception { KnowledgeDraftsAcceptance.run(this); }
