@@ -9,11 +9,14 @@ import java.util.*;
 final class Requests {
     private Requests() {}
 
+    static Map<String,Object> input(Object body) {
+        var input=object(body);
+        if(!Set.of("short_description","description").containsAll(input.keySet()))throw new Failure(400,"Submit a summary and description only");
+        return input;
+    }
+
     static Map<String, Object> create(Store.Db db, String actor, Object body) throws SQLException {
-        var input = object(body);
-        if (!Set.of("short_description", "description").containsAll(input.keySet()))
-            throw new Failure(400, "Submit a summary and description only");
-        var item = Service.create(db, "sc_request", input, actor);
+        var item = Service.create(db, "sc_request", input(body), actor);
         db.update(
                 "INSERT INTO os_requester_record(record_id,user_id) VALUES(?,?)",
                 item.get("sys_id"),

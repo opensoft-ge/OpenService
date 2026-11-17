@@ -1086,6 +1086,18 @@ public class WebController {
                             "comparisonName",
                             args.getOrDefault("with", "")));
         }
+        Matcher creationPreview=Pattern.compile("/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/creation-preview").matcher(path);
+        if(creationPreview.matches()){
+            c.admin();c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");method(method,api?new String[]{"POST"}:new String[]{"GET","POST"});String target=creationPreview.group(1);
+            Map<String,Object> inspection=map();String kind="record",table="incident",document="{\"short_description\":\"Review this work\"}";
+            if(method.equals("POST")){
+                Object input;
+                if(api)input=body(c);
+                else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");TypedFields.require(form.keySet().equals(Set.of("kind","table","values")),"Provide kind, table and values");kind=Objects.toString(form.get("kind"),"");table=Objects.toString(form.get("table"),"");document=Objects.toString(form.get("values"),"");input=map("kind",kind,"table",table,"values",CreationPreview.document(document));}
+                inspection=CreationPreview.inspect(c.db,c.db.viewerId,target,input);
+            }
+            return api?json(map("result",inspection),200):view(c,"creation-preview",map("table","accounts","account",Service.account(c.db,target),"inspection",inspection,"kind",kind,"selectedTable",table,"document",document));
+        }
         Matcher accountPermissions =
                 Pattern.compile(
                                 "/(?:api/openservice/users|admin/accounts)/([0-9a-f]{32})/permissions")

@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void proposedCreationCanBeCheckedInBothThemes() throws Exception { CreationPreviewBrowserAcceptance.run(this); }
     @Test void jobAttemptHistoryIsAccessibleInBothThemes() throws Exception { WorkAttemptsBrowserAcceptance.run(this); }
     @Test void catalogueQuestionsCanBeConfiguredAndAnsweredInBothThemes() throws Exception { CatalogueQuestionsBrowserAcceptance.run(this); }
     @Test void routedFulfilmentReachesRequesterCompletionInBothThemes() throws Exception { FulfilmentBrowserAcceptance.run(this); }

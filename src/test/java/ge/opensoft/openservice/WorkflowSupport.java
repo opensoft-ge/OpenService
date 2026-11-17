@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void proposedCreationChecksMatchNativeJourneysWithoutWrites() throws Exception { CreationPreviewAcceptance.run(this); }
+    @Test void proposedCreationChecksReevaluateConfiguredPoliciesAndReferences() throws Exception { CreationPreviewAcceptance.policies(this); }
     @Test void jobAttemptHistoryRetainsOutcomesWithoutPayloads() throws Exception { WorkAttemptsAcceptance.run(this); }
     @Test void jobAttemptHistorySurvivesLeasesRetriesRollbackAndCleanup() throws Exception { WorkAttemptsAcceptance.lifecycle(this); }
     @Test void questionSnapshotsRespectFieldAccessAndAtomicRouting() throws Exception { CatalogueQuestionsBoundariesAcceptance.run(this); }

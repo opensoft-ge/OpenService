@@ -96,9 +96,7 @@ public final class Service {
             throw new Failure(400, "Unknown state");
     }
 
-    public static Map<String, Object> create(Store.Db db, String table, Object body, String actor)
-            throws SQLException {
-        var definition = schema(db, table);
+    static Map<String,Object> creationData(Store.Db db,Map<String,Object> definition,Object body) throws SQLException {
         RecordPolicy.read(db,definition);
         RecordPolicy.require(definition, "create", db.viewerRole);
         var payload = object(body);
@@ -117,6 +115,14 @@ public final class Service {
         data.putAll(payload);
         TypedFields.transition(definition, data.getOrDefault("state", ""), db.viewerRole);
         TypedFields.check(db, definition, data);
+        ApprovalGate.creation(definition,data);
+        return data;
+    }
+
+    public static Map<String, Object> create(Store.Db db, String table, Object body, String actor)
+            throws SQLException {
+        var definition = schema(db, table);
+        var data = creationData(db, definition, body);
         String now = now();
         var item =
                 map(
