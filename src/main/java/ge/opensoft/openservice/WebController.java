@@ -212,6 +212,7 @@ public class WebController {
                         && !(context.role().equals("requester")
                                 && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
+                        && !path.matches("/(?:support|api/openservice/support)(?:/[0-9a-f]{32})?")
                         && !path.matches(
                                 "/(?:api/openservice/comments/[^/]+/[0-9a-f]{32}|record/[^/]+/[0-9a-f]{32}/comment)"))
                     throw new Failure(403, "Read-only account");
@@ -344,6 +345,14 @@ public class WebController {
             TypedFields.require(c.arguments().keySet().equals(Set.of("key")),"Provide key only");var result=EventCases.page(c.db,c.parameter("key",""));return api?json(map("result",result),200):view(c,"event-case",map("table","events","escalation",result));
         }
 
+        if(Set.of("/support","/api/openservice/support").contains(path)){
+            method(method,"GET","POST");c.uniqueQuery();boolean api=path.startsWith("/api/");if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}var result=SupportConversations.create(store,c.db,input);return api?json(map("result",result),201):redirect("/support/"+result.get("conversation_id"));}TypedFields.require(Set.of("article_id").containsAll(c.arguments().keySet()),"Use article_id only");String article=c.parameter("article_id","");Map<String,Object> source=article.isEmpty()?null:object(KnowledgeQuestions.context(store,c.db,article).get("source"));var conversations=SupportConversations.list(c.db);return api?json(map("result",conversations),200):view(c,"support-list",map("table","support","conversations",conversations,"source",source,"conversationKey",id()));
+        }
+        Matcher supportConversation=Pattern.compile("/(?:support|api/openservice/support)/([0-9a-f]{32})(/export)?").matcher(path);
+        if(supportConversation.matches()){
+            boolean api=path.startsWith("/api/"),export=supportConversation.group(2)!=null;method(method,export?new String[]{"GET"}:new String[]{"GET","POST"});c.noQuery();c.uniqueQuery();String id=supportConversation.group(1);Map<String,Object> result;if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));for(String flag:List.of("confirm","allow_external")){if(form.containsKey(flag)){TypedFields.require(Set.of("true","false").contains(form.get(flag)),"Use a boolean confirmation");form.put(flag,Boolean.parseBoolean(form.get(flag).toString()));}}input=form;}result=SupportConversations.submit(store,c.db,id,input);if(Boolean.TRUE.equals(result.get("deleted")))return api?json(map("result",result),200):redirect("/support");if(!api && !Set.of("preview","review_handoff").contains(object(input).get("operation")))return redirect("/support/"+id);}else result=SupportConversations.page(store,c.db,id);
+            if(export){disposition(c,"support-"+id+".json");return binary(JSON.writeValueAsBytes(map("conversation_id",id,"source",result.get("source"),"state",result.get("state"),"request_id",result.get("request_id"),"turns",result.get("turns"))),"application/json",200);}return api?json(map("result",result),200):view(c,"support-conversation",map("table","support","conversation",result));
+        }
         Matcher knowledgeFeedback=Pattern.compile("/(knowledge|api/openservice/knowledge)/([0-9a-f]{32})(/feedback)?").matcher(path);
         if(knowledgeFeedback.matches()){
             boolean api=path.startsWith("/api/"),write=knowledgeFeedback.group(3)!=null;method(method,write?"POST":"GET");c.noQuery();c.uniqueQuery();String id=knowledgeFeedback.group(2);Map<String,Object> result;

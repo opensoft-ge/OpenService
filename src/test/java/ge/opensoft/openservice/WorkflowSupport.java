@@ -16,6 +16,11 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void supportConversationRetainsContextAndHandsOffReviewedWork() throws Exception { SupportConversationsAcceptance.run(this); }
+    @Test void supportConversationRejectsUnauthorizedOrUnreviewedActions() throws Exception { SupportConversationsAcceptance.boundaries(this); }
+    @Test void supportConversationRechecksSourceAndHandoffPolicy() throws Exception { SupportConversationsAcceptance.contexts(this); }
+    @Test void supportConversationBudgetsAndRetentionRemainBounded() throws Exception { SupportConversationsAcceptance.limits(this); }
+
     @Test void failedWorkNotifiesItsCurrentOwnerAndLinksRecovery() throws Exception { WorkFailureAlertsAcceptance.run(this); }
     @Test void failureAlertsRespectCurrentOwnerAuthorityAndPreferences() throws Exception { WorkFailureAlertsAcceptance.boundaries(this); }
     @Test void attachmentScansQuarantineUntilCurrentCleanEvidence() throws Exception { AttachmentScanningAcceptance.run(this); }
@@ -130,7 +135,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_attachment_scan", "os_attachment",
+                            "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

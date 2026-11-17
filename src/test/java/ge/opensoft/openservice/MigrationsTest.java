@@ -15,6 +15,13 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void supportConversationUpgradePreservesPublishedKnowledge(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String article;
+        try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);article=KnowledgeSearchAcceptance.article(db,actor,"Retained article","Published source");db.update("DROP TABLE os_support_conversation");db.update("DELETE FROM os_migration WHERE version>=50");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_support_conversation"));db.connection.rollback();assertEquals(49,db.count("SELECT MAX(version) FROM os_migration"));}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Published source",Values.object(KnowledgeQuestions.context(store,db,article).get("source")).get("content"));assertEquals(0,db.count("SELECT COUNT(*) FROM os_support_conversation"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void attachmentScanUpgradePreservesLegacyContentAndHolds(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String file=Values.id();
         try(var db=store.open()){PlatformFoundationTest.bind(db);String record=PlatformFoundationTest.record(db,"incident","Legacy attachment");db.update("INSERT INTO os_attachment(sys_id,record_id,name,content,quarantined,hold_revision) VALUES(?,?,?,?,1,2)",file,record,"retained.txt","legacy bytes".getBytes());db.update("DROP TABLE os_attachment_scan");db.update("DELETE FROM os_migration WHERE version>=49");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_attachment_scan"));db.connection.rollback();assertEquals(48,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -596,6 +603,7 @@ class MigrationsTest {
                     (String)
                             db.one("SELECT password FROM os_user WHERE name='admin'")
                                     .get("password");
+            db.update("DROP TABLE os_support_conversation");
             db.update("DROP INDEX ix_os_user_identity");
             db.update("ALTER TABLE os_user DROP COLUMN user_id");
             db.update("DELETE FROM os_migration WHERE version>=2");

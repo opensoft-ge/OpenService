@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 49;
+    static final int VERSION = 50;
 
     private Migrations() {}
 
@@ -526,6 +526,10 @@ final class Migrations {
         if(version<49){
             db.update("CREATE TABLE IF NOT EXISTS os_attachment_scan(attachment_id VARCHAR(32) PRIMARY KEY REFERENCES os_attachment(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,status VARCHAR(20) NOT NULL,sha256 VARCHAR(64) NOT NULL,engine VARCHAR(255) NOT NULL,completed_at BIGINT NOT NULL,hold_revision BIGINT NOT NULL,release_on_clean INTEGER NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(49,?)","durable current-content attachment scanning");
+        }
+        if(version<50){
+            db.update("CREATE TABLE IF NOT EXISTS os_support_conversation(conversation_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id) ON DELETE CASCADE,article_id VARCHAR(32) NOT NULL,article_version INTEGER NOT NULL,revision INTEGER NOT NULL,state VARCHAR(20) NOT NULL,envelope TEXT NOT NULL,request_id VARCHAR(32) NOT NULL,updated_at BIGINT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(50,?)","owned support conversations and reviewed request handoff");
         }
     }
 
