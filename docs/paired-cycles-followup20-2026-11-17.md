@@ -93,3 +93,25 @@ Final gates: 786 tests, zero failures/errors/skips; whole-project Java 7168/7168
 | WebController.java | 2246/2246 | 1239/1239 | 41/41 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Test reviewed connector configurations and retire aliases safely`. No push.
+
+## Round 4 — reviewed attachment holds and release
+
+Selected `OS-N17B-04`, workstream 5 / OS-PARITY-08. Current attachment downloads enforce record visibility but have no hold/quarantine state. Add a manual administrator hold that blocks both browser and Attachment API file downloads, including for administrators. Record pages identify held files; metadata remains visible under the existing record boundary. Release requires a reason and review fingerprint tied to current bytes, metadata and hold revision. Preserve hold state across migration replacement of an existing attachment. Add a transactional schema upgrade with available-by-default legacy files. No automatic antivirus/privacy scanner, infected-file classification, quarantine retention or forensic-download exception is claimed; storage backups still contain held bytes.
+
+Compared attachment governance (5), report export (14) and knowledge feedback (9). Choose this concrete containment control before additional reporting convenience. Acceptance: native upload → administrator hold → denied downloads for every role → stale-content release rejection → reviewed release, CSRF/roles/strict input, current record isolation, audit evidence, restart persistence and both-theme browser review. Verify upgrade rollback/repeat without byte loss.
+
+Research retrieved 2026-11-17: official Brazil [attachment quarantine policies](https://www.servicenow.com/docs/r/platform-security/data-privacy-classic/attachment-quarantine-policies.html) and [Antivirus Scanning](https://www.servicenow.com/docs/r/platform-security/exploring-antivirus-scanning.html). Refresh existing OS-DISC-02 / WS5 P1 scanner/privacy backlog: pending, failed and infected scans need withheld downloads, safe release authority and durable evidence; dependencies include scanner integration, classification policy and operational ownership. The manual hold is only a prerequisite. Next research: authorized report export and spreadsheet safety.
+
+The initial SQLite/PostgreSQL route regressions returned 404 before implementation. Focused HTTP/browser/upgrade tests then passed. Full acceptance also performs two real staged migrations: import → hold → changed source bytes → fresh synchronization → still denied download → stale-review rejection → current reviewed release. This confirms preservation through the actual importer, not only a direct database update. Migration upgrade tests verify rollback, repeated startup and retained file bytes.
+
+Inspected desktop-light and mobile-dark review screenshots. The accumulated-change QA pass rechecked both file-download paths, metadata versus byte visibility, hold/release authority, CSRF, review fingerprints, serialized mutations, migration upsert behavior, current record boundaries, audit contents and earlier catalogue/connector/AI/approval repairs. No new or reopened defect or further repair was required. Manual holds do not block access to filesystem backups and do not establish malware safety.
+
+Final gates: 791 tests, zero failures/errors/skips; whole-project Java 7193/7193 lines, 3975/3975 branches, 427/427 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| AttachmentHolds.java | 12/12 | 14/14 | 3/3 |
+| Migrations.java | 191/191 | 102/102 | 3/3 |
+| WebController.java | 2255/2255 | 1249/1249 | 41/41 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Add reviewed attachment holds across download paths`. No push.

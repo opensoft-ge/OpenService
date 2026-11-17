@@ -46,6 +46,13 @@ class MigrationsTest {
         try(var db=new Store(env).open()){assertEquals(1,db.count("SELECT COUNT(*) FROM os_catalog_order"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_requester_record"));assertEquals("Retained offering",db.one("SELECT name FROM os_offering").get("name"));assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));}
     }
 
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void attachmentHoldUpgradePreservesBytesAndRollsBack(boolean postgres) throws Exception {
+        var env=configuration(postgres);var store=new Store(env);byte[] content={0,1,-1};
+        try(var db=store.open()){db.update("INSERT INTO os_attachment(sys_id,record_id,name,content,content_type) VALUES('retained','parent','file.bin',?,'application/octet-stream')",content);db.update("ALTER TABLE os_attachment DROP COLUMN quarantined");db.update("ALTER TABLE os_attachment DROP COLUMN hold_revision");db.update("DELETE FROM os_migration WHERE version>=38");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT quarantined FROM os_attachment"));db.connection.rollback();assertEquals(37,db.count("SELECT MAX(version) FROM os_migration"));}
+        for(int i=0;i<2;i++){try(var db=new Store(env).open()){var file=db.one("SELECT * FROM os_attachment WHERE sys_id='retained'");assertArrayEquals(content,(byte[])file.get("content"));assertEquals(0,file.get("quarantined"));assertEquals(0,file.get("hold_revision"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}
+    }
+
     @TempDir Path root;
 
     MockEnvironment configuration(boolean postgres) throws Exception {

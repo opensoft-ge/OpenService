@@ -305,6 +305,16 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher attachmentAccess=Pattern.compile("/(admin/attachments|api/openservice/attachment-access)/([0-9a-f]{32})").matcher(path);
+        if(attachmentAccess.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=attachmentAccess.group(2);boolean api=path.startsWith("/api/");
+            if(method.equals("POST")){
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");String held=Objects.toString(form.get("held"),"");TypedFields.require(Set.of("true","false").contains(held),"Choose download access");form.put("held",Boolean.parseBoolean(held));input=form;}
+                var result=AttachmentHolds.change(c.db,id,input);return api?json(map("result",result),200):redirect(path);
+            }
+            var result=AttachmentHolds.inspect(c.db,id);return api?json(map("result",result),200):view(c,"attachment-access",map("table",result.get("table"),"file",result));
+        }
+
         Matcher connectorConsole=Pattern.compile("/admin/connectors/([a-z][a-z0-9_-]{0,79})").matcher(path);
         if(connectorConsole.matches()){
             method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String alias=connectorConsole.group(1);
@@ -2372,6 +2382,7 @@ public class WebController {
                                     + RecordAccess.filter(c.db, "os_record.sys_id", allowed),
                             allowed.toArray())
                     == null) throw new Failure(404, "Attachment not found");
+            AttachmentHolds.requireDownload(c.db,file.get("sys_id").toString());
             disposition(c, (String) file.get("name"));
             return binary((byte[]) file.get("content"), (String) file.get("content_type"), 200);
         }
@@ -2666,7 +2677,7 @@ public class WebController {
                         item == null
                                 ? List.of()
                                 : c.db.all(
-                                        "SELECT sys_id,name FROM os_attachment WHERE record_id=?"
+                                        "SELECT sys_id,name,quarantined FROM os_attachment WHERE record_id=?"
                                                 + " ORDER BY sys_id",
                                         id)));
     }
@@ -3058,6 +3069,7 @@ public class WebController {
         }
         var metadata = metadata(c, row);
         if (!content) return json(map("result", metadata), 200);
+        AttachmentHolds.requireDownload(c.db,row.get("sys_id").toString());
         disposition(c, (String) row.get("file_name"));
         c.response.setHeader("X-Attachment-Metadata", JSON.writeValueAsString(metadata));
         return binary((byte[]) row.get("content"), (String) row.get("content_type"), 200);
