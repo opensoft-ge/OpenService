@@ -330,3 +330,25 @@ Final gates: 824 tests, zero failures/errors/skips; whole-project Java 7335/7335
 | WebController.java | 2290/2290 | 1325/1325 | 42/42 |
 
 Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Require fresh password confirmation for configured approval decisions`. No push.
+
+## Round 14 — separate response and resolution commitments
+
+Selected `OS-N17B-14`, workstream 8 / OS-PARITY-02. Existing service clocks have calendars and manual lifecycle controls but no purpose, so response and resolution commitments cannot be distinguished. Add optional `purpose:general|response|resolution` (default general), durable classification and browser selection. Permit one running/paused response clock and one running/paused resolution clock per record, with separate completion, pause/resume and budgets. Preserve multiple legacy general clocks. A terminal named clock permits a new one; starting twice is a conflict, not an idempotent retry. Add transactional schema 41 and a partial unique index; direct starts/control share the worker/HTTP lock.
+
+Compared clock purposes (8), subscriptions (6) and configuration comparison (12). Choose independent time commitments before notification expansion. Acceptance: API/form selection, invalid/extra inputs, retained legacy defaults, duplicate running/paused prevention, independent completion and another record, rollback/restart/upgrade, concurrent named starts and both-theme browser review. No automatic reply/resolution detection, SLA definition conditions, retroactive timing, repair/replay or multi-contract SLA engine.
+
+Official evidence retrieved 2026-11-17: Brazil [SLA definition](https://www.servicenow.com/docs/r/it-service-management/service-level-management/t_CreateAnSLADefinition.html), updated 2026-09-10. Vendor response/resolution targets classify agreements; conditions separately control their lifecycle. Merge explicit attach/pause/stop/reset conditions, relative duration and audit-based repair into existing missing WS8 P2 work, dependent on versioned policy and reliable record history. Native uniqueness is an OpenService contract, not claimed vendor behavior. Next research: personal subscriptions and notification channels.
+
+Both databases rejected named clock creation before implementation. Five focused API/browser/migration tests now pass, including transactional upgrade rollback, preserved legacy clocks and simultaneous direct starts returning exactly one success and one conflict. QA R14-1: the older calendar guide still said the browser could not create clocks; update it to the already implemented record controls and retain the actual parent-schedule/designer gaps. Add an explicit unknown-start-form-field rejection to the negative contract.
+
+Inspected desktop-light and mobile-dark screenshots, including the labelled horizontally scrollable clock table. Final accumulated-change review checked legacy defaults, named uniqueness during pause/restart/concurrent starts, independent lifecycle/budget state, shared business-lock ordering, record/read boundaries, snapshot calendars and migration rollback. Earlier approval revocation, AI consent, publication, catalogue, attachment and migration repairs remain valid. R14-1 is resolved; no new/reopened finding or further repair was required.
+
+Final gates: 829 tests, zero failures/errors/skips; whole-project Java 7343/7343 lines, 4221/4221 branches, 446/446 methods. Browser-script exact gates passed. Frozen source matched the final tested tree.
+
+| Touched production Java file | Lines | Branches | Methods |
+|---|---|---|---|
+| Migrations.java | 201/201 | 108/108 | 3/3 |
+| RecordClocks.java | 13/13 | 10/10 | 2/2 |
+| ServiceClocks.java | 87/87 | 50/50 | 6/6 |
+
+Final accumulated-change QA review against `e80a665f121e99489f480131a52ca777ec304282`: no new/reopened findings, no repairs in the final review, and no unresolved finding within this round. Known product gaps remain tracked separately. Local opendevbot commit: `Track response and resolution commitments with independent clocks`. No push.

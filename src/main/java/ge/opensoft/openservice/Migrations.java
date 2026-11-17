@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 40;
+    static final int VERSION = 41;
 
     private Migrations() {}
 
@@ -486,6 +486,11 @@ final class Migrations {
         if(version<40){
             db.update("CREATE TABLE IF NOT EXISTS os_event_case(event_key VARCHAR(160) PRIMARY KEY,record_id VARCHAR(32) NOT NULL UNIQUE,created_at BIGINT NOT NULL,creator_id VARCHAR(32) NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(40,?)","reviewed operational event to private incident correlation");
+        }
+        if(version<41){
+            addColumn(db,"os_sla","purpose","VARCHAR(20) NOT NULL DEFAULT 'general' CHECK(purpose IN ('general','response','resolution'))");
+            db.update("CREATE UNIQUE INDEX IF NOT EXISTS ix_os_sla_active_purpose ON os_sla(table_name,record_id,purpose) WHERE purpose<>'general' AND state IN ('running','paused')");
+            db.update("INSERT INTO os_migration(version,name) VALUES(41,?)","separate response and resolution service clocks");
         }
     }
 

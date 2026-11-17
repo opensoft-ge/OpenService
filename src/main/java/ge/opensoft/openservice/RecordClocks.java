@@ -15,8 +15,8 @@ final class RecordClocks {
   Service.requireAccountAdministrator(db,db.viewerId);page(db,table,id);
   var form=new LinkedHashMap<>(input);form.remove("csrf");String operation=form.getOrDefault("operation","");
   if(operation.equals("start")){
-   require(form.keySet().equals(Set.of("operation","calendar","minutes")),"Provide calendar and minutes only");
-   ServiceClocks.start(db,db.viewerId,map("table",table,"record_id",id,"calendar",form.get("calendar"),"minutes",Service.number(form.get("minutes"),1,525600)),System.currentTimeMillis());
+   require(form.keySet().containsAll(Set.of("operation","calendar","minutes")) && Set.of("operation","calendar","minutes","purpose").containsAll(form.keySet()),"Provide calendar and minutes only");
+   ServiceClocks.start(db,db.viewerId,map("table",table,"record_id",id,"calendar",form.get("calendar"),"minutes",Service.number(form.get("minutes"),1,525600),"purpose",form.getOrDefault("purpose","general")),System.currentTimeMillis());
   }else{
    require(form.keySet().equals(Set.of("operation","clock_id")),"Provide operation and clock_id only");
    var clock=db.one("SELECT sla_id FROM os_sla WHERE sla_id=? AND table_name=? AND record_id=?",form.get("clock_id"),table,id);

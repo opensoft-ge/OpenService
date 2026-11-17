@@ -26,11 +26,12 @@ final class ServiceClocks {
 
     static Map<String, Object> start(Store.Db db, String actor, Object input, long now)
             throws SQLException {
+        if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");
         Service.requireAccountAdministrator(db, actor);
         var body = object(input);
-        require(
-                body.keySet().equals(Set.of("table", "record_id", "calendar", "minutes")),
-                "Provide table, record_id, calendar and minutes");
+        require(body.keySet().containsAll(Set.of("table","record_id","calendar","minutes")) && Set.of("table","record_id","calendar","minutes","purpose").containsAll(body.keySet()),"Provide table, record_id, calendar, minutes and optional purpose");
+        String purpose=WorkJobs.text(body.getOrDefault("purpose","general"),20);
+        require(Set.of("general","response","resolution").contains(purpose),"Choose general, response or resolution");
         String table = WorkJobs.text(body.get("table"), 80),
                 record = WorkJobs.text(body.get("record_id"), 32),
                 calendar = WorkJobs.text(body.get("calendar"), 80);
@@ -40,20 +41,21 @@ final class ServiceClocks {
         Service.record(db, table, record);
         var schedule = db.one("SELECT definition FROM os_calendar WHERE calendar_id=?", calendar);
         if (schedule == null) throw new Failure(404, "Business calendar not found");
+        if(!purpose.equals("general") && db.count("SELECT COUNT(*) FROM os_sla WHERE table_name=? AND record_id=? AND purpose=? AND state IN ('running','paused')",table,record,purpose)>0)throw new Failure(409,"An active clock already tracks this purpose; complete or cancel it before starting another");
         String id = id();
         db.update(
                 "INSERT INTO"
-                    + " os_sla(sla_id,table_name,record_id,definition,remaining_ms,last_tick,state,owner_id)"
-                    + " VALUES(?,?,?,?,?,?,'running',?)",
+                    + " os_sla(sla_id,table_name,record_id,definition,remaining_ms,last_tick,state,owner_id,purpose)"
+                    + " VALUES(?,?,?,?,?,?,'running',?,?)",
                 id,
                 table,
                 record,
                 JSON.writeValueAsString(schedule.get("definition")),
                 ((Number) body.get("minutes")).longValue() * 60000,
                 now,
-                actor);
+                actor,purpose);
         SecurityEvents.record(
-                db, actor, actor, "sla.started", map("sla_id", id, "record_id", record));
+                db, actor, actor, "sla.started", map("sla_id", id, "record_id", record,"purpose",purpose));
         return db.one("SELECT * FROM os_sla WHERE sla_id=?", id);
     }
 
@@ -96,7 +98,7 @@ final class ServiceClocks {
         require(args.keySet().equals(Set.of("table")),"Provide only the record table");
         String table=WorkJobs.text(args.get("table"),80);
         Service.record(db,table,id);
-        var rows=db.all("SELECT sla_id,state,remaining_ms,last_tick,breached_at FROM os_sla WHERE table_name=? AND record_id=? ORDER BY last_tick DESC,sla_id LIMIT 101",table,id);
+        var rows=db.all("SELECT sla_id,purpose,state,remaining_ms,last_tick,breached_at FROM os_sla WHERE table_name=? AND record_id=? ORDER BY last_tick DESC,sla_id LIMIT 101",table,id);
         boolean more=rows.size()>100;
         if(more) rows.removeLast();
         return map("table",table,"record_id",id,"clocks",rows,"truncated",more);
@@ -104,6 +106,7 @@ final class ServiceClocks {
 
     static void control(Store.Db db, String actor, String id, String operation, long now)
             throws SQLException {
+        if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");
         Service.requireAccountAdministrator(db, actor);
         require(
                 Set.of("pause", "resume", "complete", "cancel").contains(operation),

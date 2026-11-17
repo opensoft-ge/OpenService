@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void clockPurposeUpgradeAndConcurrentStartsRemainSafe(boolean postgres) throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String record,calendar="purpose-upgrade";
+        try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);record=PlatformFoundationTest.record(db,"incident","Retained clock");ServiceClocks.calendar(db,actor,Values.map("name",calendar,"calendar",PlatformFoundationTest.calendar()));ServiceClocks.start(db,actor,Values.map("table","incident","record_id",record,"calendar",calendar,"minutes",120),System.currentTimeMillis());db.update("DROP INDEX ix_os_sla_active_purpose");db.update("ALTER TABLE os_sla DROP COLUMN purpose");db.update("DELETE FROM os_migration WHERE version>=41");db.connection.commit();Migrations.apply(db);assertEquals("general",db.one("SELECT purpose FROM os_sla").get("purpose"));db.connection.rollback();assertEquals(40,db.count("SELECT MAX(version) FROM os_migration"));}
+        var upgraded=new Store(env);try(var executor=Executors.newFixedThreadPool(2)){var begin=new CountDownLatch(1);List<Future<Integer>> results=new ArrayList<>();for(int i=0;i<2;i++)results.add(executor.submit(()->{begin.await();try(var db=upgraded.open()){String actor=PlatformFoundationTest.bind(db);try{ServiceClocks.start(db,actor,Values.map("table","incident","record_id",record,"calendar",calendar,"minutes",120,"purpose","response"),System.currentTimeMillis());db.connection.commit();return 200;}catch(Values.Failure conflict){return conflict.status;}}}));begin.countDown();assertEquals(Set.of(200,409),Set.of(results.get(0).get(30,TimeUnit.SECONDS),results.get(1).get(30,TimeUnit.SECONDS)));}
+        try(var db=new Store(env).open()){assertEquals(2,db.count("SELECT COUNT(*) FROM os_sla"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_sla WHERE purpose='general'"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_sla WHERE purpose='response'"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void knowledgeFeedbackUpgradeRollsBackAndRetainsReviews(boolean postgres) throws Exception {
         var env=configuration(postgres);var store=new Store(env);
         try(var db=store.open()){db.update("DROP TABLE os_knowledge_feedback");db.update("DELETE FROM os_migration WHERE version>=39");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_knowledge_feedback"));db.connection.rollback();assertEquals(38,db.count("SELECT MAX(version) FROM os_migration"));}
