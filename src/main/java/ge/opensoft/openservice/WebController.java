@@ -946,6 +946,17 @@ public class WebController {
             method(method,"GET");c.admin();c.uniqueQuery();boolean detail=migrationRows.group(2)!=null,api=path.startsWith("/api/");if(detail)c.noQuery();var result=detail?MigrationRows.inspect(c.db,migrationRows.group(1),migrationRows.group(2),migrationRows.group(3)):MigrationRows.page(c.db,migrationRows.group(1),c.arguments());return api?json(map("result",result),200):view(c,detail?"migration-row":"migration-rows",map("table","migration","inspection",result));
         }
 
+
+        var dashboardEditor=Pattern.compile("/dashboards/(new|([0-9a-f]{32})/edit)").matcher(path);
+        if(dashboardEditor.matches()){method(method,"GET");c.uniqueQuery();c.noQuery();String id=Objects.toString(dashboardEditor.group(2),"");return view(c,"dashboard-editor",map("table","dashboards","page",Dashboards.editor(c.db,id)));}
+        var dashboards=Pattern.compile("/(dashboards|api/openservice/dashboards)(?:/([0-9a-f]{32})(/delete)?)?").matcher(path);
+        if(dashboards.matches()){
+            c.uniqueQuery();c.noQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(dashboards.group(2),"");
+            if(dashboards.group(3)!=null){method(method,"POST");Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));input=form;}Dashboards.remove(c.db,id,input);return api?json(map("result",map("deleted",true)),200):redirect("/dashboards");}
+            method(method,"GET","POST");if(method.equals("POST")){var result=Dashboards.save(c.db,id,api?body(c):Dashboards.form(c.arguments()));return api?json(map("result",result),id.isEmpty()?201:200):redirect("/dashboards/"+result.get("dashboard_id"));}
+            if(id.isEmpty()){var rows=Dashboards.list(c.db);return api?json(map("result",rows),200):view(c,"dashboards",map("table","dashboards","dashboards",rows,"canManage",Set.of("admin","agent").contains(c.role())));}
+            var page=Dashboards.show(c.db,id);return api?json(map("result",page),200):view(c,"dashboard-view",map("table","dashboards","page",page));
+        }
         var measurementSchedule=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/measurement-schedule").matcher(path);
         if(measurementSchedule.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();c.noQuery();boolean api=path.startsWith("/api/");String id=measurementSchedule.group(1);Map<String,Object> page;

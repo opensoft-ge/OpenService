@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 86;
+    static final int VERSION = 87;
 
     private Migrations() {}
 
@@ -757,6 +757,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_report_schedule(schedule_id VARCHAR(32) PRIMARY KEY,report_id VARCHAR(32) NOT NULL,owner_id VARCHAR(32) NOT NULL,revision INTEGER NOT NULL,auth_revision BIGINT NOT NULL,definition_hash VARCHAR(64) NOT NULL,interval_minutes INTEGER NOT NULL,enabled INTEGER NOT NULL,next_at BIGINT NOT NULL,last_job VARCHAR(32) NOT NULL,status VARCHAR(80) NOT NULL,UNIQUE(report_id,owner_id))");
             db.update("CREATE INDEX IF NOT EXISTS ix_report_schedule_due ON os_report_schedule(enabled,next_at)");
             db.update("INSERT INTO os_migration(version,name) VALUES(86,?)","recurring private report measurement schedules");
+        }
+
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=87")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_dashboard(dashboard_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL,name VARCHAR(160) NOT NULL,visibility VARCHAR(20) NOT NULL,revision INTEGER NOT NULL,definition TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_dashboard_group(dashboard_id VARCHAR(32) NOT NULL,group_id VARCHAR(32) NOT NULL,PRIMARY KEY(dashboard_id,group_id))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(87,?)","owned live report dashboards and current group view grants");
         }
 
 
