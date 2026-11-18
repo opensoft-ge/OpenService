@@ -17,7 +17,7 @@ final class CatalogueQuestions {
         require(input instanceof List<?> items && items.size()<=20,"Use at most 20 questions");
         var result=new ArrayList<Map<String,Object>>();var keys=new HashSet<String>();
         for(Object raw:(List<?>)input){
-            var q=object(raw);require(q.keySet().equals(Set.of("key","label","type","required","choices")),"Provide key, label, type, required and choices");
+            var q=object(raw);require(q.keySet().containsAll(Set.of("key","label","type","required","choices")) && Set.of("key","label","type","required","choices","when").containsAll(q.keySet()),"Provide key, label, type, required and choices");
             String key=WorkJobs.text(q.get("key"),40),label=WorkJobs.text(q.get("label"),160),type=WorkJobs.text(q.get("type"),20);
             require(key.matches("[a-z][a-z0-9_]{0,39}") && keys.add(key),"Use unique question keys with lowercase letters, digits and underscores");
             require(Set.of("string","choice","boolean","date","integer").contains(type),"Choose text, choice, yes/no, date or integer");
@@ -25,7 +25,7 @@ final class CatalogueQuestions {
             require(q.get("choices") instanceof List<?> options && options.size()<=20,"Use at most 20 choices");
             var choices=new ArrayList<String>();for(Object option:(List<?>)q.get("choices")){String choice=WorkJobs.text(option,120);require(!choices.contains(choice),"Choices must be unique");choices.add(choice);}
             require(type.equals("choice")?!choices.isEmpty():choices.isEmpty(),"Choice questions need options; other types must have none");
-            result.add(map("key",key,"label",label,"type",type,"required",q.get("required"),"choices",choices));
+            var normalized=map("key",key,"label",label,"type",type,"required",q.get("required"),"choices",choices);CatalogueConditions.validate(q,normalized,result);result.add(normalized);
         }
         return result;
     }
@@ -46,13 +46,13 @@ final class CatalogueQuestions {
     static Map<String,Object> edit(Store.Db db,String actor,String id,Map<String,Object> form) throws SQLException {
         Service.requireAccountAdministrator(db,actor);if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");var offering=Catalogue.find(db,id,true);String operation=WorkJobs.text(form.get("operation"),10);
         require(Set.of("save","remove").contains(operation),"Choose save or remove");boolean remove=operation.equals("remove");
-        require(form.keySet().equals(remove?Set.of("operation","revision","key"):Set.of("operation","revision","key","label","type","required","choices")),"Provide the question form fields");
+        var fields=new HashSet<>(remove?Set.of("operation","revision","key"):Set.of("operation","revision","key","label","type","required","choices"));if(!remove && form.containsKey("condition_key"))fields.addAll(Set.of("condition_key","condition_value"));require(form.keySet().equals(fields),"Provide the question form fields");
         String key=WorkJobs.text(form.get("key"),40);var questions=new ArrayList<>(objects(offering.get("questions")));int index=-1;for(int i=0;i<questions.size();i++)if(questions.get(i).get("key").equals(key))index=i;
         if(remove){if(index<0)throw new Failure(404,"Question not found");questions.remove(index);}
         else{
             require(Set.of("true","false").contains(form.get("required")),"Choose required or optional");require(form.get("choices") instanceof String,"Choices must be text");String options=form.get("choices").toString();
             var question=map("key",key,"label",form.get("label"),"type",form.get("type"),"required",Boolean.parseBoolean(form.get("required").toString()),"choices",options.isBlank()?List.of():Arrays.asList(options.split("\\R",-1)));
-            if(index<0)questions.add(question);else questions.set(index,question);
+            CatalogueConditions.form(form,question);if(index<0)questions.add(question);else questions.set(index,question);
         }
         return save(db,actor,id,map("revision",form.get("revision"),"questions",questions));
     }
@@ -71,9 +71,9 @@ final class CatalogueQuestions {
     }
 
     static List<Map<String,Object>> snapshot(Store.Db db,Map<String,Object> offering,Map<String,Object> answers) throws SQLException {
-        var rules=map();for(var q:objects(offering.get("questions")))rules.put(q.get("key").toString(),map("type",q.get("type"),"required",q.get("required"),"max_length",2000,"choices",q.get("choices")));
-        require(rules.keySet().containsAll(answers.keySet()),"One or more answers do not belong to this offering");TypedFields.check(db,map("field_rules",rules),answers);
-        var snapshot=new ArrayList<Map<String,Object>>();for(var q:objects(offering.get("questions")))snapshot.add(map("key",q.get("key"),"label",q.get("label"),"type",q.get("type"),"value",answers.getOrDefault(q.get("key"),"")));return snapshot;
+        var all=objects(offering.get("questions"));var keys=new HashSet<String>();for(var q:all)keys.add(q.get("key").toString());require(keys.containsAll(answers.keySet()),"One or more answers do not belong to this offering");var active=CatalogueConditions.active(all,answers);var rules=map();for(var q:active)rules.put(q.get("key").toString(),map("type",q.get("type"),"required",q.get("required"),"max_length",2000,"choices",q.get("choices")));
+        TypedFields.check(db,map("field_rules",rules),answers);
+        var snapshot=new ArrayList<Map<String,Object>>();for(var q:active)snapshot.add(map("key",q.get("key"),"label",q.get("label"),"type",q.get("type"),"value",answers.getOrDefault(q.get("key"),"")));return snapshot;
     }
 
     static String description(List<Map<String,Object>> answers) {

@@ -16,6 +16,11 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void catalogueConditionsAnswersAndAuthority() throws Exception { CatalogueConditionsAcceptance.answersAndAuthority(this); }
+    @Test void catalogueConditionsDefinitions() throws Exception { CatalogueConditionsAcceptance.definitions(this); }
+    @Test void catalogueConditionsEditor() throws Exception { CatalogueConditionsAcceptance.editor(this); }
+    @Test void catalogueConditionsAssistedAndConcurrent() throws Exception { CatalogueConditionsAcceptance.assistedAndConcurrent(this); }
+    @Test void catalogueConditionsRun() throws Exception { CatalogueConditionsAcceptance.run(this); }
     @Test void workflowInsightsTiesAndRetention() throws Exception { WorkflowInsightsAcceptance.tiesAndRetention(this); }
     @Test void workflowInsightsEvidence() throws Exception { WorkflowInsightsAcceptance.evidence(this); }
     @Test void workflowInsightsAuthorization() throws Exception { WorkflowInsightsAcceptance.authorization(this); }

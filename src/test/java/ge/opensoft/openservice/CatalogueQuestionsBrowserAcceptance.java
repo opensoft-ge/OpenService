@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 final class CatalogueQuestionsBrowserAcceptance {
-    static void question(Page page,String key,String label,String type,boolean required,String choices){page.getByLabel("Question key").fill(key);page.getByLabel("Question label").fill(label);page.getByLabel("Answer type").selectOption(type);page.getByLabel("Answer required").selectOption(Boolean.toString(required));page.getByLabel("Choices",new Page.GetByLabelOptions().setExact(true)).fill(choices);page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Save question")).press("Enter");}
+    static void question(Page page,String key,String label,String type,boolean required,String choices){page.getByLabel("Question key",new Page.GetByLabelOptions().setExact(true)).fill(key);page.getByLabel("Question label").fill(label);page.getByLabel("Answer type").selectOption(type);page.getByLabel("Answer required").selectOption(Boolean.toString(required));page.getByLabel("Choices",new Page.GetByLabelOptions().setExact(true)).fill(choices);page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Save question")).press("Enter");}
     static void run(BrowserTest h)throws Exception {
         String title="Configured service "+id().substring(0,8),buyer="QuestionBuyer"+id().substring(0,8);
         try(var db=h.store.open()){Service.createAccount(db,map("name",buyer,"password",WorkflowSupport.PASSWORD,"role","requester"));db.connection.commit();}

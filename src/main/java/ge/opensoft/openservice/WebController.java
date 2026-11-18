@@ -1331,7 +1331,7 @@ public class WebController {
             c.db.count("SELECT 1");
             return json(map("status", "ok"), 200);
         }
-        if (path.equals("/static/migrations.js")) {
+        if (Set.of("/static/migrations.js","/static/catalogue.js").contains(path)) {
             method(method, "GET");
             try (var input = WebController.class.getResourceAsStream(path)) {
                 return binary(
