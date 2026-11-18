@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 82;
+    static final int VERSION = 83;
 
     private Migrations() {}
 
@@ -738,6 +738,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_totp_challenge(session_hash VARCHAR(64) PRIMARY KEY,user_id VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,expires_at BIGINT NOT NULL,envelope TEXT NOT NULL)");
             db.update("CREATE TABLE IF NOT EXISTS os_totp_attempt(user_id VARCHAR(32) PRIMARY KEY,failures INTEGER NOT NULL,expires_at BIGINT NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(82,?)","verified TOTP enrollment, single-use recovery and browser second-factor challenges");
+        }
+
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=83")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_offboarding(handoff_id VARCHAR(32) PRIMARY KEY,source_id VARCHAR(32) NOT NULL,recipient_id VARCHAR(32) NOT NULL,actor_id VARCHAR(32) NOT NULL,created_at VARCHAR(26) NOT NULL,detail TEXT NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_offboarding_source ON os_offboarding(source_id,created_at)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(83,?)","reviewed account offboarding work and report handoff receipts");
         }
 
     }

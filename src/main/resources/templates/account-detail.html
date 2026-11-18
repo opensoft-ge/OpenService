@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main class="account-settings">
 <section class="page-heading"><div><span class="eyebrow">ACCOUNT ADMINISTRATION</span><h1 th:text="${account.name}">Account</h1><p>Manage this account’s access.</p></div><a href="/admin/accounts" class="button">All accounts</a></section>
+<p><a class="button" th:href="${'/admin/accounts/'+account.user_id+'/offboarding'}">Review offboarding handoff</a></p>
 <section class="panel retention-panel"><h2>Self-reported profile</h2><dl><dt>Display name</dt><dd class="account-name" th:text="${profile.display_name.isEmpty() ? 'Not provided' : profile.display_name}"></dd><dt>Job title</dt><dd class="account-name" th:text="${profile.job_title.isEmpty() ? 'Not provided' : profile.job_title}"></dd></dl><p>Only the account holder edits these details. They do not confer permissions or verify employment.</p></section>
 <section class="panel"><div class="panel-heading"><h2>Account access</h2></div>
 <div th:if="${error!=null}" class="notice" role="alert" th:text="${error}"></div>

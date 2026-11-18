@@ -342,6 +342,12 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher offboarding=Pattern.compile("/(?:admin/accounts|api/openservice/users)/([0-9a-f]{32})/offboarding").matcher(path);
+        if(offboarding.matches()) {
+            method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=offboarding.group(1);
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}var result=Offboarding.apply(c.db,id,input);return api?json(map("result",result),200):redirect("/admin/accounts/"+id+"/offboarding");}
+            if(!Set.of("recipient").containsAll(c.arguments().keySet()))throw new Failure(400,"Use successor username only");String recipient=c.parameter("recipient","");if(recipient.length()>80)throw new Failure(400,"Successor username is too long");var page=Offboarding.page(c.db,id,recipient);return api?json(map("result",page),200):view(c,"offboarding",map("table","account","page",page));
+        }
         if(path.equals("/mfa")) {
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();
             if(method.equals("POST")){checkCsrf(c,c.parameter("csrf",""));var input=new LinkedHashMap<String,Object>(c.arguments());input.remove("csrf");return finishSignIn(c,Totp.complete(store,c.db,c.session.getId(),input,System.currentTimeMillis()));}
