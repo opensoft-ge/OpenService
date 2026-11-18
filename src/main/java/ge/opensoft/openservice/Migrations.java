@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 65;
+    static final int VERSION = 66;
 
     private Migrations() {}
 
@@ -621,6 +621,11 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_hr_onboarding(parent_id VARCHAR(32) PRIMARY KEY,revision INTEGER NOT NULL,launched INTEGER NOT NULL,steps TEXT NOT NULL)");
             db.update("CREATE TABLE IF NOT EXISTS os_hr_onboarding_work(child_id VARCHAR(32) PRIMARY KEY,parent_id VARCHAR(32) NOT NULL,task_id VARCHAR(32) NOT NULL UNIQUE,ordinal INTEGER NOT NULL,group_id VARCHAR(32) NOT NULL,display_title VARCHAR(160) NOT NULL,status VARCHAR(16) NOT NULL,reason TEXT NOT NULL,updated VARCHAR(40) NOT NULL,UNIQUE(parent_id,ordinal))");
             db.update("INSERT INTO os_migration(version,name) VALUES(65,?)","reviewed department onboarding and private HR progress");
+        }
+
+        if(version<66){
+            db.update("CREATE TABLE IF NOT EXISTS os_risk_assessment(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(66,?)","native risk assessment history and reviewed treatment");
         }
 
     }

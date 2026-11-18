@@ -282,5 +282,67 @@
         "admin"
       ]
     }
+  },
+  "risk": {
+    "label": "Risks",
+    "prefix": "RSK",
+    "fields": {
+      "short_description": "Risk summary",
+      "description": "Risk description",
+      "assigned_to": "Assigned to",
+      "assignment_group": "Assignment group",
+      "state": "State",
+      "priority": "Priority",
+      "risk_score": "Inherent risk score",
+      "residual_score": "Residual risk score"
+    },
+    "states": {
+      "draft": "Draft",
+      "assess": "Assessment",
+      "respond": "Treatment and review",
+      "monitor": "Monitoring",
+      "retired": "Retired"
+    },
+    "flow": {
+      "draft": [
+        "assess"
+      ],
+      "assess": [
+        "respond"
+      ],
+      "respond": [
+        "assess",
+        "monitor"
+      ],
+      "monitor": [
+        "assess",
+        "retired"
+      ],
+      "retired": [
+        "assess"
+      ]
+    },
+    "record_roles": {
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    },
+    "transition_rules": {
+      "monitor": {
+        "min_approvals": 1
+      }
+    }
   }
 }

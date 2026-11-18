@@ -95,6 +95,7 @@ final class Approvals {
             Map<String, Object> definition,
             String target)
             throws SQLException {
+        RiskAssessments.reviewable(db,table,item,target);
         RecordPolicy.require(definition, "read", db.viewerRole);
         RecordPolicy.require(definition, "update", db.viewerRole);
         FieldAccess.writing(db, definition, map("state", target));

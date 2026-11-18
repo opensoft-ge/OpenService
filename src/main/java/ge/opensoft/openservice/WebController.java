@@ -349,6 +349,12 @@ public class WebController {
             if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","task_revision","record_revision"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));input=form;}result=FieldDispatch.command(c.db,table,id,task,input);if(!api)return redirect(path);}else result=FieldDispatch.page(c.db,table,id,task);
             return api?json(map("result",result),200):view(c,"field-dispatch",map("table",table,"page",result,"dispatchPath","/record/"+table+"/"+id+"/field-dispatch/"+task));
         }
+        Matcher riskAssessment=Pattern.compile("/(?:record/risk|api/openservice/risks)/([0-9a-f]{32})/assessment").matcher(path);
+        if(riskAssessment.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=riskAssessment.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision","likelihood","impact","residual_likelihood","residual_impact"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));input=form;}result=RiskAssessments.save(c.db,id,input);if(!api)return redirect(path);}else result=RiskAssessments.page(c.db,id);
+            return api?json(map("result",result),200):view(c,"risk-assessment",map("table","risk","definition",Service.schema(c.db,"risk"),"page",result,"assessmentPath","/record/risk/"+id+"/assessment"));
+        }
         Matcher onboarding=Pattern.compile("/(?:record/hr_case|api/openservice/hr-cases)/([0-9a-f]{32})/onboarding").matcher(path);
         if(onboarding.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=onboarding.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
@@ -365,7 +371,7 @@ public class WebController {
                 Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","record_revision"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));if(Set.of("create","revise").contains(Objects.toString(form.get("operation"),""))){var predecessors=new ArrayList<String>();for(String key:new ArrayList<>(form.keySet()))if(key.startsWith("predecessor_")){TypedFields.require(form.remove(key).equals("true"),"Choose predecessor tasks");predecessors.add(key.substring(12));}form.put("predecessors",predecessors);}if(form.containsKey("required")){TypedFields.require(Set.of("true","false").contains(form.get("required")),"Choose whether the task is required");form.put("required",Boolean.parseBoolean(form.get("required").toString()));}input=form;}
                 result=WorkTasks.command(c.db,table,id,input);if(!api)return redirect(path);
             }else result=WorkTasks.page(c.db,table,id);
-            return api?json(map("result",result),200):view(c,"work-tasks",map("table",table,"work",result,"workPath","/record/"+table+"/"+id+"/work-tasks"));
+            return api?json(map("result",result),200):view(c,"work-tasks",map("table",table,"definition",Service.schema(c.db,table),"work",result,"workPath","/record/"+table+"/"+id+"/work-tasks"));
         }
         Matcher recordScope=Pattern.compile("/(?:admin|api/openservice)/record-scopes/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32})").matcher(path);
         if(recordScope.matches()){

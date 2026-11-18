@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void riskAssessmentUpgradeRetainsHistory(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String retained,risk;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","UpgradeRiskOwner","role","agent","password",WorkflowSupport.PASSWORD));retained=Service.create(db,"incident",Values.map("short_description","Retained incident before risk upgrade"),"admin").get("sys_id").toString();db.update("DROP TABLE os_risk_assessment");db.update("DELETE FROM os_schema WHERE name='risk'");db.update("DELETE FROM os_migration WHERE version>=66");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_risk_assessment"));db.connection.rollback();assertEquals(65,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);risk=Service.create(db,"risk",Values.map("short_description","Retained supply risk"),"admin").get("sys_id").toString();var body=Values.map("revision",0,"record_revision",0,"likelihood",5,"impact",5,"residual_likelihood",2,"residual_impact",2,"response","accept","rationale","Retained assessment rationale","treatment","Retained acceptance plan","owner","UpgradeRiskOwner","review_on","2030-12-31");RiskAssessments.save(db,risk,body);body.put("revision",1);body.put("record_revision",1);body.put("residual_impact",1);RiskAssessments.save(db,risk,body);db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Retained incident before risk upgrade",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));var page=RiskAssessments.page(db,risk);assertEquals(2,Values.objects(page.get("history")).size());assertEquals(25,Values.object(page.get("assessment")).get("score"));assertEquals(2,Values.object(page.get("assessment")).get("residual_score"));assertEquals(4,Values.object(Values.objects(page.get("history")).getLast().get("detail")).get("residual_score"));assertEquals(true,page.get("current"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void onboardingUpgradeRetainsPrivateDepartmentProgress(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String parent,group,child,task;
         try(var db=store.open()){PlatformFoundationTest.bind(db);group=Service.create(db,"sys_user_group",Values.map("short_description","Upgrade onboarding department"),"admin").get("sys_id").toString();EmployeeServices.save(db,Values.map("operation","employee","username","admin","department","Engineering","active",true,"revision",0));String service=Values.objects(EmployeeServices.save(db,EmployeeCasesAcceptance.service("",0,group,"Engineering")).get("services")).getFirst().get("service_id").toString();parent=EmployeeCases.create(db,service,Values.map("employee_revision",1,"service_revision",1,"summary","Retained onboarding case","description","PRIVATE retained HR details","key",Values.id())).get("sys_id").toString();for(String table:List.of("os_hr_onboarding_work","os_hr_onboarding"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_migration WHERE version>=65");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_hr_onboarding"));db.connection.rollback();assertEquals(64,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -949,7 +957,8 @@ class MigrationsTest {
                 try (var db = future.get(30, TimeUnit.SECONDS).open()) {
                     assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
                     assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
-                    assertEquals(9, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertEquals(10, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='risk'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='hr_case'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='customer_case'"));
                 }
