@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 92;
+    static final int VERSION = 93;
 
     private Migrations() {}
 
@@ -788,6 +788,11 @@ final class Migrations {
         if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=92")==0) {
             db.update("CREATE TABLE IF NOT EXISTS os_ai_evaluation(suite_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL,name VARCHAR(160) NOT NULL,version VARCHAR(80) NOT NULL,cohort VARCHAR(12) NOT NULL,dataset_hash VARCHAR(64) NOT NULL,envelope TEXT NOT NULL,created VARCHAR(26) NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(92,?)","sealed native assistant evaluations");
+        }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=93")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_imported_journal(sequence "+(db.postgres?"BIGSERIAL PRIMARY KEY":"INTEGER PRIMARY KEY AUTOINCREMENT")+",source_url VARCHAR(320) NOT NULL,journal_id VARCHAR(32) NOT NULL,job_id VARCHAR(32) NOT NULL,source_table VARCHAR(80) NOT NULL,target_table VARCHAR(80) NOT NULL,record_id VARCHAR(32) NOT NULL,kind VARCHAR(40) NOT NULL,body TEXT NOT NULL,reported_author VARCHAR(200) NOT NULL,reported_time VARCHAR(80) NOT NULL,fingerprint VARCHAR(64) NOT NULL,publisher_id VARCHAR(32) NOT NULL,published VARCHAR(26) NOT NULL,UNIQUE(source_url,journal_id))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_imported_journal_record ON os_imported_journal(record_id,sequence)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(93,?)","reviewed imported journal publication");
         }
     }
 

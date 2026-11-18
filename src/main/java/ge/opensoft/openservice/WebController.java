@@ -1347,6 +1347,13 @@ public class WebController {
             }
         }
 
+        Matcher importedHistory=Pattern.compile("/(?:record/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32})/imported-history|api/openservice/imported-history/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32}))").matcher(path);
+        if(importedHistory.matches()){
+            method(method,"GET","POST");c.uniqueQuery();boolean api=path.startsWith("/api/");String table=api?importedHistory.group(3):importedHistory.group(1),record=api?importedHistory.group(4):importedHistory.group(2);Map<String,Object> result;
+            if(method.equals("GET"))result=ImportedJournals.page(c.db,table,record,c.arguments());else{c.admin();c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");if(form.containsKey("confirm"))form.put("confirm","true".equals(form.get("confirm")));input=form;}result=ImportedJournals.command(c.db,table,record,input);}
+            return api?json(map("result",result),200):view(c,"imported-history",map("table",table,"definition",FieldAccess.schema(c.db,Service.schema(c.db,table)),"recordId",record,"page",result));
+        }
+
         Matcher evaluation=Pattern.compile("/(?:admin|api/openservice)/ai-evaluations(?:/([0-9a-f]{32}))?").matcher(path);
         if(evaluation.matches()){
             c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String suite=Objects.toString(evaluation.group(1),"");Map<String,Object> result;

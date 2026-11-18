@@ -1,6 +1,6 @@
 # Automatic development batch — 18 November 2026
 
-Round **43 of 50** in the [new feature report](auto50-2026-11-18.md) passes **1603 tests**, zero failures/errors/skips. Whole Java: **9840/9840 lines, 10462/10462 branches, 1027/1027 methods**; exact gate passes all 78 accumulated changed Java files. All 3 browser-script gates pass. All 703 source/test hashes match the frozen build. Final light/dark browser, keyboard/axe and SQLite/PostgreSQL upgrade/restart evidence pass. Existing image/deployment evidence retains its original scope.
+Round **44 of 50** in the [new feature report](auto50-2026-11-18.md) passes **1618 tests**, zero failures/errors/skips. Whole Java: **9852/9852 lines, 10540/10540 branches, 1030/1030 methods**; exact gate passes all 79 accumulated changed Java files. All 3 browser-script gates pass. All 707 source/test hashes match the frozen build. Final light/dark browser, keyboard/axe and SQLite/PostgreSQL upgrade/restart evidence pass. Existing image/deployment evidence retains its original scope.
 
 
 # Automatic development batch — latest verification
