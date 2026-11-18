@@ -1182,4 +1182,14 @@ class MigrationsTest {
         }
     }
 
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void supportSourcesUpgradePreservesOwnedConversations(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String article,other,old=Values.id(),key=Values.id();
+        try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);article=KnowledgeSearchAcceptance.article(db,actor,"Retained primary source","Primary evidence");other=KnowledgeSearchAcceptance.article(db,actor,"Retained additional source","Additional evidence");SupportConversations.create(store,db,Values.map("article_id",article,"key",old));db.update("ALTER TABLE os_support_conversation DROP COLUMN sources");db.update("DELETE FROM os_migration WHERE version>=90");db.connection.commit();Migrations.apply(db);assertEquals("[]",db.one("SELECT sources FROM os_support_conversation WHERE conversation_id=?",old).get("sources"));db.connection.rollback();assertEquals(89,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);assertEquals(0,Values.objects(SupportConversations.page(store,db,old).get("sources")).size());SupportConversations.create(store,db,Values.map("article_id",article,"key",key,"sources",java.util.List.of(Values.map("kind","knowledge","article_id",other))));db.connection.commit();}
+        try(var provider=new RecordQuestionsAcceptance.Provider(store,env)){provider.settings.put("AI_SUPPORT_ENABLED","true");try(var db=store.open()){PlatformFoundationTest.bind(db);var pre=SupportConversations.submit(store,db,key,Values.map("operation","preview","revision",1,"question","Compare the retained sources"));SupportConversations.submit(store,db,key,SupportConversationsAcceptance.ask(pre));db.connection.commit();}
+            for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var page=SupportConversations.page(store,db,key);assertEquals(1,Values.objects(page.get("turns")).size());assertEquals(other,Values.objects(page.get("sources")).getFirst().get("article_id"));assertEquals(2,db.count("SELECT COUNT(*) FROM os_support_conversation"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}assertEquals(1,provider.calls.get());
+        }
+    }
+
 }

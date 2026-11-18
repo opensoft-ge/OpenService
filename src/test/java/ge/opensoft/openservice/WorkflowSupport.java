@@ -16,6 +16,11 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void supportSourcesBoundaries() throws Exception { SupportSourcesAcceptance.boundaries(this); }
+    @Test void supportSourcesRevisions() throws Exception { SupportSourcesAcceptance.revisions(this); }
+    @Test void supportSourcesPermissions() throws Exception { SupportSourcesAcceptance.permissions(this); }
+    @Test void supportSourcesHandoffAndBounds() throws Exception { SupportSourcesAcceptance.handoffAndBounds(this); }
+    @Test void supportSourcesRun() throws Exception { SupportSourcesAcceptance.run(this); }
     @Test void requestResolutionBoundaries() throws Exception { RequestResolutionAcceptance.boundaries(this); }
     @Test void requestResolutionChangedInputs() throws Exception { RequestResolutionAcceptance.changedInputs(this); }
     @Test void requestResolutionLimits() throws Exception { RequestResolutionAcceptance.limits(this); }

@@ -67,6 +67,7 @@ class BrowserTest {
     @Test void operatorDiagnosticDownloadJourney() throws Exception { OperatorDiagnosticsBrowserAcceptance.run(this); }
     @Test void stagedMigrationReviewJourney() throws Exception { MigrationRowsBrowserAcceptance.run(this); }
     @Test void reportMeasurementJourney() throws Exception { ReportMeasurementsBrowserAcceptance.run(this); }
+    @Test void supportSourcesPreserveCurrentContext() throws Exception { SupportSourcesBrowserAcceptance.run(this); }
     @Test void supportConversationReachesReviewedHumanFollowUp() throws Exception { SupportConversationsBrowserAcceptance.run(this); }
     @Test void failureNoticeLeadsThroughAttemptReviewToRecovery() throws Exception { WorkFailureAlertsBrowserAcceptance.run(this); }
     @Test void attachmentUploadReachesScanReviewAndProtectedRelease() throws Exception { AttachmentScanningBrowserAcceptance.run(this); }
