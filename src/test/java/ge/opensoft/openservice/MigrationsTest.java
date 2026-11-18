@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void changeScheduleUpgradePreservesUnscheduledPlanReadiness(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String ci,change;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);ci=Service.create(db,"cmdb_ci",Values.map("short_description","Retained configuration item"),"admin").get("sys_id").toString();change=Service.create(db,"change_request",Values.map("short_description","Retained reviewed plan"),"admin").get("sys_id").toString();ChangePlanning.save(db,change,ChangeSchedulingBrowserAcceptance.plan());db.update("DROP TABLE os_change_schedule");db.update("DROP TABLE os_change_window");db.update("DELETE FROM os_migration WHERE version>=57");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_change_schedule"));db.connection.rollback();assertEquals(56,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals(true,ChangePlanning.detail(db,change).get("current"));ChangeScheduling.save(db,change,Values.map("operation","save","revision",0,"record_revision",1,"ci_id",ci,"start","2026-11-18T09:00:00Z","end","2026-11-18T10:00:00Z"));assertEquals(false,ChangePlanning.detail(db,change).get("current"));var plan=ChangeSchedulingBrowserAcceptance.plan();plan.put("revision",1);plan.put("record_revision",2);ChangePlanning.save(db,change,plan);db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals(true,ChangePlanning.detail(db,change).get("current"));assertEquals(ci,ChangeScheduling.schedule(db,change).get("ci_id"));assertEquals(false,Values.object(ChangeScheduling.page(db,change,Map.of()).get("findings")).get("blocked"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void catalogueWorkflowUpgradeRetainsReviewedPlans(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String offering,group;
         try(var db=store.open()){PlatformFoundationTest.bind(db);offering=Catalogue.save(db,db.viewerId,"",CatalogueAcceptance.offering("Retained offering",0,true)).get("offering_id").toString();group=Service.create(db,"sys_user_group",Values.map("short_description","Retained team"),"admin").get("sys_id").toString();db.update("DROP TABLE os_catalog_workflow_order");db.update("DROP TABLE os_catalog_workflow");db.update("DELETE FROM os_migration WHERE version>=56");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_catalog_workflow"));db.connection.rollback();assertEquals(55,db.count("SELECT MAX(version) FROM os_migration"));}

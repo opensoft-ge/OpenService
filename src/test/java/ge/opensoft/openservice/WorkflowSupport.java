@@ -16,6 +16,10 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void changeSchedulingWorkflow() throws Exception { ChangeSchedulingAcceptance.run(this); }
+    @Test void changeSchedulingBoundaries() throws Exception { ChangeSchedulingAcceptance.boundaries(this); }
+    @Test void changeSchedulingAuthority() throws Exception { ChangeSchedulingAcceptance.authority(this); }
+    @Test void changeSchedulingCalendars() throws Exception { ChangeSchedulingAcceptance.calendars(this); }
     @Test void catalogueWorkflowOrderedTeams() throws Exception { CatalogueWorkflowsAcceptance.run(this); }
     @Test void catalogueWorkflowBounds() throws Exception { CatalogueWorkflowsAcceptance.boundaries(this); }
     @Test void catalogueWorkflowAuthority() throws Exception { CatalogueWorkflowsAcceptance.authority(this); }
@@ -151,7 +155,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

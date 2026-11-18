@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void reviewedChangeSchedulingJourney() throws Exception { ChangeSchedulingBrowserAcceptance.run(this); }
     @Test void catalogueMultiTeamJourney() throws Exception { CatalogueWorkflowsBrowserAcceptance.run(this); }
     @Test void coordinatedWorkTaskJourney() throws Exception { WorkTasksBrowserAcceptance.run(this); }
     @Test void parentScopeJourney() throws Exception { RecordScopesBrowserAcceptance.run(this); }

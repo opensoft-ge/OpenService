@@ -503,6 +503,18 @@ public class WebController {
             else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));result=CatalogueQuestions.edit(c.db,c.db.viewerId,id,form);}
             return api?json(map("result",result),200):redirect("/admin/catalogue/"+id+"/questions");
         }
+        Matcher changeWindows=Pattern.compile("/(admin|api/openservice)/change-windows/([0-9a-f]{32})").matcher(path);
+        if(changeWindows.matches()){
+            c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String ci=changeWindows.group(2);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));if(!"remove".equals(form.get("operation"))){String active=Objects.toString(form.get("active"),"");TypedFields.require(Set.of("true","false").contains(active),"Choose active or inactive");form.put("active",Boolean.parseBoolean(active));}input=form;}result=ChangeWindows.save(c.db,ci,input);if(!api)return redirect(path);}
+            else result=ChangeWindows.page(c.db,ci);return api?json(map("result",result),200):view(c,"change-windows",map("table","cmdb_ci","page",result));
+        }
+        Matcher changeSchedule=Pattern.compile("/(record|api/openservice)/change_request/([0-9a-f]{32})/schedule").matcher(path);
+        if(changeSchedule.matches()){
+            method(method,"GET","POST");c.uniqueQuery();boolean api=path.startsWith("/api/");String id=changeSchedule.group(2);Map<String,Object> result;
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));input=form;}result=ChangeScheduling.save(c.db,id,input);if(!api)return redirect(path);}
+            else result=ChangeScheduling.page(c.db,id,c.arguments());return api?json(map("result",result),200):view(c,"change-schedule",map("table","change_request","page",result,"query",c.arguments().getOrDefault("q","")));
+        }
         Matcher catalogueWorkflow=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/workflow").matcher(path);
         if(catalogueWorkflow.matches()){
             c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=catalogueWorkflow.group(2);Map<String,Object> result;

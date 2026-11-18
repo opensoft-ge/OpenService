@@ -23,7 +23,7 @@ final class ChangePlanning {
 
     static Map<String,Object> snapshot(Store.Db db,Map<String,Object> item) throws SQLException {
         var data=new TreeMap<>(object(item.get("data")));data.remove("state");
-        return map("data",data,"schema_version",Approvals.version(Service.schema(db,"change_request")));
+        var snapshot=map("data",data,"schema_version",Approvals.version(Service.schema(db,"change_request")));var schedule=ChangeScheduling.schedule(db,item.get("sys_id").toString());if(((Number)schedule.get("revision")).intValue()>0)snapshot.put("schedule",map("ci_id",schedule.get("ci_id"),"starts",schedule.get("starts").toString(),"ends",schedule.get("ends").toString(),"revision",schedule.get("revision").toString()));return snapshot;
     }
 
     static Map<String,Object> detail(Store.Db db,String id) throws SQLException {

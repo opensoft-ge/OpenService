@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 56;
+    static final int VERSION = 57;
 
     private Migrations() {}
 
@@ -559,6 +559,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_catalog_workflow(offering_id VARCHAR(32) PRIMARY KEY REFERENCES os_offering(offering_id) ON DELETE CASCADE,enabled INTEGER NOT NULL,steps TEXT NOT NULL)");
             db.update("CREATE TABLE IF NOT EXISTS os_catalog_workflow_order(request_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,offering_id VARCHAR(32) NOT NULL,offering_revision INTEGER NOT NULL,steps TEXT NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(56,?)","reviewed catalogue plans and multi-team fulfilment");
+        }
+        if(version<57){
+            db.update("CREATE TABLE IF NOT EXISTS os_change_window(window_id VARCHAR(32) PRIMARY KEY,ci_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,name VARCHAR(120) NOT NULL,kind VARCHAR(12) NOT NULL,calendar_id VARCHAR(80) NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_change_window_ci ON os_change_window(ci_id)");
+            db.update("CREATE TABLE IF NOT EXISTS os_change_schedule(change_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,ci_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),starts BIGINT NOT NULL,ends BIGINT NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_change_schedule_ci ON os_change_schedule(ci_id,starts,ends)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(57,?)","change reservations with current maintenance and blackout windows");
         }
     }
 

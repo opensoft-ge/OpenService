@@ -191,6 +191,7 @@ public final class Service {
         ApprovalGate.update(db, item);
         Fulfilment.guard(db,item);
         ChangePlanning.guard(db,item);
+        ChangeScheduling.guard(db,item);
         WorkTasks.guard(db,item);
         CatalogueWorkflows.settle(db,item);
         db.update(
@@ -275,6 +276,7 @@ public final class Service {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
         RecordScopes.deleting(db,item.get("sys_id").toString());
         WorkTasks.deleting(db,item.get("sys_id").toString());
+        ChangeWindows.deleting(db,item.get("sys_id").toString());
         TypedFields.deleting(db, item);
         audit(db, item, actor, "deleted", map("before", serialize(item)));
         db.update("DELETE FROM os_attachment WHERE record_id=?", item.get("sys_id"));
@@ -296,6 +298,8 @@ public final class Service {
         db.update("DELETE FROM os_case_task WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_task_plan WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_catalog_workflow_order WHERE request_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_change_schedule WHERE change_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_change_window WHERE ci_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
 
