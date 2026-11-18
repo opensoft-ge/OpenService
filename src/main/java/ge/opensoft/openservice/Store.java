@@ -147,6 +147,7 @@ public class Store {
         String viewerId;
         String viewerRole;
         boolean customerIntake;
+        boolean customerResolutionReopen;
 
         public Db(Connection connection, boolean postgres) throws SQLException {
             this.connection = connection;

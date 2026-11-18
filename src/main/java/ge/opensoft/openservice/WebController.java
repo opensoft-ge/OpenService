@@ -210,7 +210,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && (Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
+                                && (path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
                         && !path.matches("/(?:support|api/openservice/support)(?:/[0-9a-f]{32})?")
                         && !path.matches(
@@ -507,6 +507,12 @@ public class WebController {
             method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");Map<String,Object> result;
             if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));String enabled=Objects.toString(form.get("enabled"),"");TypedFields.require(Set.of("true","false").contains(enabled),"Choose enabled or disabled");form.put("enabled",Boolean.parseBoolean(enabled));input=form;}result=CustomerReplies.preference(c.db,input);if(!api)return redirect("/customer-service/notifications");}else result=CustomerReplies.preference(c.db);
             return api?json(map("result",result),200):view(c,"customer-notifications",map("table","customer_case","definition",map("label","Customer service"),"preference",result));
+        }
+        Matcher customerResolution=Pattern.compile("/(?:record/customer_case|api/openservice/customer-cases)/([0-9a-f]{32})/resolution").matcher(path);
+        if(customerResolution.matches()){
+            method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");String id=customerResolution.group(1);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));input=form;}result=CustomerResolutions.command(c.db,id,input);if(!api)return redirect("/record/customer_case/"+id+"/resolution");}else result=CustomerResolutions.page(c.db,id);
+            return api?json(map("result",result),200):view(c,"customer-resolution",map("table","customer_case","definition",map("label","Customer service"),"page",result));
         }
         Matcher customerReplies=Pattern.compile("/(?:record/customer_case|api/openservice/customer-cases)/([0-9a-f]{32})/replies").matcher(path);
         if(customerReplies.matches()){

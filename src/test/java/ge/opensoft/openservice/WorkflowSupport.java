@@ -16,6 +16,13 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void customerResolutionGates() throws Exception { CustomerResolutionsAcceptance.gates(this); }
+    @Test void customerResolutionLimits() throws Exception { CustomerResolutionsAcceptance.limits(this); }
+
+    @Test void customerResolutionRun() throws Exception { CustomerResolutionsAcceptance.run(this); }
+    @Test void customerResolutionAuthority() throws Exception { CustomerResolutionsAcceptance.authority(this); }
+    @Test void customerResolutionBoundaries() throws Exception { CustomerResolutionsAcceptance.boundaries(this); }
+
     @Test void customerRepliesRun() throws Exception { CustomerRepliesAcceptance.run(this); }
     @Test void customerRepliesDelivery() throws Exception { CustomerRepliesAcceptance.delivery(this); }
     @Test void customerRepliesAuthority() throws Exception { CustomerRepliesAcceptance.authority(this); }
@@ -171,7 +178,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_customer_reply", "os_customer_delivery", "os_customer_case", "os_customer_entitlement", "os_customer_contact", "os_customer_account", "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_customer_resolution", "os_customer_reply", "os_customer_delivery", "os_customer_case", "os_customer_entitlement", "os_customer_contact", "os_customer_account", "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

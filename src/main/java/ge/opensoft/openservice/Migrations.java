@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 60;
+    static final int VERSION = 61;
 
     private Migrations() {}
 
@@ -590,6 +590,11 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_customer_reply(reply_id VARCHAR(32) PRIMARY KEY,record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,actor_id VARCHAR(32) NOT NULL,actor_name VARCHAR(80) NOT NULL,ordinal INTEGER NOT NULL,body TEXT NOT NULL,created VARCHAR(40) NOT NULL,submission_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,job_id VARCHAR(32) NOT NULL,UNIQUE(record_id,actor_id,submission_key),UNIQUE(record_id,ordinal))");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_customer_reply_record ON os_customer_reply(record_id)");
             db.update("INSERT INTO os_migration(version,name) VALUES(60,?)","published customer replies and current email preferences");
+        }
+
+        if(version<61){
+            db.update("CREATE TABLE IF NOT EXISTS os_customer_resolution(resolution_id VARCHAR(32) PRIMARY KEY,record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,ordinal INTEGER NOT NULL,revision INTEGER NOT NULL,status VARCHAR(16) NOT NULL,code VARCHAR(12) NOT NULL,solution TEXT NOT NULL,proposer_name VARCHAR(80) NOT NULL,reason TEXT NOT NULL,created VARCHAR(40) NOT NULL,decided VARCHAR(40) NOT NULL,snapshot VARCHAR(64) NOT NULL,reopened INTEGER NOT NULL DEFAULT 0,UNIQUE(record_id,ordinal))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(61,?)","reviewed customer solution decisions and guarded reopening");
         }
 
     }

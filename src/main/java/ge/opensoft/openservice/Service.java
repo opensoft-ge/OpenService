@@ -194,6 +194,7 @@ public final class Service {
         ChangePlanning.guard(db,item);
         ChangeScheduling.guard(db,item);
         MajorIncidents.guard(db,item);
+        CustomerResolutions.guard(db,item);
         WorkTasks.guard(db,item);
         CatalogueWorkflows.settle(db,item);
         db.update(
@@ -246,7 +247,7 @@ public final class Service {
             if (!((List<?>)
                             object(definition.get("flow"))
                                     .getOrDefault(data.get("state"), List.of()))
-                    .contains(payload.get("state")) && !ChangePlanning.reworkAllowed(db,item,payload.get("state")))
+                    .contains(payload.get("state")) && !ChangePlanning.reworkAllowed(db,item,payload.get("state")) && !CustomerResolutions.reopening(db,item,payload.get("state")))
                 throw new Failure(409, "Transition is not allowed");
             if (table.equals("change_request")
                     && List.of("approved", "rejected").contains(payload.get("state"))
@@ -303,6 +304,7 @@ public final class Service {
         db.update("DELETE FROM os_catalog_workflow_order WHERE request_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_schedule WHERE change_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_window WHERE ci_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_customer_resolution WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_customer_reply WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_major_update WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_major_incident WHERE incident_id=?",item.get("sys_id"));
