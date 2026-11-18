@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void changePlanningUpgradePreservesRecordsAndRollsBack(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String id;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);id=Service.create(db,"change_request",Values.map("short_description","Retained change"),"admin").get("sys_id").toString();db.update("DROP TABLE os_change_plan");db.update("DELETE FROM os_migration WHERE version>=53");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_change_plan"));db.connection.rollback();assertEquals(52,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);ChangePlanning.save(db,id,Values.map("revision",0,"record_revision",0,"implementation","Deploy","impact","Restart","backout","Restore","test","Verify","impact_score",2,"likelihood",3,"ready",true));db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);var plan=ChangePlanning.detail(db,id);assertEquals(true,plan.get("current"));assertEquals("medium",Values.object(plan.get("plan")).get("risk"));assertEquals(1,plan.get("revision"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void problemInvestigationUpgradePreservesRecordsAndRollsBack(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String incident,problem;
         try(var db=store.open()){PlatformFoundationTest.bind(db);incident=Service.create(db,"incident",Values.map("short_description","Retained incident"),"admin").get("sys_id").toString();problem=Service.create(db,"problem",Values.map("short_description","Retained problem"),"admin").get("sys_id").toString();db.update("DROP TABLE os_problem_link");db.update("DROP TABLE os_problem_analysis");db.update("DELETE FROM os_migration WHERE version>=52");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_problem_link"));db.connection.rollback();assertEquals(51,db.count("SELECT MAX(version) FROM os_migration"));}

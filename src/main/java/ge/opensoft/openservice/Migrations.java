@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 52;
+    static final int VERSION = 53;
 
     private Migrations() {}
 
@@ -539,6 +539,10 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_problem_link(incident_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,problem_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE)");
             db.update("CREATE TABLE IF NOT EXISTS os_problem_analysis(problem_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,cause TEXT NOT NULL,workaround TEXT NOT NULL,published INTEGER NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(52,?)","incident-linked problem investigation and workaround");
+        }
+        if(version<53){
+            db.update("CREATE TABLE IF NOT EXISTS os_change_plan(change_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(53,?)","reviewed change planning and readiness");
         }
     }
 

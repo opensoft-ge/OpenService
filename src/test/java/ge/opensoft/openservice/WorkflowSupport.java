@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void changePlanningRequiresReviewedCurrentPlans() throws Exception { ChangePlanningAcceptance.run(this); }
+    @Test void changePlanningPreservesAuthorityAndValidation() throws Exception { ChangePlanningAcceptance.boundaries(this); }
     @Test void problemInvestigationLinksIncidentsAndSharesCurrentWorkaround() throws Exception { ProblemInvestigationsAcceptance.run(this); }
     @Test void problemInvestigationPreservesAuthorityAndBounds() throws Exception { ProblemInvestigationsAcceptance.boundaries(this); }
     @Test void operatorDiagnosticsAreCurrentAndContentFree() throws Exception { OperatorDiagnosticsAcceptance.run(this); }
@@ -141,7 +143,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

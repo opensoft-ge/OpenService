@@ -1,0 +1,15 @@
+package ge.opensoft.openservice;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
+import java.nio.file.Path;
+final class ChangePlanningBrowserAcceptance {
+ static void run(BrowserTest h)throws Exception{
+  String id;try(var db=h.store.open()){PlatformFoundationTest.bind(db);id=Service.create(db,"change_request",Values.map("short_description","Reviewed rollout"),"admin").get("sys_id").toString();db.connection.commit();}try(var playwright=Playwright.create();var browser=playwright.chromium().launch();var context=browser.newContext()){
+   var page=context.newPage();h.login(page,"admin");page.navigate(h.base()+"/record/change_request/"+id);page.getByRole(AriaRole.LINK,new Page.GetByRoleOptions().setName("Review change plan")).press("Enter");assertThat(page.locator("main")).containsText("Not ready");page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Save change plan")).press("Enter");page.reload();assertThat(page.locator("main")).containsText("Not ready");
+   page.getByLabel("Implementation steps").fill("Deploy reviewed <script> version");page.getByLabel("Expected impact").fill("Two minute interruption");page.getByLabel("Rollback steps").fill("Restore previous image");page.getByLabel("Test and verification steps").fill("Check health and request lifecycle");page.getByLabel("Impact score",new Page.GetByLabelOptions().setExact(true)).fill("3");page.getByLabel("Likelihood score").fill("2");page.getByLabel("Review decision").selectOption("true");page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Save change plan")).press("Enter");page.reload();assertThat(page.locator("main")).containsText("Ready for the current change details");assertThat(page.locator("main")).containsText("medium");assertThat(page.getByLabel("Implementation steps")).hasValue("Deploy reviewed <script> version");assertThat(page.locator("main script")).hasCount(0);
+   for(String theme:new String[]{"light","dark"}){if(theme.equals("dark")){page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Dark mode").setExact(true)).click();page.setViewportSize(390,844);}ReleaseBrowserAcceptance.accessible(page);page.screenshot(new Page.ScreenshotOptions().setPath(Path.of("target/change-plan-"+theme+".png")).setFullPage(true));}
+   try(var db=h.store.open()){PlatformFoundationTest.bind(db);Service.update(db,"change_request",Service.record(db,"change_request",id),Values.map("state","review"),"admin","admin",null);db.connection.commit();}page.reload();assertThat(page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Save change plan"))).isDisabled();assertThat(page.locator("main")).containsText("read-only");ReleaseBrowserAcceptance.accessible(page);page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Return change for rework")).press("Enter");page.getByRole(AriaRole.LINK,new Page.GetByRoleOptions().setName("Review change plan")).press("Enter");assertThat(page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Save change plan"))).isEnabled();
+  }
+ }
+}

@@ -307,6 +307,15 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher changePlan=Pattern.compile("/(?:record|api/openservice)/change_request/([0-9a-f]{32})/plan").matcher(path);
+        if(changePlan.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=changePlan.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","record_revision","impact_score","likelihood"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(form.get("ready")),"Choose draft or ready");form.put("ready",Boolean.parseBoolean(form.get("ready").toString()));input=form;}
+                result=ChangePlanning.save(c.db,id,input);if(!api)return redirect(path);
+            }else result=ChangePlanning.detail(c.db,id);
+            return api?json(map("result",result),200):view(c,"change-plan",map("table","change_request","planning",result));
+        }
         Matcher problemOptions=Pattern.compile("/(?:record|api/openservice)/incident/([0-9a-f]{32})/problem-options").matcher(path);
         if(problemOptions.matches()){
             method(method,"GET");c.uniqueQuery();String id=problemOptions.group(1);var source=ProblemInvestigations.record(c.db,"incident",id);RecordPolicy.require(Service.schema(c.db,"incident"),"update",c.db.viewerRole);var search=ReferenceSearch.search(c.db,"problem",c.arguments());return path.startsWith("/api/")?json(map("result",search),200):view(c,"problem-options",map("table","incident","incident",FieldAccess.serialize(c.db,source),"search",search,"query",c.arguments().getOrDefault("q",""),"pickerPath","/record/incident/"+id+"/problem-options"));

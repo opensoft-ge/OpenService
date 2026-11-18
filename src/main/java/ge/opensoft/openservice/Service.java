@@ -190,6 +190,7 @@ public final class Service {
     static void save(Store.Db db, Map<String, Object> item) throws SQLException {
         ApprovalGate.update(db, item);
         Fulfilment.guard(db,item);
+        ChangePlanning.guard(db,item);
         db.update(
                 "UPDATE os_record SET data="
                         + db.jsonParameter()
@@ -240,7 +241,7 @@ public final class Service {
             if (!((List<?>)
                             object(definition.get("flow"))
                                     .getOrDefault(data.get("state"), List.of()))
-                    .contains(payload.get("state")))
+                    .contains(payload.get("state")) && !ChangePlanning.reworkAllowed(db,item,payload.get("state")))
                 throw new Failure(409, "Transition is not allowed");
             if (table.equals("change_request")
                     && List.of("approved", "rejected").contains(payload.get("state"))
@@ -286,6 +287,7 @@ public final class Service {
         db.update("DELETE FROM os_group_member WHERE group_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_problem_link WHERE incident_id=? OR problem_id=?",item.get("sys_id"),item.get("sys_id"));
         db.update("DELETE FROM os_problem_analysis WHERE problem_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_change_plan WHERE change_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
 
