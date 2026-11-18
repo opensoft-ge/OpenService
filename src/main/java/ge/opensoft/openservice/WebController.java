@@ -371,6 +371,16 @@ public class WebController {
             return api?json(map("result",result),200):view(c,"mfa-account",map("table","account","page",result));
         }
 
+        var groupPolicy=Pattern.compile("/(admin|api/openservice)/approval-policies/([a-z][a-z0-9_]{0,79})").matcher(path);
+        if(groupPolicy.matches()){
+            method(method,"GET","POST");c.uniqueQuery();c.noQuery();boolean api=groupPolicy.group(1).equals("api/openservice");String table=groupPolicy.group(2);
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("version",Service.number(Objects.toString(form.get("version"),""),0,Integer.MAX_VALUE));var groups=new ArrayList<String>();for(int n=1;n<=5;n++){String group=Objects.toString(form.remove("group_"+n),"");if(!group.isEmpty())groups.add(group);}form.put("groups",groups);input=form;}var result=GroupApprovals.configure(c.db,table,input);return api?json(map("result",result),200):redirect("/admin/approval-policies/"+table);}
+            var page=GroupApprovals.policy(c.db,table);return api?json(map("result",page),200):view(c,"approval-policy",map("table",table,"page",page));
+        }
+        var groupStage=Pattern.compile("/(api/openservice/records|record)/([^/]+)/([0-9a-f]{32})/approval-stage").matcher(path);
+        if(groupStage.matches()){
+            method(method,"POST");c.uniqueQuery();c.noQuery();boolean api=groupStage.group(1).equals("api/openservice/records");Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("expected_revision",Service.number(Objects.toString(form.get("expected_revision"),""),0,Integer.MAX_VALUE));input=form;}var result=GroupApprovals.request(c.db,groupStage.group(2),groupStage.group(3),c.user,input);return api?json(map("result",result),201):redirect("/record/"+groupStage.group(2)+"/"+groupStage.group(3)+"/approvals");
+        }
         var directory=Pattern.compile("/(admin|api/openservice)/directories(?:/([0-9a-f]{32}))?").matcher(path);
         if(directory.matches()){
             c.uniqueQuery();c.noQuery();boolean api=directory.group(1).equals("api/openservice");String source=Objects.toString(directory.group(2),"");Service.requireAccountAdministrator(c.db,c.db.viewerId);
@@ -961,7 +971,7 @@ public class WebController {
             var result=ApprovalDiagnostics.inspect(c.db,c.db.viewerId,id);Map<String,Object> reminder=null;
             if(method.equals("POST")){TypedFields.require(Set.of("csrf").containsAll(c.arguments().keySet()),"Reminder accepts no extra fields");reminder=ApprovalReminders.send(c.db,c.db.viewerId,id,map());}
             return view(c,"approval-diagnostics",map("table",result.get("table_name"),"diagnostic",result,"reminder",reminder,"diagnosticPath",path,"reminderKey",id(),"reminderTime",java.time.Instant.now().plusSeconds(3600).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString(),"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false),
-                "reasons",Map.of("proposal_changed","The record or configuration changed. Request a fresh review.","reviewer_unavailable","The assigned reviewer is inactive, must replace their password or no longer has a staff role.","reviewer_credentials_changed","The reviewer’s authority changed after approval. Request a fresh decision.","reviewer_permission_changed","The reviewer no longer has the required record or transition access.","awaiting_decision","The current reviewer is eligible and has not recorded a decision.","review_closed","This review is closed without a qualifying approval.","same_as_actor","Your own approval cannot authorize your transition.","qualifying","This approval currently qualifies for your approval count. Other transition rules still apply.")));
+                "reasons",Map.of("proposal_changed","The record or configuration changed. Request a fresh review.","reviewer_unavailable","The assigned reviewer is inactive, must replace their password or no longer has a staff role.","reviewer_credentials_changed","The reviewer’s authority changed after approval. Request a fresh decision.","reviewer_permission_changed","The reviewer no longer has the required record or transition access.","awaiting_decision","The current reviewer is eligible and has not recorded a decision.","review_closed","This review is closed without a qualifying approval.","same_as_actor","Your own approval cannot authorize your transition.","group_policy_unsatisfied","This review does not currently satisfy its ordered group policy. Inspect Record approvals before requesting a fresh review.","qualifying","This approval currently qualifies for your approval count. Other transition rules still apply.")));
         }
         Matcher assetRelationships=Pattern.compile("/(?:record/cmdb_ci|api/openservice/assets)/([0-9a-f]{32})/relationships(/choose)?").matcher(path);
         if(assetRelationships.matches()){

@@ -11,8 +11,7 @@ final class ApprovalGate {
 
     static int required(Map<String, Object> definition, Object target) {
         var rules = object(definition.getOrDefault("transition_rules", map()));
-        return ((Number) object(rules.getOrDefault(target, map())).getOrDefault("min_approvals", 0))
-                .intValue();
+        return Math.max(((Number) object(rules.getOrDefault(target, map())).getOrDefault("min_approvals", 0)).intValue(),GroupApprovals.groups(definition,Objects.toString(target,"")).size());
     }
 
     static void creation(Map<String, Object> definition, Map<String, Object> data) {
@@ -71,7 +70,9 @@ final class ApprovalGate {
                                 .getOrDefault(object(item.get("data")).get("state"), List.of())) {
             String target = destination.toString();
             int minimum = required(definition, target);
-            int count = minimum == 0 ? 0 : qualifying(db, item, definition, target).size();
+            var qualified = minimum == 0 ? List.<String>of() : qualifying(db,item,definition,target);
+            var stages=GroupApprovals.progress(db,item,definition,target,qualified);
+            int count=stages.isEmpty()?qualified.size():(int)stages.stream().filter(stage->stage.get("status").equals("approved")).count();
             result.add(
                     map(
                             "target_state",
@@ -84,6 +85,7 @@ final class ApprovalGate {
                             count,
                             "approval_satisfied",
                             count >= minimum));
+            if(!stages.isEmpty())result.getLast().put("group_stages",stages);
         }
         return result;
     }
@@ -104,7 +106,10 @@ final class ApprovalGate {
         if (!before.equals(after))
             throw new Failure(
                     409, "Save other field changes before requesting review of this transition");
-        if (qualifying(db, previous, definition, target).size() < minimum)
+        var qualified=qualifying(db,previous,definition,target);
+        var stages=GroupApprovals.progress(db,previous,definition,target,qualified);
+        if(stages.stream().anyMatch(stage->!stage.get("status").equals("approved")))throw new Failure(409,"Complete every current group approval stage before this transition");
+        if (qualified.size() < minimum)
             throw new Failure(
                     409,
                     "This transition requires " + minimum + " current approvals from other staff");

@@ -43,6 +43,8 @@ final class ApprovalDiagnostics {
         if(row.get("status").equals("requested")) return "awaiting_decision";
         if(!row.get("status").equals("approved")) return "review_closed";
         if(row.get("approver_id").equals(originalId)) return "same_as_actor";
+        String target=row.get("target_state").toString();
+        if(!GroupApprovals.groups(definition,target).isEmpty() && GroupApprovals.progress(db,item,definition,target,ApprovalGate.qualifying(db,item,definition,target)).stream().noneMatch(stage->stage.get("approval_id").equals(row.get("approval_id"))))return "group_policy_unsatisfied";
         return "qualifying";
     }
 }

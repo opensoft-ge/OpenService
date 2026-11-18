@@ -192,7 +192,7 @@ final class Configuration {
         for (var entry : transitions.entrySet()) {
             var rule = object(entry.getValue());
             require(
-                    Set.of("roles", "required_fields", "min_approvals", "reauthenticate").containsAll(rule.keySet()),
+                    Set.of("roles", "required_fields", "min_approvals", "reauthenticate", "approval_groups").containsAll(rule.keySet()),
                     "Unsupported transition policy");
             require(
                     rule.getOrDefault("min_approvals", 0) instanceof Integer,
@@ -200,6 +200,8 @@ final class Configuration {
             require(rule.getOrDefault("reauthenticate",false) instanceof Boolean,"reauthenticate must be boolean");
             int minimum = (int) rule.getOrDefault("min_approvals", 0);
             require(minimum >= 0 && minimum <= 10, "min_approvals must be 0–10");
+            if(rule.containsKey("approval_groups")){GroupApprovals.validate(rule.get("approval_groups"));require(minimum==0,"Choose group stages or a numeric approval minimum");minimum=((List<?>)rule.get("approval_groups")).size();}
+
             require(
                     minimum == 0 || !entry.getKey().equals(states.keySet().iterator().next()),
                     "The initial state cannot require approvals");

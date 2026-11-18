@@ -195,6 +195,7 @@ final class Approvals {
                 actor.get("name").toString(),
                 "approval.requested",
                 map("approval_id", approval));
+        GroupApprovals.assign(db,item,definition,target,reviewer.get("user_id").toString(),approval);
         notifyAssignment(db,approval,reviewer.get("name").toString());
         return publicRow(
                 db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
@@ -306,6 +307,7 @@ final class Approvals {
             db.viewerId = previousId;
             db.viewerRole = previousRole;
         }
+        GroupApprovals.delegate(db,approval,target.get("user_id").toString());
         db.update(
                 "UPDATE os_approval SET approver_id=?,approver_name=? WHERE approval_id=?",
                 target.get("user_id"),
@@ -385,6 +387,7 @@ final class Approvals {
         if (!current(row, item, definition))
             throw new Failure(409, "Proposal changed; request a new review");
         eligible(db, table, item, definition, row.get("target_state").toString());
+        GroupApprovals.review(db,item,definition,row);
         if(requiresReauthentication(definition,row.get("target_state").toString()) && !verified)throw new Failure(400,"Confirm your current password for this decision");
         db.update(
                 "UPDATE os_approval SET status=?,comment=?,decided_at=?,decision_revision=? WHERE"
@@ -400,6 +403,7 @@ final class Approvals {
                 actor.get("name").toString(),
                 "approval.decided",
                 map("approval_id", approval, "decision", value.get("decision"),"reauthenticated",verified));
+        GroupApprovals.complete(db,item,row,actor,value.get("decision").toString());
         return publicRow(
                 db.one("SELECT * FROM os_approval WHERE approval_id=?", approval),
                 item,

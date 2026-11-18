@@ -16,6 +16,19 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void groupApprovalsConfiguration() throws Exception { GroupApprovalsAcceptance.configuration(this); }
+    @Test void groupApprovalsRejection() throws Exception { GroupApprovalsAcceptance.rejection(this); }
+    @Test void groupApprovalsManual() throws Exception { GroupApprovalsAcceptance.manual(this); }
+    @Test void groupApprovalsRevocation() throws Exception { GroupApprovalsAcceptance.revocation(this); }
+    @Test void groupApprovalsPendingOrder() throws Exception { GroupApprovalsAcceptance.pendingOrder(this); }
+    @Test void groupApprovalsAuthority() throws Exception { GroupApprovalsAcceptance.authority(this); }
+    @Test void groupApprovalsPersistence() throws Exception { GroupApprovalsAcceptance.persistence(this); }
+    @Test void groupApprovalsConcurrency() throws Exception { GroupApprovalsAcceptance.concurrency(this); }
+    @Test void groupApprovalsLimits() throws Exception { GroupApprovalsAcceptance.limits(this); }
+    @Test void groupApprovalsLegacy() throws Exception { GroupApprovalsAcceptance.legacy(this); }
+    @Test void groupApprovalsCorruptEvidence() throws Exception { GroupApprovalsAcceptance.corruptEvidence(this); }
+    @Test void groupApprovalsReauthentication() throws Exception { GroupApprovalsAcceptance.reauthentication(this); }
+    @Test void groupApprovalsRun() throws Exception { GroupApprovalsAcceptance.run(this); }
     @Test void scimConfiguration() throws Exception { ScimAcceptance.configuration(this); }
     @Test void scimAuthority() throws Exception { ScimAcceptance.authority(this); }
     @Test void scimIdentities() throws Exception { ScimAcceptance.identities(this); }
@@ -357,7 +370,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_directory", "os_offboarding", "os_totp_recovery", "os_totp_setup", "os_totp_challenge", "os_totp_attempt", "os_totp", "os_oidc_challenge", "os_oidc_binding", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_approval_group", "os_directory", "os_offboarding", "os_totp_recovery", "os_totp_setup", "os_totp_challenge", "os_totp_attempt", "os_totp", "os_oidc_challenge", "os_oidc_binding", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
