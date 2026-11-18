@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 75;
+    static final int VERSION = 76;
 
     private Migrations() {}
 
@@ -689,6 +689,12 @@ final class Migrations {
             db.update("CREATE INDEX IF NOT EXISTS ix_typed_relation_target ON os_typed_relation(target_id,active)");
             db.update("CREATE TABLE IF NOT EXISTS os_relation_history(relation_id VARCHAR(32) NOT NULL REFERENCES os_typed_relation(relation_id),revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(relation_id,revision))");
             db.update("INSERT INTO os_migration(version,name) VALUES(75,?)","governed typed record relationships with retained reviewed changes");
+        }
+
+        if(version<76){
+            db.update("CREATE TABLE IF NOT EXISTS os_ci_outage(outage_id VARCHAR(32) PRIMARY KEY,record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),request_id VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,kind VARCHAR(20) NOT NULL,summary VARCHAR(160) NOT NULL,begin_ms BIGINT NOT NULL,end_ms BIGINT NOT NULL,cancelled INTEGER NOT NULL,revision INTEGER NOT NULL,UNIQUE(record_id,request_id))");
+            db.update("CREATE TABLE IF NOT EXISTS os_outage_history(outage_id VARCHAR(32) NOT NULL REFERENCES os_ci_outage(outage_id),revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(outage_id,revision))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(76,?)","retained CI outage evidence and exact-window availability");
         }
 
     }

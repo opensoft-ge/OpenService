@@ -298,6 +298,7 @@ public final class Service {
         AssetCustody.deleting(db,item.get("sys_id").toString());
         DiscoveryReconciliation.deleting(db,item.get("sys_id").toString());
         TypedRelationships.deleting(db,item.get("sys_id").toString());
+        ServiceOutages.deleting(db,item.get("sys_id").toString());
         ProjectDelivery.deleting(db,item.get("sys_id").toString());
         RecordScopes.deleting(db,item.get("sys_id").toString());
         WorkTasks.deleting(db,item.get("sys_id").toString());
