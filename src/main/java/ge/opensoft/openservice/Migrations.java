@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 93;
+    static final int VERSION = 94;
 
     private Migrations() {}
 
@@ -793,6 +793,10 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_imported_journal(sequence "+(db.postgres?"BIGSERIAL PRIMARY KEY":"INTEGER PRIMARY KEY AUTOINCREMENT")+",source_url VARCHAR(320) NOT NULL,journal_id VARCHAR(32) NOT NULL,job_id VARCHAR(32) NOT NULL,source_table VARCHAR(80) NOT NULL,target_table VARCHAR(80) NOT NULL,record_id VARCHAR(32) NOT NULL,kind VARCHAR(40) NOT NULL,body TEXT NOT NULL,reported_author VARCHAR(200) NOT NULL,reported_time VARCHAR(80) NOT NULL,fingerprint VARCHAR(64) NOT NULL,publisher_id VARCHAR(32) NOT NULL,published VARCHAR(26) NOT NULL,UNIQUE(source_url,journal_id))");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_imported_journal_record ON os_imported_journal(record_id,sequence)");
             db.update("INSERT INTO os_migration(version,name) VALUES(93,?)","reviewed imported journal publication");
+        }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=94")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_automation_install(package_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,version VARCHAR(80) NOT NULL,fingerprint VARCHAR(64) NOT NULL,actor_id VARCHAR(32) NOT NULL,created VARCHAR(26) NOT NULL,detail TEXT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(94,?)","portable inactive automation packages");
         }
     }
 

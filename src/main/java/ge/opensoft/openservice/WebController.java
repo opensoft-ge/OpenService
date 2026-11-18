@@ -611,6 +611,17 @@ public class WebController {
             }else result=incident?ProblemInvestigations.incident(c.db,id):ProblemInvestigations.problem(c.db,id);
             return api?json(map("result",result),200):view(c,incident?"incident-problem":"problem-investigation",map("table",table,"investigation",result));
         }
+        Matcher automationPackage=Pattern.compile("/(admin|api/openservice)/automation-packages(?:/([0-9a-f]{32})(/download)?)?").matcher(path);
+        if(automationPackage.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();boolean api=path.startsWith("/api/");String packageId=automationPackage.group(2);var result=AutomationPackages.page(c.db);String documentJson="",bindingsJson="{\"groups\":{},\"staff\":{},\"aliases\":{}}";
+            if(packageId!=null){method(method,"GET");var receipt=AutomationPackages.receipt(c.db,packageId);if(automationPackage.group(3)!=null){disposition(c,"automation-package-"+packageId+".json");return json(object(receipt.get("detail")).get("document"),200);}result.put("receipt",receipt);}
+            else if(method.equals("POST")){
+                Map<String,Object> input;if(api)input=object(body(c));else{input=new LinkedHashMap<>(c.arguments());input.remove("csrf");try{for(String field:List.of("flows","actions","document","bindings"))if(input.containsKey(field))input.put(field,JSON.readValue(input.get(field).toString(),Object.class));}catch(tools.jackson.core.JacksonException invalid){throw new Failure(400,"Use valid package and binding JSON");}if(input.containsKey("confirm"))input.put("confirm","true".equals(input.get("confirm")));}
+                if("capture".equals(input.get("operation"))){var doc=AutomationPackages.capture(c.db,input);disposition(c,"automation-package-"+doc.get("package_id")+".json");return json(doc,200);}
+                var outcome=AutomationPackages.command(store,c.db,input);result=AutomationPackages.page(c.db);result.putAll(outcome);documentJson=JSON.writerWithDefaultPrettyPrinter().writeValueAsString(input.get("document"));bindingsJson=JSON.writerWithDefaultPrettyPrinter().writeValueAsString(input.get("bindings"));
+            }
+            return api?json(map("result",result),200):view(c,"automation-packages",map("table","configuration","page",result,"documentJson",documentJson,"bindingsJson",bindingsJson,"reviewJson",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(result.get("review"))));
+        }
         Matcher configurationHistory=Pattern.compile("/(admin|api/openservice)/configuration/history(?:/([0-9a-f]{32})(/download)?)?").matcher(path);
         if(configurationHistory.matches()){
             method(method,"GET");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=configurationHistory.group(2);
