@@ -52,7 +52,7 @@ final class EmployeeCases {
 
     static Map<String,Object> page(Store.Db db,String id,boolean employee)throws SQLException {
         var item=record(db,id,employee);var data=publicFields(FieldAccess.serialize(db,item));var messages=db.all("SELECT actor_name,body,created FROM os_hr_reply WHERE record_id=? ORDER BY ordinal",id);String state=object(item.get("data")).get("state").toString();
-        return map("record",data,"messages",messages,"revision",messages.size(),"states",Service.schema(db,"hr_case").get("states"),"can_publish",!Set.of("closed","cancelled").contains(state) && writable(db) && (employee || RecordPolicy.allows(Service.schema(db,"hr_case"),"update",db.viewerRole)),"employee",employee);
+        return map("onboarding",EmployeeOnboarding.progress(db,id),"record",data,"messages",messages,"revision",messages.size(),"states",Service.schema(db,"hr_case").get("states"),"can_publish",!Set.of("closed","cancelled").contains(state) && writable(db) && (employee || RecordPolicy.allows(Service.schema(db,"hr_case"),"update",db.viewerRole)),"employee",employee);
     }
 
     static Map<String,Object> publish(Store.Db db,String id,boolean employee,Object input)throws SQLException {

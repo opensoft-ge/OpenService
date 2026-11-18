@@ -162,6 +162,7 @@ public final class Service {
     static long insert(Store.Db db, Map<String, Object> item) throws SQLException {
         CustomerCases.insertion(db,item);
         EmployeeCases.insertion(db,item);
+        EmployeeOnboarding.insertion(db,item.get("sys_id").toString());
         ApprovalGate.creation(schema(db, item.get("table").toString()), object(item.get("data")));
         try (var query =
                 db.statement(
@@ -197,6 +198,7 @@ public final class Service {
         MajorIncidents.guard(db,item);
         CustomerResolutions.guard(db,item);
         WorkTasks.guard(db,item);
+        EmployeeOnboarding.guard(db,item);
         FieldDispatch.parentGuard(db,item);
         CatalogueWorkflows.settle(db,item);
         db.update(
@@ -281,6 +283,7 @@ public final class Service {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
         RecordScopes.deleting(db,item.get("sys_id").toString());
         WorkTasks.deleting(db,item.get("sys_id").toString());
+        EmployeeOnboarding.deleting(db,item.get("sys_id").toString());
         ChangeWindows.deleting(db,item.get("sys_id").toString());
         MajorIncidents.deleting(db,item.get("sys_id").toString());
         TypedFields.deleting(db, item);

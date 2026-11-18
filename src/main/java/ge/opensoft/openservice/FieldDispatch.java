@@ -20,7 +20,7 @@ final class FieldDispatch {
     }
 
     static Map<String,Object> page(Store.Db db,String table,String id,String taskId) throws SQLException {
-        var parent=WorkTasks.record(db,table,id);var task=WorkTasks.task(db,id,taskId);team(db,task);var dispatch=current(db,taskId);
+        var parent=WorkTasks.record(db,table,id);EmployeeOnboarding.taskGuard(db,id,"dispatch");var task=WorkTasks.task(db,id,taskId);team(db,task);var dispatch=current(db,taskId);
         var choices=new ArrayList<Map<String,Object>>();
         for(var user:db.all("SELECT u.user_id,u.name,a.calendar_id FROM os_user u JOIN os_field_availability a ON a.user_id=u.user_id JOIN os_group_member m ON m.user_id=u.user_id WHERE m.group_id=? AND u.active=1 AND u.role='agent' AND u.password_reset_required=0 AND a.active=1 ORDER BY u.name",task.get("group_id")))choices.add(user);
         var shown=new LinkedHashMap<>(dispatch);shown.put("technician",db.one("SELECT COALESCE((SELECT name FROM os_user WHERE user_id=?),'Unassigned or removed') AS name",dispatch.get("technician_id")).get("name"));
@@ -31,7 +31,7 @@ final class FieldDispatch {
 
     static Map<String,Object> command(Store.Db db,String table,String id,String taskId,Object input) throws SQLException {
         if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");
-        var parent=WorkTasks.record(db,table,id);var task=WorkTasks.task(db,id,taskId);team(db,task);RecordPolicy.require(Service.schema(db,table),"update",db.viewerRole);
+        var parent=WorkTasks.record(db,table,id);EmployeeOnboarding.taskGuard(db,id,"dispatch");var task=WorkTasks.task(db,id,taskId);team(db,task);RecordPolicy.require(Service.schema(db,table),"update",db.viewerRole);
         FieldVisits.guardDispatch(db,taskId);var current=current(db,taskId);var body=object(input);String operation=WorkJobs.text(body.get("operation"),7);boolean assign=operation.equals("assign"),accept=operation.equals("accept");
         require(Set.of("assign","accept","reject","release").contains(operation),"Choose a field dispatch action");
         var keys=new HashSet<>(Set.of("operation","revision","task_revision","record_revision"));keys.addAll(assign?Set.of("technician_id","start","end","location"):Set.of("reason"));

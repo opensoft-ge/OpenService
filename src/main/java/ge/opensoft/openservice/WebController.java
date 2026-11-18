@@ -349,6 +349,12 @@ public class WebController {
             if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","task_revision","record_revision"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));input=form;}result=FieldDispatch.command(c.db,table,id,task,input);if(!api)return redirect(path);}else result=FieldDispatch.page(c.db,table,id,task);
             return api?json(map("result",result),200):view(c,"field-dispatch",map("table",table,"page",result,"dispatchPath","/record/"+table+"/"+id+"/field-dispatch/"+task));
         }
+        Matcher onboarding=Pattern.compile("/(?:record/hr_case|api/openservice/hr-cases)/([0-9a-f]{32})/onboarding").matcher(path);
+        if(onboarding.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=onboarding.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision","ordinal"))if(form.containsKey(field))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));input=form;}result=EmployeeOnboarding.command(c.db,id,input);if(!api)return redirect(path);}else result=EmployeeOnboarding.page(c.db,id);
+            return api?json(map("result",result),200):view(c,"employee-onboarding",map("table","hr_case","definition",map("label","Employee services"),"page",result,"onboardingPath","/record/hr_case/"+id+"/onboarding"));
+        }
         if(path.equals("/work-tasks") || path.equals("/api/openservice/work-tasks")){
             method(method,"GET");c.uniqueQuery();var result=WorkTasks.queue(c.db,c.arguments());return path.startsWith("/api/")?json(map("result",result),200):view(c,"work-task-queue",map("table","work","queue",result));
         }

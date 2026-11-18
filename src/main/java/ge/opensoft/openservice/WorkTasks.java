@@ -39,17 +39,17 @@ final class WorkTasks {
     }
 
     static Map<String,Object> page(Store.Db db,String table,String id) throws SQLException {
-        var parent=record(db,table,id);var plan=plan(db,id);var tasks=new ArrayList<Map<String,Object>>();var groupNames=new LinkedHashMap<String,String>();
+        var parent=record(db,table,id);var plan=plan(db,id);var onboarding=EmployeeOnboarding.binding(db,id);var tasks=new ArrayList<Map<String,Object>>();var groupNames=new LinkedHashMap<String,String>();
         if(RecordPolicy.allows(Service.schema(db,"sys_user_group"),"read",db.viewerRole))for(var group:Service.page(db,"sys_user_group",Map.of("sysparm_limit","100"),"").rows())groupNames.put(group.get("sys_id").toString(),Objects.toString(group.get("short_description"),"Team"));
         for(var row:db.all("SELECT task_id FROM os_case_task WHERE parent_id=? ORDER BY ordinal",id)){
-            var task=task(db,id,row.get("task_id").toString());task.put("ready",ready(db,task));task.put("field_status",FieldDispatch.current(db,task.get("task_id").toString()).get("status"));task.put("visit_phase",FieldVisits.current(db,task.get("task_id").toString()).get("phase"));task.put("owned",task.get("assignee_id").equals(db.viewerId));task.put("group_name",groupNames.getOrDefault(task.get("group_id"),"Restricted or unavailable team"));task.put("can_work","admin".equals(db.viewerRole) || Fulfilment.member(db,task.get("group_id").toString()));task.put("assignee_name",db.one("SELECT COALESCE((SELECT name FROM os_user WHERE user_id=?),'Unassigned') AS name",task.get("assignee_id")).get("name"));tasks.add(task);
+            var task=task(db,id,row.get("task_id").toString());task.put("ready",ready(db,task) && (onboarding==null || EmployeeOnboarding.ready(db,onboarding)));task.put("field_status",FieldDispatch.current(db,task.get("task_id").toString()).get("status"));task.put("visit_phase",FieldVisits.current(db,task.get("task_id").toString()).get("phase"));task.put("owned",task.get("assignee_id").equals(db.viewerId));task.put("group_name",groupNames.getOrDefault(task.get("group_id"),"Restricted or unavailable team"));task.put("can_work","admin".equals(db.viewerRole) || Fulfilment.member(db,task.get("group_id").toString()));task.put("assignee_name",db.one("SELECT COALESCE((SELECT name FROM os_user WHERE user_id=?),'Unassigned') AS name",task.get("assignee_id")).get("name"));tasks.add(task);
         }
-        return map("parent",FieldAccess.serialize(db,parent),"plan",plan,"states",Service.schema(db,table).get("states"),"tasks",tasks,"groups",groupNames,"mutable",!closed(db,parent,plan),"can_manage",RecordPolicy.allows(Service.schema(db,table),"update",db.viewerRole));
+        return map("onboarding",onboarding!=null,"parent",FieldAccess.serialize(db,parent),"plan",plan,"states",Service.schema(db,table).get("states"),"tasks",tasks,"groups",groupNames,"mutable",!closed(db,parent,plan),"can_manage",onboarding==null && RecordPolicy.allows(Service.schema(db,table),"update",db.viewerRole));
     }
 
     static Map<String,Object> command(Store.Db db,String table,String id,Object input) throws SQLException {
         if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");var parent=record(db,table,id);var plan=plan(db,id);var body=object(input);String operation=WorkJobs.text(body.get("operation"),12);
-        require(Set.of("configure","create","revise","claim","complete","cancel","requeue","waive").contains(operation),"Choose a supported task operation");
+        require(Set.of("configure","create","revise","claim","complete","cancel","requeue","waive").contains(operation),"Choose a supported task operation");EmployeeOnboarding.taskGuard(db,id,operation);
         var keys=new HashSet<>(Set.of("operation","revision","record_revision"));boolean configure=operation.equals("configure"),create=operation.equals("create");
         if(configure)keys.add("close_at");else if(create)keys.addAll(Set.of("summary","details","group_id","required","predecessors"));else{keys.add("task_id");switch(operation){case "revise"->keys.addAll(Set.of("summary","details","group_id","predecessors"));case "complete"->keys.add("outcome");case "cancel","requeue","waive"->keys.add("reason");default->{ /* claim */ }}}
         require(body.keySet().equals(keys),"Provide only the selected task operation fields");ProblemInvestigations.revision(body.get("record_revision"),parent.get("revision"));
@@ -82,7 +82,7 @@ final class WorkTasks {
             }
             db.update("UPDATE os_case_task SET summary=?,details=?,group_id=?,assignee_id=?,state=?,required=?,predecessors=?,outcome=?,note=?,revision=revision+1 WHERE task_id=?",task.get("summary"),task.get("details"),task.get("group_id"),task.get("assignee_id"),task.get("state"),task.get("required"),JSON.writeValueAsString(task.get("predecessors")),task.get("outcome"),task.get("note"),taskId);FieldDispatch.finished(db,taskId,task.get("state").toString());
         }
-        db.update("UPDATE os_task_plan SET revision=revision+1 WHERE parent_id=?",id);String actor=Service.account(db,db.viewerId).get("name").toString();if(structural)Service.update(db,table,parent,map(),actor,db.viewerRole,body.get("record_revision").toString());Service.audit(db,parent,actor,"worktask."+operation,map("task_id",taskId));if(Set.of("claim","complete").contains(operation))CatalogueWorkflows.advance(db,parent);return page(db,table,id);
+        db.update("UPDATE os_task_plan SET revision=revision+1 WHERE parent_id=?",id);String actor=Service.account(db,db.viewerId).get("name").toString();if(structural)Service.update(db,table,parent,map(),actor,db.viewerRole,body.get("record_revision").toString());Service.audit(db,parent,actor,"worktask."+operation,map("task_id",taskId));if(Set.of("claim","complete").contains(operation))CatalogueWorkflows.advance(db,parent);if(Set.of("claim","complete","requeue").contains(operation))EmployeeOnboarding.advance(db,parent);return page(db,table,id);
     }
 
     static Map<String,Object> queue(Store.Db db,Map<String,String> args) throws SQLException {
