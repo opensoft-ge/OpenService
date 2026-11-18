@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}">
 <main id="migration-workspace" th:attr="data-csrf=${csrf}">
 <section class="page-heading"><div><span class="eyebrow">ADMINISTRATION · MIGRATION</span><h1>Connect, review, migrate.</h1><p>Bring selected records and supporting data from an authorized ServiceNow instance.</p></div></section>
-<p><a href="/admin/migration-stops">Review and cancel unfinished migrations</a></p><div class="notice">Imported accounts start disabled; imported records are private. Source passwords are never copied. Source history is preserved in an administrator-only archive. Scripts, ACL logic and external integrations require separate review and implementation.</div>
+<p><a href="/admin/migration-mappings">Assess source fields and prepare a reviewed mapping</a></p><p><a href="/admin/migration-stops">Review and cancel unfinished migrations</a></p><div class="notice">Imported accounts start disabled; imported records are private. Source passwords are never copied. Source history is preserved in an administrator-only archive. Scripts, ACL logic and external integrations require separate review and implementation.</div>
 <div class="detail-grid"><section class="panel"><h2>1. Define the migration</h2>
 <p>Map destination fields to source fields. Values translate choices explicitly. Add a reviewed OpenService configuration bundle to install custom tables and workflow rules atomically. Keep credentials out of the plan.</p>
 <form id="migration-create" class="record-form"><label>Migration plan<textarea id="migration-plan" rows="18" required spellcheck="false">{

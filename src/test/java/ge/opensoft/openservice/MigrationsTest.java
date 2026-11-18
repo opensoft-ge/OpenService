@@ -1192,4 +1192,13 @@ class MigrationsTest {
         }
     }
 
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void migrationMappingUpgradeRetainsReviewedAssessment(boolean postgres)throws Exception {
+        var env=configuration(postgres);env.setProperty("MIGRATION_ALLOWED_ORIGINS",MigrationSource.origin());var store=new Store(env);String retained;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before mapping assessment"),"admin").get("sys_id").toString();db.update("DROP TABLE os_source_assessment");db.update("DELETE FROM os_migration WHERE version>=91");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_source_assessment"));db.connection.rollback();assertEquals(90,db.count("SELECT MAX(version) FROM os_migration"));}
+        MigrationMappingsAcceptance.seed();store=new Store(env);String id;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);id=MigrationMappings.assess(store,db,MigrationMappingsAcceptance.assess()).get("assessment_id").toString();MigrationMappings.command(store,db,id,Values.map("operation","review","revision",1,"mapping",MigrationMappingsAcceptance.mapping()));db.connection.commit();}
+        String job="";for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var page=MigrationMappings.command(store,db,id,MigrationMappingsAcceptance.confirm(2));if(n==0)job=page.get("job_id").toString();assertEquals(job,page.get("job_id"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_transfer_job"));assertEquals("Retained before mapping assessment",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.commit();}}MigrationSource.reset();
+    }
+
 }

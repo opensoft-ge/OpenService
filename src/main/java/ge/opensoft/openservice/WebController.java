@@ -1346,6 +1346,13 @@ public class WebController {
                         200);
             }
         }
+
+        Matcher mappingAssessment=Pattern.compile("/(?:admin|api/openservice)/migration-mappings(?:/([0-9a-f]{32}))?").matcher(path);
+        if(mappingAssessment.matches()){
+            c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String assessment=Objects.toString(mappingAssessment.group(1),"");Map<String,Object> result;
+            if(method.equals("GET"))result=assessment.isEmpty()?MigrationMappings.directory(c.db):MigrationMappings.page(c.db,assessment);else{Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");if(!assessment.isEmpty()){form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));if(form.containsKey("mapping")){try{form.put("mapping",JSON.readValue(form.get("mapping").toString(),Object.class));}catch(tools.jackson.core.JacksonException invalid){throw new Failure(400,"Invalid mapping JSON");}}if(form.containsKey("confirm"))form.put("confirm","true".equals(form.get("confirm")));}input=form;}result=assessment.isEmpty()?MigrationMappings.assess(store,c.db,input):MigrationMappings.command(store,c.db,assessment,input);if(!api)return redirect("/admin/migration-mappings/"+result.get("assessment_id"));}
+            if(api)return json(map("result",result),method.equals("POST") && assessment.isEmpty()?201:200);String mappingJson="",planJson="";if(!assessment.isEmpty()){var mapping=result.get("review")==null?map("fields",result.get("suggested"),"values",map()):new LinkedHashMap<>(object(object(object(result.get("review")).get("tables")).get(result.get("source_table"))));mapping.remove("target");mappingJson=JSON.writerWithDefaultPrettyPrinter().writeValueAsString(mapping);planJson=JSON.writerWithDefaultPrettyPrinter().writeValueAsString(result.get("review"));}return view(c,assessment.isEmpty()?"migration-mappings":"migration-mapping",map("table","migration","page",result,"mappingJson",mappingJson,"planJson",planJson));
+        }
         if (path.equals("/admin/migrations")) {
             method(method, "GET");
             c.admin();

@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 90;
+    static final int VERSION = 91;
 
     private Migrations() {}
 
@@ -780,6 +780,10 @@ final class Migrations {
         if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=90")==0) {
             addColumn(db,"os_support_conversation","sources","TEXT NOT NULL DEFAULT '[]'");
             db.update("INSERT INTO os_migration(version,name) VALUES(90,?)","current permission-bound support sources");
+        }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=91")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_source_assessment(assessment_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL,source_url VARCHAR(320) NOT NULL,source_table VARCHAR(80) NOT NULL,target VARCHAR(80) NOT NULL,definition TEXT NOT NULL,revision INTEGER NOT NULL,job_id VARCHAR(32) NOT NULL,created VARCHAR(26) NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(91,?)","owned source dictionary mapping assessments");
         }
     }
 

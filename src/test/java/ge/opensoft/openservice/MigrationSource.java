@@ -14,6 +14,7 @@ final class MigrationSource {
     static final Map<String, List<Map<String, Object>>> tables = new ConcurrentHashMap<>();
     static final Map<String, byte[]> files = new ConcurrentHashMap<>();
     static volatile String raw;
+    static volatile boolean dictionaryFilter=true;
     static volatile int status = 200;
     static volatile CountDownLatch entered, release;
     static final HttpServer server = start();
@@ -76,6 +77,7 @@ final class MigrationSource {
                                             .filter(row ->
                                                     row.get("sys_id").toString().compareTo(cursor)
                                                             > 0)
+                                            .filter(row -> metadataMatches(table,query,row))
                                             .sorted(
                                                     Comparator.comparing(
                                                             row -> row.get("sys_id").toString()))
@@ -96,6 +98,17 @@ final class MigrationSource {
         }
     }
 
+    static boolean metadataMatches(String table,String query,Map<String,Object> row) {
+        if(!Set.of("sys_dictionary","sys_db_object").contains(table))return true;
+        if(table.equals("sys_dictionary") && !dictionaryFilter)return true;
+        var id=java.util.regex.Pattern.compile("(?:sysparm_query=|\\^)sys_id=([0-9a-f]{32})").matcher(query);
+        if(id.find())return row.get("sys_id").equals(id.group(1));
+        var name=java.util.regex.Pattern.compile("(?:sysparm_query=|\\^)name=([a-z0-9_]+)").matcher(query);
+        if(name.find())return name.group(1).equals(row.get("name"));
+        var names=java.util.regex.Pattern.compile("nameIN([a-z0-9_,]+)").matcher(query);
+        return !names.find() || Arrays.asList(names.group(1).split(",")).contains(row.get("name"));
+    }
+
     static String key(int value) {
         return String.format(Locale.ROOT, "%032x", value);
     }
@@ -105,6 +118,7 @@ final class MigrationSource {
         files.clear();
         queries.clear();
         raw = null;
+        dictionaryFilter=true;
         status = 200;
         entered = null;
         release = null;
