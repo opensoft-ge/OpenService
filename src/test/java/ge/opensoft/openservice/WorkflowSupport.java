@@ -16,6 +16,9 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void workTasksCoordinateDependenciesAndCompletion() throws Exception { WorkTasksAcceptance.run(this); }
+    @Test void workTasksValidateRecoveryAndBounds() throws Exception { WorkTasksAcceptance.boundaries(this); }
+    @Test void workTasksHonorCurrentParentAndTeamAuthority() throws Exception { WorkTasksAcceptance.authority(this); }
     @Test void parentScopesTrackCurrentAuthorityAcrossRecordSurfaces() throws Exception { RecordScopesAcceptance.run(this); }
     @Test void parentScopesPreventCyclesAndPreserveMutationBoundaries() throws Exception { RecordScopesAcceptance.boundaries(this); }
     @Test void changePlanningRequiresReviewedCurrentPlans() throws Exception { ChangePlanningAcceptance.run(this); }
@@ -145,7 +148,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

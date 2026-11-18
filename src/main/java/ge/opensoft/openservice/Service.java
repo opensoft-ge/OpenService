@@ -191,6 +191,7 @@ public final class Service {
         ApprovalGate.update(db, item);
         Fulfilment.guard(db,item);
         ChangePlanning.guard(db,item);
+        WorkTasks.guard(db,item);
         db.update(
                 "UPDATE os_record SET data="
                         + db.jsonParameter()
@@ -272,6 +273,7 @@ public final class Service {
             throws SQLException {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
         RecordScopes.deleting(db,item.get("sys_id").toString());
+        WorkTasks.deleting(db,item.get("sys_id").toString());
         TypedFields.deleting(db, item);
         audit(db, item, actor, "deleted", map("before", serialize(item)));
         db.update("DELETE FROM os_attachment WHERE record_id=?", item.get("sys_id"));
@@ -290,6 +292,8 @@ public final class Service {
         db.update("DELETE FROM os_problem_analysis WHERE problem_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_plan WHERE change_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record_scope WHERE record_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_case_task WHERE parent_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_task_plan WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
 

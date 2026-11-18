@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 54;
+    static final int VERSION = 55;
 
     private Migrations() {}
 
@@ -548,6 +548,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_record_scope(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,parent_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),revision INTEGER NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_record_scope_parent ON os_record_scope(parent_id)");
             db.update("INSERT INTO os_migration(version,name) VALUES(54,?)","live parent permission boundaries for linked records");
+        }
+        if(version<55){
+            db.update("CREATE TABLE IF NOT EXISTS os_task_plan(parent_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,close_at VARCHAR(80) NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_case_task(task_id VARCHAR(32) PRIMARY KEY,parent_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,ordinal INTEGER NOT NULL,summary VARCHAR(160) NOT NULL,details TEXT NOT NULL,group_id VARCHAR(32) NOT NULL,assignee_id VARCHAR(32) NOT NULL,state VARCHAR(20) NOT NULL,required INTEGER NOT NULL,predecessors TEXT NOT NULL,outcome TEXT NOT NULL,note TEXT NOT NULL,revision INTEGER NOT NULL,UNIQUE(parent_id,ordinal))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_case_task_group ON os_case_task(group_id,state)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(55,?)","dependent team work and parent completion gates");
         }
     }
 

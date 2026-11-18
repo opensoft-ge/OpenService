@@ -307,6 +307,18 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/work-tasks") || path.equals("/api/openservice/work-tasks")){
+            method(method,"GET");c.uniqueQuery();var result=WorkTasks.queue(c.db,c.arguments());return path.startsWith("/api/")?json(map("result",result),200):view(c,"work-task-queue",map("table","work","queue",result));
+        }
+        Matcher workTasks=Pattern.compile("/(?:record|api/openservice/records)/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32})/work-tasks").matcher(path);
+        if(workTasks.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=workTasks.group(1),id=workTasks.group(2);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","record_revision"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));if(Set.of("create","revise").contains(Objects.toString(form.get("operation"),""))){var predecessors=new ArrayList<String>();for(String key:new ArrayList<>(form.keySet()))if(key.startsWith("predecessor_")){TypedFields.require(form.remove(key).equals("true"),"Choose predecessor tasks");predecessors.add(key.substring(12));}form.put("predecessors",predecessors);}if(form.containsKey("required")){TypedFields.require(Set.of("true","false").contains(form.get("required")),"Choose whether the task is required");form.put("required",Boolean.parseBoolean(form.get("required").toString()));}input=form;}
+                result=WorkTasks.command(c.db,table,id,input);if(!api)return redirect(path);
+            }else result=WorkTasks.page(c.db,table,id);
+            return api?json(map("result",result),200):view(c,"work-tasks",map("table",table,"work",result,"workPath","/record/"+table+"/"+id+"/work-tasks"));
+        }
         Matcher recordScope=Pattern.compile("/(?:admin|api/openservice)/record-scopes/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32})").matcher(path);
         if(recordScope.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();String table=recordScope.group(1),id=recordScope.group(2);boolean api=path.startsWith("/api/");Map<String,Object> result;
@@ -320,7 +332,7 @@ public class WebController {
         if(changePlan.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=changePlan.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
             if(method.equals("POST")){
-                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","record_revision","impact_score","likelihood"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(form.get("ready")),"Choose draft or ready");form.put("ready",Boolean.parseBoolean(form.get("ready").toString()));input=form;}
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","record_revision","impact_score","likelihood"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(Objects.toString(form.get("ready"),"")),"Choose draft or ready");form.put("ready",Boolean.parseBoolean(form.get("ready").toString()));input=form;}
                 result=ChangePlanning.save(c.db,id,input);if(!api)return redirect(path);
             }else result=ChangePlanning.detail(c.db,id);
             return api?json(map("result",result),200):view(c,"change-plan",map("table","change_request","planning",result));
@@ -333,7 +345,7 @@ public class WebController {
         if(investigation.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=investigation.group(1),id=investigation.group(2);boolean api=path.startsWith("/api/"),incident=table.equals("incident");Map<String,Object> result;
             if(method.equals("POST")){
-                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));if(!incident){form.put("record_revision",Service.number(Objects.toString(form.get("record_revision"),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(form.get("publish")),"Choose draft or published");form.put("publish",Boolean.parseBoolean(form.get("publish").toString()));}input=form;}
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));if(!incident){form.put("record_revision",Service.number(Objects.toString(form.get("record_revision"),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(Objects.toString(form.get("publish"),"")),"Choose draft or published");form.put("publish",Boolean.parseBoolean(form.get("publish").toString()));}input=form;}
                 result=incident?ProblemInvestigations.link(c.db,id,input):ProblemInvestigations.save(c.db,id,input);if(!api)return redirect(path);
             }else result=incident?ProblemInvestigations.incident(c.db,id):ProblemInvestigations.problem(c.db,id);
             return api?json(map("result",result),200):view(c,incident?"incident-problem":"problem-investigation",map("table",table,"investigation",result));

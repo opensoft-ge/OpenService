@@ -1,0 +1,1 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="identity(task)"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="task_id" th:value="${task.task_id}"><input type="hidden" name="revision" th:value="${task.revision}"><input type="hidden" name="record_revision" th:value="${work.parent.sys_mod_count}"></th:block>
