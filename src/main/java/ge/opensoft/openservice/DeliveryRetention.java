@@ -10,7 +10,7 @@ import java.util.*;
 final class DeliveryRetention {
     private DeliveryRetention() {}
 
-    private static final String ELIGIBLE = "state IN ('delivered','cancelled') AND expires_at<?";
+    static final String ELIGIBLE = "state IN ('delivered','cancelled') AND expires_at<? AND NOT EXISTS (SELECT 1 FROM os_retention_hold h WHERE h.job_id=os_outbox.job_id)";
 
     static Map<String, Object> run(
             Store.Db db, String actor, Map<String, Object> values, boolean apply, long now)

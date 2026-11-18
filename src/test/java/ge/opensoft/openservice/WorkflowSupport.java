@@ -16,6 +16,11 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void deliveryArchiveJourney()throws Exception{DeliveryArchiveAcceptance.journey(this);}
+    @Test void deliveryArchiveBoundaries()throws Exception{DeliveryArchiveAcceptance.boundaries(this);}
+    @Test void deliveryArchiveStaleAndHolds()throws Exception{DeliveryArchiveAcceptance.staleAndHolds(this);}
+    @Test void deliveryArchiveConflictsAndRollback()throws Exception{DeliveryArchiveAcceptance.conflictsAndRollback(this);}
+    @Test void deliveryArchiveLimitsAndConcurrency()throws Exception{DeliveryArchiveAcceptance.limitsAndConcurrency(this);}
     @Test void bulkChangesRun() throws Exception { BulkChangesAcceptance.run(this); }
     @Test void bulkChangesBoundaries() throws Exception { BulkChangesAcceptance.boundaries(this); }
     @Test void bulkChangesStaleAndAuthority() throws Exception { BulkChangesAcceptance.staleAndAuthority(this); }
@@ -441,7 +446,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_outage_history", "os_ci_outage", "os_relation_history", "os_typed_relation", "os_relation_type", "os_discovery_field", "os_discovery_report", "os_discovery_identity", "os_discovery_source", "os_bulk_receipt", "os_collaboration_post", "os_record_follow", "os_automation_install", "os_imported_journal", "os_ai_evaluation", "os_source_assessment", "os_ai_resolution", "os_ai_triage", "os_inbound_mail_receipt","os_inbound_mail_thread","os_inbound_mailbox","os_asset_movement","os_asset_identity","os_project_schedule","os_project_origin","os_demand_assessment","os_vulnerability_observation","os_vulnerability","os_vulnerability_scan","os_security_document","os_security_case","os_security_team","os_risk_assessment","os_hr_onboarding_work","os_hr_onboarding","os_hr_reply","os_hr_case","os_hr_service","os_employee","os_field_visit","os_field_dispatch","os_field_availability","os_customer_resolution", "os_customer_reply", "os_customer_delivery", "os_customer_case", "os_customer_entitlement", "os_customer_contact", "os_customer_account", "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_outage_history", "os_ci_outage", "os_relation_history", "os_typed_relation", "os_relation_type", "os_discovery_field", "os_discovery_report", "os_discovery_identity", "os_discovery_source", "os_retention_hold", "os_delivery_archive", "os_bulk_receipt", "os_collaboration_post", "os_record_follow", "os_automation_install", "os_imported_journal", "os_ai_evaluation", "os_source_assessment", "os_ai_resolution", "os_ai_triage", "os_inbound_mail_receipt","os_inbound_mail_thread","os_inbound_mailbox","os_asset_movement","os_asset_identity","os_project_schedule","os_project_origin","os_demand_assessment","os_vulnerability_observation","os_vulnerability","os_vulnerability_scan","os_security_document","os_security_case","os_security_team","os_risk_assessment","os_hr_onboarding_work","os_hr_onboarding","os_hr_reply","os_hr_case","os_hr_service","os_employee","os_field_visit","os_field_dispatch","os_field_availability","os_customer_resolution", "os_customer_reply", "os_customer_delivery", "os_customer_case", "os_customer_entitlement", "os_customer_contact", "os_customer_account", "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

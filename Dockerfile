@@ -1,4 +1,4 @@
-FROM eclipse-temurin:27-jdk@sha256:9d4c29a53a1a7a028416306d090080484602ccc43cc316404e12cabd133c7056 AS build
+FROM eclipse-temurin:27-jdk@sha256:5e6d9093c7a8e95adfaa8828253c58f2c6820116d07a062440a778358807578a AS build
 RUN apt-get update && apt-get install -y --no-install-recommends unzip && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
 COPY .mvn .mvn
@@ -9,7 +9,7 @@ COPY licenses licenses
 COPY docs/runtime-licenses.json docs/provenance.md docs/
 RUN --mount=type=cache,target=/root/.m2,sharing=locked ./mvnw -B -Dmaven.test.skip=true package
 
-FROM eclipse-temurin:27-jre@sha256:05a57c9f4d6d8bf8d8c2213049ea816609672ffcc14463a9c83433a610703e10 AS runtime
+FROM eclipse-temurin:27-jre@sha256:acfb350b50e707addf3dcbb47f7052d1882d1e5f1670ce838a9c7838d82d4fe5 AS runtime
 # OpenService launches Java directly; the inherited Go service manager is unused.
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends curl && rm -f /usr/bin/pebble && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /app /data && chown -R 10001:10001 /app /data

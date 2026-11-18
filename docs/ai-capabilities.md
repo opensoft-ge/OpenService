@@ -44,3 +44,7 @@ The rows below define acceptance scope, not completed features. Track status, ev
 ## Continued discovery
 
 During product development, inspect current official counterpart/provider AI documentation and release notes, record source URLs, retrieval date and product/version scope, and add new reusable gaps to the existing roadmap/ledger. Separate verified vendor behavior from owner-defined improvements. Research and documentation do not by themselves authorize external data transmission or implementation beyond the requested scope.
+
+## 18 November 2026 continuation priorities
+
+The 50-round batch retains OS-AI-001–005 as partial. Next agent work must advance delegated identity/tool grants, durable multi-step planning, stop/runaway-trigger controls and real invoking-user access diagnostics (OS-DISC-AI-CONTAINMENT and OS-DISC-AI-ACCESS-TEST). Human-scored held-out knowledge evaluations do not establish general tool-effect quality or billed-cost qualification. These requirements remain in the existing roadmap; no background implementation or provider qualification is implied by completing the batch.

@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 97;
+    static final int VERSION = 98;
 
     private Migrations() {}
 
@@ -813,6 +813,14 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_shared_session(session_hash VARCHAR(64) PRIMARY KEY,created_at BIGINT NOT NULL,last_seen BIGINT NOT NULL,expires_at BIGINT NOT NULL,envelope TEXT NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_shared_session_expiry ON os_shared_session(expires_at)");
             db.update("INSERT INTO os_migration(version,name) VALUES(97,?)","encrypted shared browser session state");
+        }
+
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=98")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_retention_policy(singleton INTEGER PRIMARY KEY,revision INTEGER NOT NULL,days INTEGER NOT NULL)");
+            db.update("INSERT INTO os_retention_policy(singleton,revision,days) VALUES(1,1,90) ON CONFLICT(singleton) DO NOTHING");
+            db.update("CREATE TABLE IF NOT EXISTS os_retention_hold(job_id VARCHAR(32) PRIMARY KEY,reason VARCHAR(500) NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_delivery_archive(batch_id VARCHAR(32) PRIMARY KEY,state VARCHAR(20) NOT NULL,created VARCHAR(26) NOT NULL,item_count INTEGER NOT NULL,fingerprint VARCHAR(64) NOT NULL,envelope TEXT NOT NULL,detail TEXT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(98,?)","reviewed recoverable delivery metadata retention");
         }
 
     }

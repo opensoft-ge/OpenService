@@ -1,6 +1,6 @@
 # Automatic development batch — 18 November 2026
 
-Round **49 of 50** in the [new feature report](auto50-2026-11-18.md) passes **1689 tests**, zero failures/errors/skips. Whole Java: **10054/10054 lines, 10990/10990 branches, 1092/1092 methods**; exact gate passes all 88 accumulated changed Java files. All 3 browser-script gates pass. All 728 source/test hashes match the frozen build. Final light/dark browser, keyboard/axe and SQLite/PostgreSQL upgrade/restart evidence pass. Existing image/deployment evidence retains its original scope.
+Round **50 of 50** in the [new feature report](auto50-2026-11-18.md) passes **1702 tests**, zero failures/errors/skips. Whole Java: **10086/10086 lines, 11076/11076 branches, 1101/1101 methods**; exact gate passes all 90 accumulated changed Java files. All 3 browser-script gates pass. All 732 source/test hashes match the frozen build. Final light/dark browser, keyboard/axe and SQLite/PostgreSQL upgrade/restart evidence pass. The final packaged image passed fresh installation, same-version restore, schema 51 to 98 upgrade/restore and a small shared-session read smoke. Current vulnerability, runtime and license limitations remain explicit in the [final package qualification](auto50-2026-11-18.md#final-packaged-qualification--18-november-2026). Historical deployment evidence below retains its original scope.
 
 
 # Automatic development batch — latest verification

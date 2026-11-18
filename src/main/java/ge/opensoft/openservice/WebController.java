@@ -1315,6 +1315,15 @@ public class WebController {
             directory.put("jobs", directory.get("result"));
             return view(c, "delivery", directory);
         }
+
+        if(Set.of("/admin/delivery/archive","/api/openservice/delivery/archive").contains(path)){
+            method(method,"GET","POST");c.admin();c.noQuery();boolean api=path.startsWith("/api/");var result=DeliveryArchive.page(c.db);
+            if(method.equals("POST")){
+                Map<String,Object> input;if(api)input=object(body(c));else{input=map();for(String name:c.http.getParameterMap().keySet())if(!name.equals("csrf"))input.put(name,name.equals("confirm")?Boolean.valueOf(c.parameter(name,"")):c.parameter(name,""));}
+                var outcome=DeliveryArchive.command(store,c.db,input,System.currentTimeMillis());result=DeliveryArchive.page(c.db);result.putAll(outcome);
+            }
+            return api?json(map("result",result),200):view(c,"delivery-archive",map("table","delivery","page",result,"requestKey",id()));
+        }
         if (Set.of("/admin/delivery/retention", "/api/openservice/delivery/retention")
                 .contains(path)) {
             method(method, "GET", "POST");

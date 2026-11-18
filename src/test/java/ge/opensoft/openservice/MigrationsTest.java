@@ -15,6 +15,15 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void deliveryArchiveUpgradeAndRecovery(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String job,batch;Map<String,Object> input;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);job=DeliveryArchiveAcceptance.seed(db,"delivered",1);db.update("DROP TABLE os_delivery_archive");db.update("DROP TABLE os_retention_hold");db.update("DROP TABLE os_retention_policy");db.update("DELETE FROM os_migration WHERE version=98");db.connection.commit();Migrations.apply(db);assertEquals(90,((Number)DeliveryArchive.policy(db).get("days")).intValue());db.connection.rollback();assertEquals(97,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var review=Values.object(DeliveryArchive.command(store,db,Values.map("operation","review"),System.currentTimeMillis()).get("review"));batch=Values.id();input=Values.map("operation","archive","cutoff",review.get("cutoff"),"proof",review.get("proof"),"key",batch,"confirm",true);DeliveryArchive.command(store,db,input,System.currentTimeMillis());db.connection.commit();}
+        for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);assertEquals(batch,Values.object(DeliveryArchive.command(store,db,input,System.currentTimeMillis()).get("receipt")).get("batch_id"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_delivery_archive"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.commit();}}
+        try(var db=store.open()){PlatformFoundationTest.bind(db);var review=Values.object(DeliveryArchive.command(store,db,Values.map("operation","review_restore","batch_id",batch),System.currentTimeMillis()).get("review"));DeliveryArchive.command(store,db,Values.map("operation","restore","batch_id",batch,"proof",review.get("proof"),"confirm",true),System.currentTimeMillis());db.connection.commit();}
+        store=new Store(env);try(var db=store.open()){assertEquals("delivered",db.one("SELECT state FROM os_outbox WHERE job_id=?",job).get("state"));assertNull(Outbox.claim(db,System.currentTimeMillis()));}
+    }
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void bulkChangeUpgradeRetainsIdempotentReceipt(boolean postgres)throws Exception {
         var env=configuration(postgres);var store=new Store(env);String record;Map<String,Object> input;
         try(var db=store.open()){PlatformFoundationTest.bind(db);record=Service.create(db,"incident",Values.map("short_description","Before bulk upgrade"),"admin").get("sys_id").toString();db.update("DROP TABLE os_bulk_receipt");db.update("DELETE FROM os_migration WHERE version>=96");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_bulk_receipt"));db.connection.rollback();assertEquals(95,db.count("SELECT MAX(version) FROM os_migration"));}

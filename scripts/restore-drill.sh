@@ -340,7 +340,22 @@ if [ "$drill_source_version" -ge 14 ]; then
     [ "$drill_status" = 404 ]
     echo 'PASS: encrypted pending delivery, requester ownership and isolation survive restore; outbound delivery stays disabled.'
 fi
-for artifact in configuration.json record.json security.json metrics.json attachment.bin; do
+# Upgrades may introduce new built-in tables. Every pre-existing definition and
+# all other configuration metadata must still match exactly; same-version restore
+# keeps the stronger whole-export equality check.
+if [ "$drill_source_version" -lt "$drill_restored_version" ]; then
+    jq -S --slurpfile original "$drill_directory/source-configuration.json" \
+        '.tables |= with_entries(select(.key as $key | $original[0].tables | has($key)))' \
+        "$drill_directory/restored-configuration.json" > "$drill_directory/restored-existing-configuration.json"
+    cmp "$drill_directory/source-configuration.json" "$drill_directory/restored-existing-configuration.json"
+    drill_added_tables=$(jq --slurpfile original "$drill_directory/source-configuration.json" \
+        '[.tables | keys[] | select(. as $key | $original[0].tables | has($key) | not)] | length' \
+        "$drill_directory/restored-configuration.json")
+    echo "PASS: every previous configuration definition and metadata field survives upgrade; $drill_added_tables new tables introduced."
+else
+    cmp "$drill_directory/source-configuration.json" "$drill_directory/restored-configuration.json"
+fi
+for artifact in record.json security.json metrics.json attachment.bin; do
     cmp "$drill_directory/source-$artifact" "$drill_directory/restored-$artifact"
 done
 cmp "$drill_directory/payload.bin" "$drill_directory/restored-attachment.bin"
