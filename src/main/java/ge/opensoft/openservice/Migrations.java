@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 95;
+    static final int VERSION = 96;
 
     private Migrations() {}
 
@@ -804,6 +804,11 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_collaboration_post(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,actor_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id) ON DELETE CASCADE,request_key VARCHAR(32) NOT NULL,event_sequence BIGINT NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(26) NOT NULL,PRIMARY KEY(record_id,actor_id,request_key))");
             db.update("INSERT INTO os_migration(version,name) VALUES(95,?)","scoped record subscriptions and mentions");
         }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=96")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_bulk_receipt(actor_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id),request_key VARCHAR(32) NOT NULL,table_name VARCHAR(80) NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(26) NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(actor_id,request_key))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(96,?)","reviewed atomic bulk record changes");
+        }
+
     }
 
     private static void addColumn(Store.Db db, String table, String column, String definition)

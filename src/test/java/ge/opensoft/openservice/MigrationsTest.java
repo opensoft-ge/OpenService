@@ -15,6 +15,13 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void bulkChangeUpgradeRetainsIdempotentReceipt(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String record;Map<String,Object> input;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);record=Service.create(db,"incident",Values.map("short_description","Before bulk upgrade"),"admin").get("sys_id").toString();db.update("DROP TABLE os_bulk_receipt");db.update("DELETE FROM os_migration WHERE version>=96");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_bulk_receipt"));db.connection.rollback();assertEquals(95,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var request=BulkChangesAcceptance.review(List.of(record),Values.map("priority","2"));input=BulkChangesAcceptance.apply(request,BulkChanges.command(db,"incident",request));BulkChanges.command(db,"incident",input);db.connection.commit();}
+        for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var receipt=Values.object(BulkChanges.command(db,"incident",input).get("receipt"));assertEquals(input.get("key"),receipt.get("request_key"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_bulk_receipt"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_event WHERE record_id=? AND action='updated'",record));assertEquals("2",Values.object(Service.record(db,"incident",record).get("data")).get("priority"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.commit();}}
+    }
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void collaborationUpgradeRetainsScopedNotices(boolean postgres)throws Exception {
         var env=configuration(postgres);var store=new Store(env);String record,reader,notice;Map<String,Object> input=RecordCollaborationAcceptance.journal("comment","Retained collaboration body",List.of("UpgradeActivityReader"));
         try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","UpgradeActivityReader","role","reader","password",WorkflowSupport.PASSWORD));reader=RecordAccess.owner(db,"UpgradeActivityReader");record=Service.create(db,"incident",Values.map("short_description","Retained before collaboration"),"admin").get("sys_id").toString();db.update("DROP TABLE os_collaboration_post");db.update("DROP TABLE os_record_follow");db.update("DELETE FROM os_migration WHERE version>=95");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_record_follow"));db.connection.rollback();assertEquals(94,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -789,6 +796,7 @@ class MigrationsTest {
             db.update("DROP TABLE os_customer_delivery");
             db.update("DROP TABLE os_field_availability");db.update("DROP TABLE os_customer_contact");
             db.update("DROP TABLE os_record_follow");db.update("DROP TABLE os_collaboration_post");
+            db.update("DROP TABLE os_bulk_receipt");
             db.update("DROP INDEX ix_os_user_identity");
             db.update("ALTER TABLE os_user DROP COLUMN user_id");
             db.update("DELETE FROM os_migration WHERE version>=2");

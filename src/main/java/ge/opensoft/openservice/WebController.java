@@ -615,6 +615,16 @@ public class WebController {
         if(Set.of("/account/subscriptions","/api/openservice/me/subscriptions").contains(path)){
             method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}RecordCollaboration.remove(c.db,input);if(!api)return redirect(path);}var result=RecordCollaboration.directory(c.db);return api?json(map("result",result),200):view(c,"subscriptions",map("table","notifications","page",result));
         }
+        Matcher bulk=Pattern.compile("/(?:bulk|api/openservice/bulk)/([^/]+)(?:/([0-9a-f]{32}))?").matcher(path);
+        if(bulk.matches()){
+            method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");String table=bulk.group(1),key=bulk.group(2);var result=BulkChanges.page(c.db,table);String recordsJson="[]",patchJson="{}";
+            if(key!=null){method(method,"GET");result.put("receipt",BulkChanges.receipt(c.db,table,key));}
+            else if(method.equals("POST")){
+                Map<String,Object> input;if(api)input=object(body(c));else{input=new LinkedHashMap<>(c.arguments());input.remove("csrf");if(!input.containsKey("records")){var records=new ArrayList<String>();for(String field:new ArrayList<>(input.keySet()))if(field.startsWith("selected_")){TypedFields.require("true".equals(input.remove(field)),"Choose selected records");records.add(field.substring(9));}input.put("records",records);}try{for(String field:List.of("records","patch"))if(input.get(field) instanceof String value)input.put(field,JSON.readValue(value,Object.class));}catch(tools.jackson.core.JacksonException invalid){throw new Failure(400,"Use valid bulk selection and field JSON");}if(input.containsKey("confirm"))input.put("confirm","true".equals(input.get("confirm")));}
+                var outcome=BulkChanges.command(c.db,table,input);result=BulkChanges.page(c.db,table);result.putAll(outcome);result.put("selected",input.get("records"));recordsJson=JSON.writeValueAsString(input.get("records"));patchJson=JSON.writerWithDefaultPrettyPrinter().writeValueAsString(input.get("patch"));
+            }
+            return api?json(map("result",result),200):view(c,"bulk-changes",map("table",table,"definition",FieldAccess.schema(c.db,Service.schema(c.db,table)),"page",result,"recordsJson",recordsJson,"patchJson",patchJson,"requestKey",id()));
+        }
         Matcher collaboration=Pattern.compile("/(?:record/([^/]+)/([0-9a-f]{32})/collaboration|api/openservice/collaboration/([^/]+)/([0-9a-f]{32}))").matcher(path);
         if(collaboration.matches()){
             method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");String table=api?collaboration.group(3):collaboration.group(1),record=api?collaboration.group(4):collaboration.group(2);Map<String,Object> result;
