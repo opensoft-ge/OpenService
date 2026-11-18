@@ -161,6 +161,7 @@ public final class Service {
 
     static long insert(Store.Db db, Map<String, Object> item) throws SQLException {
         CustomerCases.insertion(db,item);
+        EmployeeCases.insertion(db,item);
         ApprovalGate.creation(schema(db, item.get("table").toString()), object(item.get("data")));
         try (var query =
                 db.statement(
@@ -309,6 +310,7 @@ public final class Service {
         db.update("DELETE FROM os_change_window WHERE ci_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_customer_resolution WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_customer_reply WHERE record_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_hr_reply WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_major_update WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_major_incident WHERE incident_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));

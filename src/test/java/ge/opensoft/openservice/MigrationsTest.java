@@ -14,6 +14,15 @@ import java.util.*;
 import java.util.concurrent.*;
 
 class MigrationsTest {
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void employeeServiceUpgradeRetainsPrivateConversation(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String user,group,id;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","UpgradeEmployee","role","requester","password",WorkflowSupport.PASSWORD));user=RecordAccess.owner(db,"UpgradeEmployee");group=Service.create(db,"sys_user_group",Values.map("short_description","Retained HR team"),"admin").get("sys_id").toString();for(String table:List.of("os_hr_reply","os_hr_case","os_hr_service","os_employee"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_schema WHERE name='hr_case'");db.update("DELETE FROM os_migration WHERE version>=64");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_hr_case"));db.connection.rollback();assertEquals(63,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);EmployeeServices.save(db,Values.map("operation","employee","username","UpgradeEmployee","department","Engineering","active",true,"revision",0));String service=Values.objects(EmployeeServices.save(db,EmployeeCasesAcceptance.service("",0,group,"Engineering")).get("services")).getFirst().get("service_id").toString();db.viewerId=user;db.viewerRole="requester";id=EmployeeCases.create(db,service,Values.map("employee_revision",1,"service_revision",1,"summary","Retained employee case","description","Retained private details","key",Values.id())).get("sys_id").toString();EmployeeCases.publish(db,id,true,Values.map("revision",0,"record_revision",0,"key",Values.id(),"body","Retained employee message"));PlatformFoundationTest.bind(db);Service.audit(db,Service.record(db,"hr_case",id),"admin","note",Values.map("body","Retained HR internal note"));db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){db.viewerId=user;db.viewerRole="requester";var page=EmployeeCases.page(db,id,true);assertEquals("Retained employee message",Values.objects(page.get("messages")).getFirst().get("body"));assertFalse(Values.JSON.writeValueAsString(page).contains("HR internal"));assertEquals(404,assertThrows(Values.Failure.class,()->Service.readRecord(db,"hr_case",id)).status);assertEquals(1,((Number)EmployeeCases.portal(db,Map.of()).get("total")).intValue());assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+
 
     @ParameterizedTest @ValueSource(booleans={false,true})
     void fieldVisitUpgradeRetainsCloseoutEvidence(boolean postgres)throws Exception{
@@ -932,7 +941,8 @@ class MigrationsTest {
                 try (var db = future.get(30, TimeUnit.SECONDS).open()) {
                     assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
                     assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
-                    assertEquals(8, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertEquals(9, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='hr_case'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='customer_case'"));
                 }
             }

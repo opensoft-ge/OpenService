@@ -150,6 +150,8 @@ public class Store {
         boolean customerResolutionReopen;
         boolean fieldDispatchCommand;
         boolean fieldVisitCommand;
+        boolean employeeIntake;
+        boolean employeePortal;
 
         public Db(Connection connection, boolean postgres) throws SQLException {
             this.connection = connection;

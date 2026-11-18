@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 63;
+    static final int VERSION = 64;
 
     private Migrations() {}
 
@@ -607,6 +607,14 @@ final class Migrations {
         if(version<63){
             db.update("CREATE TABLE IF NOT EXISTS os_field_visit(task_id VARCHAR(32) PRIMARY KEY REFERENCES os_case_task(task_id) ON DELETE CASCADE,revision INTEGER NOT NULL,phase VARCHAR(12) NOT NULL,checklist TEXT NOT NULL,answers TEXT NOT NULL,parts TEXT NOT NULL,evidence TEXT NOT NULL,notes TEXT NOT NULL,travelled BIGINT NOT NULL,arrived BIGINT NOT NULL,ended BIGINT NOT NULL,evidence_required INTEGER NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(63,?)","field visit execution checks part usage and evidence receipts");
+        }
+
+        if(version<64){
+            db.update("CREATE TABLE IF NOT EXISTS os_employee(user_id VARCHAR(32) PRIMARY KEY,department VARCHAR(80) NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_hr_service(service_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,description TEXT NOT NULL,department VARCHAR(80) NOT NULL,group_id VARCHAR(32) NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_hr_case(record_id VARCHAR(32) PRIMARY KEY,service_id VARCHAR(32) NOT NULL REFERENCES os_hr_service(service_id),user_id VARCHAR(32) NOT NULL,employee_revision INTEGER NOT NULL,service_revision INTEGER NOT NULL,intake_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(40) NOT NULL,UNIQUE(user_id,intake_key))");
+            db.update("CREATE TABLE IF NOT EXISTS os_hr_reply(reply_id VARCHAR(32) PRIMARY KEY,record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,actor_id VARCHAR(32) NOT NULL,actor_name VARCHAR(80) NOT NULL,ordinal INTEGER NOT NULL,body TEXT NOT NULL,created VARCHAR(40) NOT NULL,submission_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,UNIQUE(record_id,actor_id,submission_key),UNIQUE(record_id,ordinal))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(64,?)","private employee service intake and public case follow-up");
         }
 
     }

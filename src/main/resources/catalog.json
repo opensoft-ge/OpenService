@@ -220,5 +220,67 @@
         "admin"
       ]
     }
+  },
+  "hr_case": {
+    "label": "HR cases",
+    "prefix": "HRC",
+    "fields": {
+      "short_description": "Public summary",
+      "description": "Employee-visible description",
+      "assigned_to": "Assigned to",
+      "assignment_group": "Assignment group",
+      "state": "State",
+      "priority": "Priority"
+    },
+    "states": {
+      "new": "New",
+      "working": "In progress",
+      "waiting": "Waiting for information",
+      "closed": "Closed complete",
+      "cancelled": "Closed incomplete"
+    },
+    "flow": {
+      "new": [
+        "working",
+        "cancelled"
+      ],
+      "working": [
+        "waiting",
+        "closed",
+        "cancelled"
+      ],
+      "waiting": [
+        "working",
+        "closed",
+        "cancelled"
+      ],
+      "closed": [
+        "working"
+      ],
+      "cancelled": [
+        "working"
+      ]
+    },
+    "record_roles": {
+      "create": [
+        "admin",
+        "agent",
+        "reader",
+        "requester"
+      ],
+      "read": [
+        "admin",
+        "agent",
+        "reader",
+        "requester"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    }
   }
 }
