@@ -54,6 +54,7 @@ final class ServiceClocks {
                 ((Number) body.get("minutes")).longValue() * 60000,
                 now,
                 actor,purpose);
+        SlaEscalations.remember(db,id,((Number)body.get("minutes")).longValue()*60000);
         SecurityEvents.record(
                 db, actor, actor, "sla.started", map("sla_id", id, "record_id", record,"purpose",purpose));
         return db.one("SELECT * FROM os_sla WHERE sla_id=?", id);
@@ -76,6 +77,7 @@ final class ServiceClocks {
                 breach ? "breached" : "running",
                 breach ? now : 0,
                 row.get("sla_id"));
+        SlaEscalations.advance(db,row,remaining,now);
         if (breach) SlaAlerts.send(db,row,now);
     }
 

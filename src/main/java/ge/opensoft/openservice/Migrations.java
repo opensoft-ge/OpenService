@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 76;
+    static final int VERSION = 77;
 
     private Migrations() {}
 
@@ -695,6 +695,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_ci_outage(outage_id VARCHAR(32) PRIMARY KEY,record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),request_id VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,kind VARCHAR(20) NOT NULL,summary VARCHAR(160) NOT NULL,begin_ms BIGINT NOT NULL,end_ms BIGINT NOT NULL,cancelled INTEGER NOT NULL,revision INTEGER NOT NULL,UNIQUE(record_id,request_id))");
             db.update("CREATE TABLE IF NOT EXISTS os_outage_history(outage_id VARCHAR(32) NOT NULL REFERENCES os_ci_outage(outage_id),revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(outage_id,revision))");
             db.update("INSERT INTO os_migration(version,name) VALUES(76,?)","retained CI outage evidence and exact-window availability");
+        }
+
+        if(version<77){
+            db.update("CREATE TABLE IF NOT EXISTS os_sla_budget(sla_id VARCHAR(32) PRIMARY KEY REFERENCES os_sla(sla_id) ON DELETE CASCADE,budget_ms BIGINT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_sla_escalation(sla_id VARCHAR(32) PRIMARY KEY REFERENCES os_sla(sla_id) ON DELETE CASCADE,definition TEXT NOT NULL,owner_id VARCHAR(32) NOT NULL,created_at BIGINT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_sla_threshold(sla_id VARCHAR(32) NOT NULL REFERENCES os_sla(sla_id) ON DELETE CASCADE,percent INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(sla_id,percent))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(77,?)","known original SLA budgets and current-recipient warning receipts");
         }
 
     }

@@ -620,6 +620,13 @@ public class WebController {
             return view(c,"connector-console",map("table","operations","connector",ConnectorConsole.page(c.db,alias),"probeKey",id(),"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
         }
 
+        Matcher clockEscalation=Pattern.compile("/(?:api/openservice/clocks|record/([a-z][a-z0-9_]*)/([0-9a-f]{32})/clocks)/([0-9a-f]{32})/escalation").matcher(path);
+        if(clockEscalation.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=clockEscalation.group(3);boolean api=path.startsWith("/api/");var current=SlaEscalations.page(c.db,id);var clock=object(current.get("clock"));if(!api && (!clock.get("table_name").equals(clockEscalation.group(1)) || !clock.get("record_id").equals(clockEscalation.group(2))))throw new Failure(404,"Clock is not on this record");
+            if(method.equals("POST")){current=SlaEscalations.save(c.db,id,api?body(c):SlaEscalations.form(c.arguments()),System.currentTimeMillis());if(!api)return redirect(path);}
+            return api?json(map("result",current),200):view(c,"clock-escalation",map("table",clock.get("table_name"),"page",current));
+        }
+
         Matcher recordClocks=Pattern.compile("/record/([a-z][a-z0-9_]*)/([0-9a-f]{32})/clocks").matcher(path);
         if(recordClocks.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=recordClocks.group(1),id=recordClocks.group(2);
