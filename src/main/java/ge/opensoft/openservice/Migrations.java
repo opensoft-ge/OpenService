@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 83;
+    static final int VERSION = 84;
 
     private Migrations() {}
 
@@ -745,6 +745,11 @@ final class Migrations {
             db.update("CREATE INDEX IF NOT EXISTS ix_offboarding_source ON os_offboarding(source_id,created_at)");
             db.update("INSERT INTO os_migration(version,name) VALUES(83,?)","reviewed account offboarding work and report handoff receipts");
         }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=84")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_directory(source_id VARCHAR(32) PRIMARY KEY,name VARCHAR(80) NOT NULL,role VARCHAR(20) NOT NULL,definition TEXT NOT NULL,owner_id VARCHAR(32) NOT NULL,owner_revision BIGINT NOT NULL,token_hash VARCHAR(64) NOT NULL,enabled INTEGER NOT NULL,revision BIGINT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(84,?)","scoped directory provisioning");
+        }
+
 
     }
 

@@ -131,6 +131,13 @@ public class WebController {
             if (request.getContentLengthLong() > 6 * 1024 * 1024)
                 throw new Failure(413, "Request exceeds 6 MB");
             String path = request.getRequestURI(), method = request.getMethod();
+            if(path.startsWith("/api/openservice/scim/")) {
+                var match=Pattern.compile("/api/openservice/scim/([0-9a-f]{32})/v2/Users(?:/([0-9a-f]{32}))?").matcher(path);if(!match.matches())throw new Failure(404,"Unsupported directory endpoint");
+                var source=Scim.authenticate(db,match.group(1),request.getHeader("Authorization"));var c=new Request(db,request,response,session,null);c.uniqueQuery();String identity=Objects.toString(match.group(2),"");Map<String,Object> result;
+                if(method.equals("GET")){if(identity.isEmpty())result=Scim.listing(db,match.group(1),c.arguments(),c.base());else{if(!c.arguments().isEmpty())throw new Failure(400,"Single user query parameters are unsupported");result=Scim.resource(Scim.identity(db,match.group(1),identity),match.group(1),c.base());}}
+                else {c.noQuery();if(identity.isEmpty()? !method.equals("POST"):!Set.of("PUT","PATCH").contains(method))throw new Failure(405,"Unsupported directory method");Object input=Scim.decode(request.getContentType(),request.getInputStream().readNBytes(65537));result=Scim.write(db,source,identity,method,input,c.base());}
+                db.connection.commit();if(method.equals("POST"))response.setHeader("Location",object(result.get("meta")).get("location").toString());return binary(JSON.writeValueAsBytes(result),"application/scim+json",method.equals("POST")?201:200);
+            }
             boolean publicPath =
                     Set.of("/healthz", "/login", "/forgot", "/oidc/start", "/oidc/callback", "/mfa")
                                     .contains(path)
@@ -239,6 +246,7 @@ public class WebController {
         } catch (Failure error) {
             db.connection.rollback();
             response.setStatus(error.status);
+            if(request.getRequestURI().startsWith("/api/openservice/scim/")){if(error.status==401)response.setHeader("WWW-Authenticate","Bearer realm=\"OpenService directory\"");var detail=map("schemas",List.of(Scim.ERROR),"status",Integer.toString(error.status),"detail",error.getMessage());if(error.status==409)detail.put("scimType","uniqueness");return binary(JSON.writeValueAsBytes(detail),"application/scim+json",error.status);}
             if (error.status == 429) response.setHeader("Retry-After", "300");
             if (error.status == 401)
                 response.setHeader("WWW-Authenticate", "Basic realm=\"OpenService\"");
@@ -363,6 +371,12 @@ public class WebController {
             return api?json(map("result",result),200):view(c,"mfa-account",map("table","account","page",result));
         }
 
+        var directory=Pattern.compile("/(admin|api/openservice)/directories(?:/([0-9a-f]{32}))?").matcher(path);
+        if(directory.matches()){
+            c.uniqueQuery();c.noQuery();boolean api=directory.group(1).equals("api/openservice");String source=Objects.toString(directory.group(2),"");Service.requireAccountAdministrator(c.db,c.db.viewerId);
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");if(source.isEmpty()){String groups=Objects.toString(form.get("groups"),"").strip();form.put("groups",groups.isEmpty()?List.of():Arrays.asList(groups.split("\\s+")));}input=form;}var result=Scim.manage(c.db,source,input);return api?json(map("result",result),source.isEmpty()?201:200):view(c,"directories",map("table","operations","page",Scim.page(c.db),"issued",result));}
+            if(!method.equals("GET"))throw new Failure(405,"GET or POST required");if(!source.isEmpty())throw new Failure(404,"Use the directory administration list");var result=Scim.page(c.db);return api?json(map("result",result),200):view(c,"directories",map("table","operations","page",result,"issued",null));
+        }
         if(path.equals("/oidc/start")) {
             method(method,"POST");c.noQuery();c.uniqueQuery();checkCsrf(c,c.parameter("csrf",""));
             if(!c.arguments().keySet().equals(Set.of("csrf")))throw new Failure(400,"Use the organizational sign-in button");
