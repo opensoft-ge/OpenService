@@ -308,6 +308,17 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/vulnerabilities") || path.equals("/api/openservice/vulnerabilities")){
+            method(method,"GET");c.noQuery();c.uniqueQuery();var result=VulnerabilityResponse.directory(c.db);return path.startsWith("/api/")?json(map("result",result),200):view(c,"vulnerabilities",map("table","vulnerability","definition",Service.schema(c.db,"vulnerability"),"page",result));
+        }
+        if(path.equals("/vulnerabilities/scans") || path.equals("/api/openservice/vulnerabilities/scans")){
+            method(method,"POST");c.admin();c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}var result=VulnerabilityResponse.ingest(store,c.db,input);return api?json(map("result",result),200):view(c,"vulnerability-import",map("table","vulnerability","definition",Service.schema(c.db,"vulnerability"),"receipt",result));
+        }
+        Matcher vulnerability=Pattern.compile("/(?:record/vulnerability|api/openservice/vulnerabilities)/([0-9a-f]{32})/remediation").matcher(path);
+        if(vulnerability.matches()){
+            method(method,"GET");c.noQuery();c.uniqueQuery();var result=VulnerabilityResponse.page(c.db,vulnerability.group(1));return path.startsWith("/api/")?json(map("result",result),200):view(c,"vulnerability-remediation",map("table","vulnerability","definition",Service.schema(c.db,"vulnerability"),"page",result));
+        }
+
         if(path.equals("/security") || path.equals("/api/openservice/security")){
             method(method,"GET");c.noQuery();c.uniqueQuery();var result=SecurityIncidents.directory(c.db);return path.startsWith("/api/")?json(map("result",result),200):view(c,"security",map("table","security_incident","definition",Service.schema(c.db,"security_incident"),"page",result,"intakeKey",Values.id()));
         }
@@ -2751,7 +2762,7 @@ public class WebController {
                             page.offset(),
                             "canCreateRecord",
                             !Set.of("reader", "requester").contains(c.role())
-                                    && !Set.of("hr_case","customer_case","security_incident").contains(table)
+                                    && !Set.of("hr_case","customer_case","security_incident","vulnerability").contains(table)
                                     && RecordPolicy.allows(definition, "create", c.role()),
                             "overview",
                             path.equals("/"),

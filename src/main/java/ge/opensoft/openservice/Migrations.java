@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 67;
+    static final int VERSION = 68;
 
     private Migrations() {}
 
@@ -633,6 +633,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_security_case(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,group_id VARCHAR(32) NOT NULL,actor_id VARCHAR(32) NOT NULL,intake_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,analysis_epoch INTEGER NOT NULL DEFAULT 0,UNIQUE(actor_id,intake_key))");
             db.update("CREATE TABLE IF NOT EXISTS os_security_document(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
             db.update("INSERT INTO os_migration(version,name) VALUES(67,?)","restricted native security investigations and containment");
+        }
+
+        if(version<68){
+            db.update("CREATE TABLE IF NOT EXISTS os_vulnerability_scan(report_id VARCHAR(32) PRIMARY KEY,alias VARCHAR(80) NOT NULL,scan_id VARCHAR(160) NOT NULL,origin TEXT NOT NULL,path TEXT NOT NULL,source_revision INTEGER NOT NULL,group_id VARCHAR(32) NOT NULL,sha256 VARCHAR(64) NOT NULL,observed_at TEXT NOT NULL,imported_at TEXT NOT NULL,actor_id VARCHAR(32) NOT NULL,findings INTEGER NOT NULL,UNIQUE(alias,scan_id))");
+            db.update("CREATE TABLE IF NOT EXISTS os_vulnerability(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,alias VARCHAR(80) NOT NULL,origin TEXT NOT NULL,path TEXT NOT NULL,asset_id VARCHAR(32) NOT NULL,vulnerability VARCHAR(160) NOT NULL,group_id VARCHAR(32) NOT NULL,verify_revision INTEGER NOT NULL,verify_at TEXT NOT NULL,task_boundary INTEGER NOT NULL,UNIQUE(alias,asset_id,vulnerability))");
+            db.update("CREATE TABLE IF NOT EXISTS os_vulnerability_observation(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,report_id VARCHAR(32) NOT NULL REFERENCES os_vulnerability_scan(report_id),observed_at TEXT NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(68,?)","asset-scoped vulnerability observations and remediation verification");
         }
 
     }

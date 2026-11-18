@@ -401,5 +401,55 @@
         "min_approvals": 1
       }
     }
+  },
+  "vulnerability": {
+    "label": "Vulnerability findings",
+    "prefix": "VUL",
+    "fields": {
+      "short_description": "Vulnerability summary",
+      "description": "Vulnerability description",
+      "assigned_to": "Assigned to",
+      "assignment_group": "Assignment group",
+      "state": "State",
+      "priority": "Priority"
+    },
+    "states": {
+      "open": "Open",
+      "remediate": "Remediation",
+      "verify": "Awaiting verification",
+      "closed": "Closed"
+    },
+    "flow": {
+      "open": [
+        "remediate"
+      ],
+      "remediate": [
+        "verify"
+      ],
+      "verify": [
+        "remediate",
+        "closed"
+      ],
+      "closed": [
+        "open"
+      ]
+    },
+    "record_roles": {
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    }
   }
 }

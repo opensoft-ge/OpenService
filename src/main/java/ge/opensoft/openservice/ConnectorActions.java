@@ -2,7 +2,6 @@ package ge.opensoft.openservice;
 import static ge.opensoft.openservice.Values.*;
 import static ge.opensoft.openservice.TypedFields.require;
 import java.util.*;
-import java.net.URI;
 import org.apache.commons.codec.digest.DigestUtils;
 
 /** Native configured JSON actions; credentials remain in the existing connection alias. */
@@ -18,7 +17,6 @@ final class ConnectorActions {
         Service.requireAccountAdministrator(db,db.viewerId);var body=object(input);require(body.keySet().equals(Set.of("name","alias","method","path","inputs","active","revision")),"Provide name, alias, method, path, inputs, active and revision");
         String name=WorkJobs.text(body.get("name"),160),alias=WorkJobs.text(body.get("alias"),80),method=WorkJobs.text(body.get("method"),10),path=Connectors.path(body.get("path"));
         require(Set.of("POST","PUT","PATCH","DELETE").contains(method),"Choose POST, PUT, PATCH or DELETE");
-        try{URI.create("https://example.invalid"+path);}catch(IllegalArgumentException invalid){throw new Failure(400,"Use a valid encoded relative path");}
         ConnectorConsole.page(db,alias);var fields=CatalogueQuestions.validate(body.get("inputs"));require(body.get("active") instanceof Boolean,"Active must be boolean");require(body.get("revision") instanceof Integer n && n>=0,"Use a nonnegative action revision");int active=Boolean.TRUE.equals(body.get("active"))?1:0;
         if(id.isEmpty()){
             require(body.get("revision").equals(0),"New actions use revision zero");require(db.count("SELECT COUNT(*) FROM os_connector_action")<200,"Connector action limit reached");id=id();db.update("INSERT INTO os_connector_action(action_id,name,alias,method,path,inputs,active,revision) VALUES(?,?,?,?,?,?,?,1)",id,name,alias,method,path,JSON.writeValueAsString(fields),active);

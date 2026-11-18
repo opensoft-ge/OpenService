@@ -65,10 +65,11 @@ final class Connectors {
     }
     static String path(Object input) {
         String path=WorkJobs.text(input,2048);
-        require(path.startsWith("/") && !path.startsWith("//") && !path.contains("#") && !path.contains("\\"),"Use a relative absolute path without a fragment");return path;
+        require(path.startsWith("/") && !path.startsWith("//") && !path.contains("#") && !path.contains("\\"),"Use a relative absolute path without a fragment");
+        try{new java.net.URI(path);}catch(java.net.URISyntaxException invalid){throw new Failure(400,"Use a valid encoded relative path");}return path;
     }
 
-    static Map<String, Object> read(Store store, Store.Db db, Object input) throws Exception {
+    static Map<String, Object> fetch(Store store, Store.Db db, Object input) throws Exception {
         var body = object(input);
         require(body.keySet().equals(Set.of("alias","path")) || body.keySet().equals(Set.of("alias","path","review")),"Provide alias, path and optional review");
         String alias=WorkJobs.text(body.get("alias"),80),path=path(body.get("path"));
@@ -88,15 +89,11 @@ final class Connectors {
                         .get("token")
                         .toString();
         byte[] bytes = ServiceNowSource.get(origin, token, path, 1024 * 1024);
-        // Retain a receipt, not arbitrary provider data or secrets, in the job history.
-        return map(
-                "alias",
-                alias,
-                "revision",
-                row.get("revision"),
-                "bytes",
-                bytes.length,
-                "sha256",
-                org.apache.commons.codec.digest.DigestUtils.sha256Hex(bytes));
+        return map("alias",alias,"revision",row.get("revision"),"content",bytes);
+    }
+
+    static Map<String,Object> read(Store store,Store.Db db,Object input)throws Exception {
+        var fetched=fetch(store,db,input);byte[] bytes=(byte[])fetched.get("content");
+        return map("alias",fetched.get("alias"),"revision",fetched.get("revision"),"bytes",bytes.length,"sha256",org.apache.commons.codec.digest.DigestUtils.sha256Hex(bytes));
     }
 }

@@ -164,6 +164,7 @@ public final class Service {
         EmployeeCases.insertion(db,item);
         RiskAssessments.insertion(item);
         SecurityIncidents.insertion(db,item);
+        VulnerabilityResponse.insertion(db,item);
         EmployeeOnboarding.insertion(db,item.get("sys_id").toString());
         ApprovalGate.creation(schema(db, item.get("table").toString()), object(item.get("data")));
         try (var query =
@@ -203,6 +204,7 @@ public final class Service {
         EmployeeOnboarding.guard(db,item);
         RiskAssessments.guard(db,item);
         SecurityIncidents.guard(db,item);
+        VulnerabilityResponse.guard(db,item);
         FieldDispatch.parentGuard(db,item);
         CatalogueWorkflows.settle(db,item);
         db.update(
@@ -319,6 +321,8 @@ public final class Service {
         db.update("DELETE FROM os_customer_reply WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_hr_reply WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_risk_assessment WHERE record_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_vulnerability_observation WHERE record_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_vulnerability WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_security_document WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_security_case WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_security_team WHERE group_id=?",item.get("sys_id"));

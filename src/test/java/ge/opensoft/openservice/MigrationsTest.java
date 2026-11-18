@@ -15,6 +15,16 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void vulnerabilityUpgradeRetainsVerification(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String retained,record,asset,group;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before vulnerability upgrade"),"admin").get("sys_id").toString();for(String table:List.of("os_vulnerability_observation","os_vulnerability","os_vulnerability_scan"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_schema WHERE name='vulnerability'");db.update("DELETE FROM os_migration WHERE version>=68");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_vulnerability"));db.connection.rollback();assertEquals(67,db.count("SELECT MAX(version) FROM os_migration"));}
+        var upgraded=new Store(env);try(var endpoint=new VulnerabilityResponseAcceptance.Endpoint(upgraded,env)){
+            try(var db=upgraded.open()){PlatformFoundationTest.bind(db);group=Service.create(db,"sys_user_group",Values.map("short_description","Retained vulnerability response team"),"admin").get("sys_id").toString();asset=Service.create(db,"cmdb_ci",Values.map("short_description","Retained affected server"),"admin").get("sys_id").toString();SecurityIncidents.enroll(db,Values.map("group_id",group,"revision",0,"active",true));endpoint.payload.set(Values.JSON.writeValueAsString(VulnerabilityResponseAcceptance.report(1,List.of(VulnerabilityResponseAcceptance.entry(asset,"UPGRADE-42","present")))));var source=Values.map("alias",endpoint.provider.alias,"path","/scan","review",ConnectorConsole.page(db,endpoint.provider.alias).get("review"),"group_id",group);VulnerabilityResponse.ingest(upgraded,db,source);record=db.one("SELECT record_id FROM os_vulnerability WHERE alias=?",endpoint.provider.alias).get("record_id").toString();Service.update(db,"vulnerability",Service.record(db,"vulnerability",record),Values.map("state","remediate"),"admin","admin",null);WorkTasks.command(db,"vulnerability",record,Values.map("operation","create","revision",1,"record_revision",1,"summary","Retained remediation","details","Apply the reviewed component update","group_id",group,"required",true,"predecessors",List.of()));String task=Values.objects(WorkTasks.page(db,"vulnerability",record).get("tasks")).getFirst().get("task_id").toString();WorkTasks.command(db,"vulnerability",record,Values.map("operation","claim","revision",0,"record_revision",2,"task_id",task));WorkTasks.command(db,"vulnerability",record,Values.map("operation","complete","revision",1,"record_revision",2,"task_id",task,"outcome","Retained remediation outcome"));Service.update(db,"vulnerability",Service.record(db,"vulnerability",record),Values.map("state","verify"),"admin","admin",null);endpoint.payload.set(Values.JSON.writeValueAsString(VulnerabilityResponseAcceptance.report(2,List.of(VulnerabilityResponseAcceptance.entry(asset,"UPGRADE-42","fixed")))));VulnerabilityResponse.ingest(upgraded,db,source);db.connection.commit();}
+            for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Retained before vulnerability upgrade",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));var page=VulnerabilityResponse.page(db,record);assertEquals("closed",Values.object(page.get("record")).get("state"));assertEquals(2,Values.objects(page.get("history")).size());assertEquals("fixed",Values.object(Values.object(page.get("latest")).get("detail")).get("status"));assertEquals(asset,RecordScopes.scope(db,record).get("parent_id"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+        }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void securityUpgradeRetainsRestrictedEvidence(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String retained,incident,group,file=Values.id();
         try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained ordinary incident"),"admin").get("sys_id").toString();for(String table:List.of("os_security_document","os_security_case","os_security_team"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_schema WHERE name='security_incident'");db.update("DELETE FROM os_migration WHERE version>=67");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_security_document"));db.connection.rollback();assertEquals(66,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -965,9 +975,10 @@ class MigrationsTest {
                 try (var db = future.get(30, TimeUnit.SECONDS).open()) {
                     assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
                     assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
-                    assertEquals(11, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertEquals(12, db.count("SELECT COUNT(*) FROM os_schema"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='risk'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='security_incident'"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='vulnerability'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='hr_case'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='customer_case'"));
                 }
