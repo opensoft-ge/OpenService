@@ -208,7 +208,7 @@ public class WebController {
                                         "/account/email",
                                         "/api/openservice/me/email",
                                         "/api/openservice/me/notifications",
-                                        "/account/notifications",
+                                        "/account/notifications", "/account/subscriptions", "/api/openservice/me/subscriptions",
                                         "/account/mfa", "/api/openservice/me/mfa",
                                         "/account/profile",
                                         "/api/openservice/me/profile",
@@ -219,6 +219,7 @@ public class WebController {
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
                                 && (path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
+                        && !path.matches("/(?:record/[^/]+/[0-9a-f]{32}/collaboration|api/openservice/collaboration/[^/]+/[0-9a-f]{32})")
                         && !path.matches("/(?:employee-service|api/openservice/employee-service)/(?:services|cases)/[0-9a-f]{32}")
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
                         && !path.matches("/(?:support|api/openservice/support)(?:/[0-9a-f]{32})?")
@@ -610,6 +611,15 @@ public class WebController {
                 result=incident?ProblemInvestigations.link(c.db,id,input):ProblemInvestigations.save(c.db,id,input);if(!api)return redirect(path);
             }else result=incident?ProblemInvestigations.incident(c.db,id):ProblemInvestigations.problem(c.db,id);
             return api?json(map("result",result),200):view(c,incident?"incident-problem":"problem-investigation",map("table",table,"investigation",result));
+        }
+        if(Set.of("/account/subscriptions","/api/openservice/me/subscriptions").contains(path)){
+            method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}RecordCollaboration.remove(c.db,input);if(!api)return redirect(path);}var result=RecordCollaboration.directory(c.db);return api?json(map("result",result),200):view(c,"subscriptions",map("table","notifications","page",result));
+        }
+        Matcher collaboration=Pattern.compile("/(?:record/([^/]+)/([0-9a-f]{32})/collaboration|api/openservice/collaboration/([^/]+)/([0-9a-f]{32}))").matcher(path);
+        if(collaboration.matches()){
+            method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");String table=api?collaboration.group(3):collaboration.group(1),record=api?collaboration.group(4):collaboration.group(2);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");if("subscribe".equals(form.get("operation"))){form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));var categories=new ArrayList<String>();for(String kind:List.of("changes","comments","notes"))if(form.containsKey(kind)){TypedFields.require("true".equals(form.remove(kind)),"Choose supported activity categories");categories.add(kind);}form.put("categories",categories);}else if(form.containsKey("mentions")){String names=form.get("mentions").toString().strip();form.put("mentions",names.isEmpty()?List.of():Arrays.asList(names.split("\\R")));}input=form;}result=RecordCollaboration.command(c.db,table,record,input);}else result=RecordCollaboration.page(c.db,table,record);
+            return api?json(map("result",result),200):view(c,"record-collaboration",map("table",table,"definition",FieldAccess.schema(c.db,Service.schema(c.db,table)),"page",result,"postKey",id()));
         }
         Matcher automationPackage=Pattern.compile("/(admin|api/openservice)/automation-packages(?:/([0-9a-f]{32})(/download)?)?").matcher(path);
         if(automationPackage.matches()){

@@ -228,18 +228,16 @@ public final class Service {
                 item.get("sys_id"));
     }
 
-    public static void audit(
+    public static long audit(
             Store.Db db, Map<String, Object> item, String actor, String action, Object detail)
             throws SQLException {
-        db.update(
-                "INSERT INTO os_event(record_id,actor,action,created,detail) VALUES(?,?,?, ?,"
-                        + db.jsonParameter()
-                        + ")",
-                item.get("sys_id"),
-                actor,
-                action,
-                now(),
-                JSON.writeValueAsString(detail));
+        long sequence;
+        try(var query=db.statement("INSERT INTO os_event(record_id,actor,action,created,detail) VALUES(?,?,?, ?,"+db.jsonParameter()+")",item.get("sys_id"),actor,action,now(),JSON.writeValueAsString(detail))) {
+            query.executeUpdate();
+            try(var keys=query.getGeneratedKeys()){keys.next();sequence=keys.getLong(1);}
+        }
+        RecordCollaboration.changed(db,item,actor,action,sequence);
+        return sequence;
     }
 
     public static Map<String, Object> update(

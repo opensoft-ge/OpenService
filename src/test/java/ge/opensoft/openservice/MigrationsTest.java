@@ -15,6 +15,13 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void collaborationUpgradeRetainsScopedNotices(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String record,reader,notice;Map<String,Object> input=RecordCollaborationAcceptance.journal("comment","Retained collaboration body",List.of("UpgradeActivityReader"));
+        try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","UpgradeActivityReader","role","reader","password",WorkflowSupport.PASSWORD));reader=RecordAccess.owner(db,"UpgradeActivityReader");record=Service.create(db,"incident",Values.map("short_description","Retained before collaboration"),"admin").get("sys_id").toString();db.update("DROP TABLE os_collaboration_post");db.update("DROP TABLE os_record_follow");db.update("DELETE FROM os_migration WHERE version>=95");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_record_follow"));db.connection.rollback();assertEquals(94,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);try(var db=store.open()){db.viewerId=reader;db.viewerRole="reader";RecordCollaboration.command(db,"incident",record,RecordCollaborationAcceptance.subscription(0,List.of("comments")));PlatformFoundationTest.bind(db);RecordCollaboration.command(db,"incident",record,input);notice=db.one("SELECT notice_id FROM os_notice WHERE user_id=?",reader).get("notice_id").toString();db.connection.commit();}
+        for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);RecordCollaboration.command(db,"incident",record,input);assertEquals(1,db.count("SELECT COUNT(*) FROM os_event WHERE record_id=? AND action='comment'",record));assertEquals(1,db.count("SELECT COUNT(*) FROM os_collaboration_post"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_notice WHERE user_id=?",reader));db.viewerId=reader;db.viewerRole="reader";assertEquals("/record/incident/"+record+"/collaboration",NoticeTargets.open(db,notice));assertEquals("Retained collaboration body",Values.object(Values.objects(RecordCollaboration.page(db,"incident",record).get("entries")).getFirst().get("detail")).get("body"));assertEquals(1,Values.objects(RecordCollaboration.directory(db).get("subscriptions")).size());assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.commit();}}
+    }
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void automationPackageUpgradeRetainsCrossWorkspaceInstallation(boolean postgres)throws Exception {
         var sourceEnv=new MockEnvironment().withProperty("DATABASE_URL","jdbc:sqlite:"+root.resolve("automation-source.db")).withProperty("SECRET_KEY","source-package-test-secret").withProperty("ADMIN_PASSWORD","source-package-password");var source=new Store(sourceEnv);Map<String,Object> document;String sourceId;
         try(var db=source.open()){PlatformFoundationTest.bind(db);var config=EventWorkflowsAcceptance.config(0,"created","1",List.of(EventWorkflowsAcceptance.note()));config.put("active",false);sourceId=Values.object(EventWorkflows.save(db,"",config).get("flow")).get("flow_id").toString();document=AutomationPackages.capture(db,Values.map("operation","capture","name","Across workspaces","version","v1","flows",List.of(sourceId),"actions",List.of()));db.connection.commit();}
@@ -781,6 +788,7 @@ class MigrationsTest {
             db.update("DROP TABLE os_report_measurement");
             db.update("DROP TABLE os_customer_delivery");
             db.update("DROP TABLE os_field_availability");db.update("DROP TABLE os_customer_contact");
+            db.update("DROP TABLE os_record_follow");db.update("DROP TABLE os_collaboration_post");
             db.update("DROP INDEX ix_os_user_identity");
             db.update("ALTER TABLE os_user DROP COLUMN user_id");
             db.update("DELETE FROM os_migration WHERE version>=2");

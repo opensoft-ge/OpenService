@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 94;
+    static final int VERSION = 95;
 
     private Migrations() {}
 
@@ -797,6 +797,12 @@ final class Migrations {
         if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=94")==0) {
             db.update("CREATE TABLE IF NOT EXISTS os_automation_install(package_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,version VARCHAR(80) NOT NULL,fingerprint VARCHAR(64) NOT NULL,actor_id VARCHAR(32) NOT NULL,created VARCHAR(26) NOT NULL,detail TEXT NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(94,?)","portable inactive automation packages");
+        }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=95")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_record_follow(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,user_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id) ON DELETE CASCADE,revision INTEGER NOT NULL,definition TEXT NOT NULL,PRIMARY KEY(record_id,user_id))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_record_follow_user ON os_record_follow(user_id,record_id)");
+            db.update("CREATE TABLE IF NOT EXISTS os_collaboration_post(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,actor_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id) ON DELETE CASCADE,request_key VARCHAR(32) NOT NULL,event_sequence BIGINT NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(26) NOT NULL,PRIMARY KEY(record_id,actor_id,request_key))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(95,?)","scoped record subscriptions and mentions");
         }
     }
 
