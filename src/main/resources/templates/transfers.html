@@ -23,7 +23,7 @@
 <label>Source OAuth bearer token<input id="migration-token" type="password" autocomplete="off"></label><p>Held only in this page's memory and sent with each fetch request. Supply it again after reopening the page.</p>
 <button id="migration-fetch" class="button primary">Fetch / resume</button><button id="migration-stop" class="button">Stop after this page</button>
 <button id="migration-preview" class="button">Validate destination preview</button><button id="migration-apply" class="button">Apply reviewed migration</button>
-<p id="migration-message" role="status" aria-live="polite"></p><pre id="migration-report"></pre><div id="migration-archives"></div><p><a id="migration-reconciliation" hidden>Review reconciliation</a></p>
+<p id="migration-message" role="status" aria-live="polite"></p><pre id="migration-report"></pre><div id="migration-archives"></div><p><a id="migration-recovery" class="button secondary" hidden>Diagnose mappings and replay staging</a><a id="migration-reconciliation" hidden>Review reconciliation</a></p>
 </section></div>
 <section class="panel"><h2>3. Synchronize and cut over</h2><p>Freeze source writes externally, run a final full synchronization, review its report and verify source completeness. Local changes or missing source records stop cutover. This records your cutover decision; it does not redirect traffic or reconfigure other systems.</p>
 <button id="migration-sync" class="button">Create final synchronization</button>

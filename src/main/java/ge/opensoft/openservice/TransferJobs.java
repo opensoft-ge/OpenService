@@ -32,6 +32,34 @@ final class TransferJobs {
     static Map<String, Object> create(Store.Db db, Object body, String actor, String allowed)
             throws Exception {
         Service.requireAccountAdministrator(db, actor);
+        var plan = definition(body,allowed);
+        String source=plan.get("source").toString();
+        String job = id();
+        db.update(
+                "INSERT INTO"
+                        + " os_transfer_job(job_id,source_url,creator_id,definition,detail,created)"
+                        + " VALUES(?,?,?,?,?,?)",
+                job,
+                source,
+                actor,
+                JSON.writeValueAsString(plan),
+                JSON.writeValueAsString(
+                        map(
+                                "status",
+                                "fetching",
+                                "phase",
+                                0,
+                                "cursor",
+                                "",
+                                "generation",
+                                generation(db, source))),
+                now());
+        SecurityEvents.record(
+                db, actor, actor, "migration.created", map("job_id", job, "source", source));
+        return describe(db, job);
+    }
+
+    static Map<String,Object> definition(Object body,String allowed) {
         var plan = new LinkedHashMap<>(object(body));
         require(
                 Set.of(
@@ -94,29 +122,7 @@ final class TransferJobs {
                                             .get("target")),
                     "Identity migration requires a sys_user_group mapping");
         plan.put("source", source);
-        String job = id();
-        db.update(
-                "INSERT INTO"
-                        + " os_transfer_job(job_id,source_url,creator_id,definition,detail,created)"
-                        + " VALUES(?,?,?,?,?,?)",
-                job,
-                source,
-                actor,
-                JSON.writeValueAsString(plan),
-                JSON.writeValueAsString(
-                        map(
-                                "status",
-                                "fetching",
-                                "phase",
-                                0,
-                                "cursor",
-                                "",
-                                "generation",
-                                generation(db, source))),
-                now());
-        SecurityEvents.record(
-                db, actor, actor, "migration.created", map("job_id", job, "source", source));
-        return describe(db, job);
+        return plan;
     }
 
     static long generation(Store.Db db, String source) throws SQLException {

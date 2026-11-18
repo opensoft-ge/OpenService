@@ -1347,6 +1347,13 @@ public class WebController {
             }
         }
 
+        Matcher migrationRecovery=Pattern.compile("/(?:admin|api/openservice)/migrations/([0-9a-f]{32})/recovery").matcher(path);
+        if(migrationRecovery.matches()){
+            c.admin();method(method,"GET","POST");c.uniqueQuery();String id=migrationRecovery.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("GET"))result=MigrationRecovery.page(c.db,id,c.arguments());else{c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");try{form.put("tables",JSON.readValue(Objects.toString(form.get("tables"),""),Object.class));}catch(tools.jackson.core.JacksonException invalid){throw new Failure(400,"Invalid replay mapping JSON");}if(form.containsKey("confirm"))form.put("confirm","true".equals(form.get("confirm")));input=form;}result=MigrationRecovery.command(store,c.db,id,input);}
+            return api?json(map("result",result),200):view(c,"migration-recovery",map("table","migration","page",result,"replayKey",Values.id(),"tablesJson",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(result.get("review")==null?result.get("tables"):object(object(result.get("review")).get("plan")).get("tables")),"planJson",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(result.get("review"))));
+        }
+
         Matcher importedHistory=Pattern.compile("/(?:record/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32})/imported-history|api/openservice/imported-history/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32}))").matcher(path);
         if(importedHistory.matches()){
             method(method,"GET","POST");c.uniqueQuery();boolean api=path.startsWith("/api/");String table=api?importedHistory.group(3):importedHistory.group(1),record=api?importedHistory.group(4):importedHistory.group(2);Map<String,Object> result;

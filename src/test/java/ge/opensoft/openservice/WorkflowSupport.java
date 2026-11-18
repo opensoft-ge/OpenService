@@ -16,6 +16,12 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void migrationRecoverySnapshotBounds() throws Exception { MigrationRecoveryAcceptance.snapshotBounds(this); }
+    @Test void migrationRecoveryRun() throws Exception { MigrationRecoveryAcceptance.run(this); }
+    @Test void migrationRecoveryBoundaries() throws Exception { MigrationRecoveryAcceptance.boundaries(this); }
+    @Test void migrationRecoveryChanges() throws Exception { MigrationRecoveryAcceptance.changes(this); }
+    @Test void migrationRecoveryPaging() throws Exception { MigrationRecoveryAcceptance.paging(this); }
+    @Test void migrationRecoveryCapacities() throws Exception { MigrationRecoveryAcceptance.capacities(this); }
     @Test void importedJournalsRun() throws Exception { ImportedJournalsAcceptance.run(this); }
     @Test void importedJournalsBoundaries() throws Exception { ImportedJournalsAcceptance.boundaries(this); }
     @Test void importedJournalsSourceShapes() throws Exception { ImportedJournalsAcceptance.sourceShapes(this); }

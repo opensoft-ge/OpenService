@@ -27,6 +27,8 @@
     const job = await request('/' + el('jobs').value);
     el('reconciliation').href = `/admin/migrations/${job.job_id}/reconciliation`;
     el('reconciliation').hidden = false;
+    el('recovery').href = `/admin/migrations/${job.job_id}/recovery`;
+    el('recovery').hidden = false;
     el('report').textContent = JSON.stringify(job, null, 2);
     el('archives').replaceChildren(...job.phases.map(table => {
       const link = document.createElement('a');
@@ -41,6 +43,7 @@
     busy = true;
     el('jobs').disabled = true;
     el('reconciliation').hidden = true;
+    el('recovery').hidden = true;
     el('message').textContent = 'Working…';
     try { await work(); el('message').textContent = 'Saved. Review the migration report below.'; }
     catch (error) { el('message').textContent = error.message; }
