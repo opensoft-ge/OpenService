@@ -16,6 +16,16 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void oidcEdges() throws Exception { OidcAcceptance.edges(this); }
+    @Test void oidcDuplicateKeys() throws Exception { OidcAcceptance.duplicateKeys(this); }
+    @Test void oidcRun() throws Exception { OidcAcceptance.run(this); }
+    @Test void oidcConfiguration() throws Exception { OidcAcceptance.configuration(this); }
+    @Test void oidcClaims() throws Exception { OidcAcceptance.claims(this); }
+    @Test void oidcState() throws Exception { OidcAcceptance.state(this); }
+    @Test void oidcAuthority() throws Exception { OidcAcceptance.authority(this); }
+    @Test void oidcProviderFailures() throws Exception { OidcAcceptance.providerFailures(this); }
+    @Test void oidcCapacity() throws Exception { OidcAcceptance.capacity(this); }
+    @Test void oidcConcurrency() throws Exception { OidcAcceptance.concurrency(this); }
     @Test void signedEventsEdges() throws Exception { SignedEventsAcceptance.edges(this); }
     @Test void signedEventsRun() throws Exception { SignedEventsAcceptance.run(this); }
     @Test void signedEventsBoundaries() throws Exception { SignedEventsAcceptance.boundaries(this); }
@@ -313,7 +323,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_oidc_challenge", "os_oidc_binding", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }

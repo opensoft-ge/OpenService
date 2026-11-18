@@ -35,6 +35,7 @@ final class AuthenticationEvents {
             Map.of(
                     "browser",
                     "Browser sign-in",
+                    "oidc", "Organizational sign-in",
                     "basic",
                     "API sign-in",
                     "email-enroll",

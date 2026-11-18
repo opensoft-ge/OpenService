@@ -37,3 +37,5 @@ OS-A20-02 updates only the local stylesheet response fixture to include a visibl
 ## AI product direction
 
 Requirement added 2026-11-16: OpenService must become fully AI enabled, agentic and conversational across its core journeys. The [AI capability and acceptance guide](ai-capabilities.md) defines the required work and evidence. This direction does not change the implementation scope or historical validation results recorded above.
+
+18November2026 round30 adds original OIDC federation code using the published Nimbus11.39 API. No SDK implementation source is copied into OpenService. Synthetic provider tests generate local RSA keys and protocol messages; they are not licensed provider-instance captures or ServiceNow SSO conformance evidence. The publisher SDK source was inspected to verify the caller's azp-validation responsibility. The ASM BSD-3-Clause license was retrieved from https://asm.ow2.io/LICENSE.txt and retained verbatim.

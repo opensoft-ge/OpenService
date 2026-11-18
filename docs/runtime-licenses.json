@@ -494,5 +494,77 @@
         "url": "http://www.eclipse.org/org/documents/edl-v10.php"
       }
     ]
+  },
+  {
+    "artifact": "oauth2-oidc-sdk-11.39.jar",
+    "licenses": [
+      {
+        "name": "Apache License, version 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+      }
+    ]
+  },
+  {
+    "artifact": "jcip-annotations-1.0-1.jar",
+    "licenses": [
+      {
+        "name": "Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "artifact": "content-type-2.3.jar",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "artifact": "json-smart-2.6.0.jar",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "artifact": "accessors-smart-2.6.0.jar",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "artifact": "asm-9.7.1.jar",
+    "licenses": [
+      {
+        "name": "BSD-3-Clause",
+        "url": "https://asm.ow2.io/license.html"
+      }
+    ]
+  },
+  {
+    "artifact": "lang-tag-1.7.jar",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "artifact": "nimbus-jose-jwt-10.9.1.jar",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
   }
 ]

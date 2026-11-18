@@ -132,7 +132,7 @@ public class WebController {
                 throw new Failure(413, "Request exceeds 6 MB");
             String path = request.getRequestURI(), method = request.getMethod();
             boolean publicPath =
-                    Set.of("/healthz", "/login", "/forgot")
+                    Set.of("/healthz", "/login", "/forgot", "/oidc/start", "/oidc/callback")
                                     .contains(path)
                             || path.matches("/(?:join|recover|verify-email)/[A-Za-z0-9_-]{32}");
             var user =
@@ -142,7 +142,7 @@ public class WebController {
                                     "SELECT * FROM os_user WHERE user_id=? AND active=1",
                                     session.getAttribute("user"));
             if (user != null
-                    && (!Objects.equals(
+                    && (!Oidc.current(store,db,user,session) || !Objects.equals(
                                     session.getAttribute("auth_revision"),
                                     ((Number) user.get("auth_revision")).longValue())
                             || !SessionLifetime.valid(
@@ -307,7 +307,56 @@ public class WebController {
         }
     }
 
+    private ModelAndView signIn(Request c,Map<String,Object> user)throws Exception {
+                if (c.db.postgres) c.db.all("SELECT pg_advisory_xact_lock(18439,4)");
+                Authentication.requireCurrent(c.db, user);
+                BrowserSessions.remove(c.db, c.session.getId());
+                c.http.changeSessionId();
+                Collections.list(c.session.getAttributeNames()).forEach(c.session::removeAttribute);
+                c.session.setAttribute("user", user.get("user_id"));
+                c.session.setAttribute(
+                        "auth_revision", ((Number) user.get("auth_revision")).longValue());
+                long issued = System.currentTimeMillis();
+                BrowserSessions.register(c.db, user, c.session.getId(), issued);
+                SessionLimit.enforce(
+                        c.db,
+                        user,
+                        c.session.getId(),
+                        AccountSessionLimit.effective(
+                                c.db, user.get("user_id").toString(), store.maxBrowserSessions));
+                c.session.setAttribute("authenticated_at", issued);
+                c.session.setAttribute("csrf", csrf());
+                if(user.containsKey("oidc_configuration")) {
+                    c.session.setAttribute("oidc_configuration",user.get("oidc_configuration"));
+                    c.session.setAttribute("oidc_binding",user.get("oidc_binding"));
+                }
+                return redirect(PasswordReset.required(user) ? "/password-required" : "/");
+    }
+
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/oidc/start")) {
+            method(method,"POST");c.noQuery();c.uniqueQuery();checkCsrf(c,c.parameter("csrf",""));
+            if(!c.arguments().keySet().equals(Set.of("csrf")))throw new Failure(400,"Use the organizational sign-in button");
+            return new ModelAndView("federation-continue",map("destination",Oidc.start(store,c.db,c.session.getId(),System.currentTimeMillis()),"issuer",Oidc.settings(store).get("issuer")));
+        }
+        if(path.equals("/oidc/callback")) {
+            method(method,"GET");c.uniqueQuery();Map<String,Object> user;
+            try {user=Oidc.complete(store,c.db,c.session.getId(),c.arguments(),System.currentTimeMillis());}
+            catch(Failure rejected) {AuthenticationEvents.record(c.db,"",Passwords.tokenHash("oidc"),"oidc","failed");c.db.connection.commit();throw rejected;}
+            return signIn(c,user);
+        }
+        Matcher federation=Pattern.compile("/(admin|api/openservice)/federation(?:/([0-9a-f]{32}))?").matcher(path);
+        if(federation.matches()) {
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(federation.group(2),"");
+            if(method.equals("POST")) {
+                Object input;
+                if(api)input=body(c);else {var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));String remove=Objects.toString(form.get("remove"),"");if(!Set.of("true","false").contains(remove))throw new Failure(400,"Choose link or removal");form.put("remove",Boolean.valueOf(remove));input=form;}
+                var result=Oidc.bind(store,c.db,id,input);return api?json(map("result",result),200):redirect("/admin/federation");
+            }
+            if(!id.isEmpty())throw new Failure(404,"Open the federation settings page");
+            var result=Oidc.page(store,c.db);return api?json(map("result",result),200):view(c,"federation",map("table","operations","page",result));
+        }
+
 
 
         Matcher outages=Pattern.compile("/(?:record/cmdb_ci|api/openservice/configuration-items)/([0-9a-f]{32})/outages").matcher(path);
@@ -1414,27 +1463,9 @@ public class WebController {
                                 c.parameter("password", ""),
                                 "browser");
                 if (user == null) throw new Failure(401, "Incorrect username or password");
-                if (c.db.postgres) c.db.all("SELECT pg_advisory_xact_lock(18439,4)");
-                Authentication.requireCurrent(c.db, user);
-                BrowserSessions.remove(c.db, c.session.getId());
-                c.http.changeSessionId();
-                Collections.list(c.session.getAttributeNames()).forEach(c.session::removeAttribute);
-                c.session.setAttribute("user", user.get("user_id"));
-                c.session.setAttribute(
-                        "auth_revision", ((Number) user.get("auth_revision")).longValue());
-                long issued = System.currentTimeMillis();
-                BrowserSessions.register(c.db, user, c.session.getId(), issued);
-                SessionLimit.enforce(
-                        c.db,
-                        user,
-                        c.session.getId(),
-                        AccountSessionLimit.effective(
-                                c.db, user.get("user_id").toString(), store.maxBrowserSessions));
-                c.session.setAttribute("authenticated_at", issued);
-                c.session.setAttribute("csrf", csrf());
-                return redirect(PasswordReset.required(user) ? "/password-required" : "/");
+                return signIn(c,user);
             }
-            return new ModelAndView("login", map("csrf", c.session.getAttribute("csrf")));
+            return new ModelAndView("login", map("csrf", c.session.getAttribute("csrf"),"federation",Boolean.parseBoolean(store.environment.getProperty("OIDC_ENABLED","false"))));
         }
         if (path.equals("/logout")) {
             method(method, "POST");

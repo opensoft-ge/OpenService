@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 80;
+    static final int VERSION = 81;
 
     private Migrations() {}
 
@@ -722,6 +722,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_signed_profile(profile_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,table_name VARCHAR(80) NOT NULL,gateway_id VARCHAR(32) NOT NULL,definition TEXT NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL,envelope TEXT NOT NULL)");
             db.update("CREATE TABLE IF NOT EXISTS os_signed_receipt(profile_id VARCHAR(32) NOT NULL REFERENCES os_signed_profile(profile_id),event_id VARCHAR(160) NOT NULL,fingerprint VARCHAR(64) NOT NULL,record_id VARCHAR(32) NOT NULL,profile_revision INTEGER NOT NULL,gateway_id VARCHAR(32) NOT NULL,key_id VARCHAR(32) NOT NULL,created VARCHAR(40) NOT NULL,PRIMARY KEY(profile_id,event_id))");
             db.update("INSERT INTO os_migration(version,name) VALUES(80,?)","signed scoped inbound integration events and retained deduplication receipts");
+        }
+
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=81")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_oidc_binding(binding_id VARCHAR(32) PRIMARY KEY,issuer VARCHAR(2048) NOT NULL,subject VARCHAR(255) NOT NULL,user_id VARCHAR(32) NOT NULL,revision INTEGER NOT NULL,UNIQUE(issuer,subject),UNIQUE(issuer,user_id))");
+            db.update("CREATE TABLE IF NOT EXISTS os_oidc_challenge(state_hash VARCHAR(64) PRIMARY KEY,session_hash VARCHAR(64) NOT NULL,expires_at BIGINT NOT NULL,configuration VARCHAR(64) NOT NULL,envelope TEXT NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_oidc_challenge_expiry ON os_oidc_challenge(expires_at)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(81,?)","explicit OIDC identity bindings and one-use browser-bound challenges");
         }
 
     }

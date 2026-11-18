@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void federatedSignInAndRevocationJourney() throws Exception { OidcBrowserAcceptance.run(this); }
     @Test void signedIntegrationSecretIntakeAndRotationJourney() throws Exception { SignedEventsBrowserAcceptance.run(this); }
     @Test void durableEventWorkflowConfigurationAndExecutionJourney() throws Exception { EventWorkflowsBrowserAcceptance.run(this); }
     @Test void conditionalClockPolicyAndAutomaticLifecycleJourney() throws Exception { ConditionalClocksBrowserAcceptance.run(this); }
