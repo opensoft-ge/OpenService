@@ -76,6 +76,7 @@ final class WorkWorker {
                     var payload = Outbox.decrypt(store.secret, job.get("envelope").toString());
                     Object output =
                             switch (job.get("kind").toString()) {
+                                case "request.resolve" -> RequestResolution.execute(store,db,job,payload);
                                 case "report.capture" -> ReportSchedules.execute(db,job,payload);
                                 case "workflow.run" -> EventWorkflows.execute(db,job,payload);
                                 case "notification" ->

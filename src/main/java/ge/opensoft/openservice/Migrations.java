@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 88;
+    static final int VERSION = 89;
 
     private Migrations() {}
 
@@ -772,6 +772,10 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_knowledge_policy(article_id VARCHAR(32) PRIMARY KEY,revision INTEGER NOT NULL,reviewer_id VARCHAR(32) NOT NULL)");
             db.update("CREATE TABLE IF NOT EXISTS os_knowledge_review(article_id VARCHAR(32) PRIMARY KEY,request_id VARCHAR(32) NOT NULL,requester_id VARCHAR(32) NOT NULL,intent VARCHAR(20) NOT NULL,proof VARCHAR(64) NOT NULL,status VARCHAR(20) NOT NULL,reason TEXT NOT NULL,created VARCHAR(26) NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(88,?)","independent knowledge publication and retirement review");
+        }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=89")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_ai_resolution(run_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL,request_id VARCHAR(32) NOT NULL,article_id VARCHAR(32) NOT NULL,proof VARCHAR(64) NOT NULL,envelope TEXT NOT NULL,state VARCHAR(20) NOT NULL,job_id VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(26) NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(89,?)","reviewed durable information request resolution");
         }
     }
 

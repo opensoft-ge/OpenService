@@ -436,6 +436,12 @@ public class WebController {
         Matcher ciDiscovery=Pattern.compile("/(?:record/cmdb_ci|api/openservice/configuration-items)/([0-9a-f]{32})/discovery").matcher(path);
         if(ciDiscovery.matches()){method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=ciDiscovery.group(1);Map<String,Object> result;if(method.equals("POST")){var input=api?object(body(c)):new LinkedHashMap<String,Object>(c.arguments());if(!api){input.remove("csrf");input.put("record_revision",Service.number(Objects.toString(input.get("record_revision"),""),0,Integer.MAX_VALUE));}result=DiscoveryReconciliation.release(c.db,id,input);}else result=DiscoveryReconciliation.ciPage(c.db,id);return api?json(map("result",result),200):view(c,"discovery-ci",map("table","cmdb_ci","page",result,"ciPath",path));}
 
+        Matcher resolution=Pattern.compile("/(?:record/sc_request|api/openservice/requests)/([0-9a-f]{32})/resolution(?:/([0-9a-f]{32}))?").matcher(path);
+        if(resolution.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=resolution.group(1),run=Objects.toString(resolution.group(2),"");Map<String,Object> result;
+            if(method.equals("GET"))result=RequestResolution.page(store,c.db,id,run);else{Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String flag:List.of("allow_external","confirm","information_only"))if(form.containsKey(flag))form.put(flag,"true".equals(form.get(flag)));input=form;}result=run.isEmpty()?RequestResolution.generate(store,c.db,id,input):RequestResolution.command(store,c.db,id,run,input);if(!api && run.isEmpty() && result.get("run")!=null)return redirect("/record/sc_request/"+id+"/resolution/"+object(result.get("run")).get("run_id"));}
+            return api?json(map("result",result),200):view(c,"request-resolution",map("table","sc_request","page",result,"resolutionPath",path,"requestId",id,"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
+        }
         Matcher triage=Pattern.compile("/(?:record/incident|api/openservice/incidents)/([0-9a-f]{32})/triage(?:/([0-9a-f]{32}))?").matcher(path);
         if(triage.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=triage.group(1),run=Objects.toString(triage.group(2),"");Map<String,Object> result;

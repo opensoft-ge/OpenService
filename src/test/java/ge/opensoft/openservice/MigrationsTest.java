@@ -1171,4 +1171,15 @@ class MigrationsTest {
         try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals(true,KnowledgeReviews.page(db,id).get("can_apply"));KnowledgeReviews.act(db,id,KnowledgeReviewsAcceptance.body(KnowledgeReviews.page(db,id),"apply",Values.map()));assertEquals(3,db.count("SELECT COUNT(*) FROM os_publication WHERE article_id=?",id));assertEquals("Retained before knowledge review",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.commit();}
     }
 
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void requestResolutionUpgradeRetainsApprovedWork(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String retained;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before request resolution"),"admin").get("sys_id").toString();db.update("DROP TABLE os_ai_resolution");db.update("DELETE FROM os_migration WHERE version>=89");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_ai_resolution"));db.connection.rollback();assertEquals(88,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);String[] ids=RequestResolutionAcceptance.seed(store);try(var provider=new RecordQuestionsAcceptance.Provider(store,env)){provider.settings.put("AI_RESOLUTION_ENABLED","true");provider.answer.set("Use the help portal for progress");String run;
+            try(var db=store.open()){PlatformFoundationTest.bind(db);String token=RequestResolution.generate(store,db,ids[0],Values.map("operation","preview","article_id",ids[1])).get("preview_token").toString();run=Values.object(RequestResolution.generate(store,db,ids[0],RequestResolutionAcceptance.generate(ids[1],token)).get("run")).get("run_id").toString();token=RequestResolution.command(store,db,ids[0],run,Values.map("operation","review","answer","Use My requests")).get("action_token").toString();RequestResolution.command(store,db,ids[0],run,RequestResolutionAcceptance.queue("Use My requests",token));db.connection.commit();}
+            store=new Store(env);assertTrue(new WorkWorker(store).runOne(System.currentTimeMillis()+1000));for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);assertEquals("completed",Values.object(RequestResolution.page(store,db,ids[0],run).get("run")).get("state"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_event WHERE record_id=? AND action='ai.resolution_applied'",ids[0]));assertEquals("Retained before request resolution",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}assertEquals(1,provider.calls.get());
+        }
+    }
+
 }
