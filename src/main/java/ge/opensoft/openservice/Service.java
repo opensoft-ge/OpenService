@@ -163,6 +163,7 @@ public final class Service {
         CustomerCases.insertion(db,item);
         EmployeeCases.insertion(db,item);
         RiskAssessments.insertion(item);
+        DemandPlanning.insertion(item);
         SecurityIncidents.insertion(db,item);
         VulnerabilityResponse.insertion(db,item);
         EmployeeOnboarding.insertion(db,item.get("sys_id").toString());
@@ -203,6 +204,7 @@ public final class Service {
         WorkTasks.guard(db,item);
         EmployeeOnboarding.guard(db,item);
         RiskAssessments.guard(db,item);
+        DemandPlanning.guard(db,item);
         SecurityIncidents.guard(db,item);
         VulnerabilityResponse.guard(db,item);
         FieldDispatch.parentGuard(db,item);
@@ -320,6 +322,7 @@ public final class Service {
         db.update("DELETE FROM os_customer_resolution WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_customer_reply WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_hr_reply WHERE record_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_demand_assessment WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_risk_assessment WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_vulnerability_observation WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_vulnerability WHERE record_id=?",item.get("sys_id"));

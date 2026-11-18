@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void demandUpgradeRetainsPlanning(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String retained,record,portfolio;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before demand planning"),"admin").get("sys_id").toString();db.update("DROP TABLE os_demand_assessment");db.update("DELETE FROM os_schema WHERE name IN ('portfolio','demand')");db.update("DELETE FROM os_migration WHERE version>=69");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_demand_assessment"));db.connection.rollback();assertEquals(68,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);portfolio=Service.create(db,"portfolio",Values.map("short_description","Retained investment portfolio"),"admin").get("sys_id").toString();record=Service.create(db,"demand",Values.map("short_description","Retained assessed demand","description","Retained business case"),"admin").get("sys_id").toString();DemandPlanning.save(db,record,Values.map("operation","assess","revision",0,"record_revision",0,"portfolio_id",portfolio,"year",2027,"value",5,"alignment",4,"urgency",3,"effort",2,"rationale","Retained rationale"));Service.update(db,"demand",Service.record(db,"demand",record),Values.map("state","screen"),"admin","admin",null);Service.update(db,"demand",Service.record(db,"demand",record),Values.map("state","qualified"),"admin","admin",null);DemandPlanning.save(db,record,Values.map("operation","decide","revision",1,"record_revision",3,"decision","deferred","rationale","Retained deferral rationale"));db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Retained before demand planning",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));var page=DemandPlanning.page(db,record);assertEquals("deferred",Values.object(page.get("record")).get("state"));assertEquals(2,Values.objects(page.get("history")).size());assertEquals(true,page.get("current"));assertEquals(84,Values.object(page.get("assessment")).get("score"));assertEquals(0,Values.objects(DemandPlanning.board(db,portfolio,2027).get("items")).getFirst().get("rank"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void vulnerabilityUpgradeRetainsVerification(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String retained,record,asset,group;
         try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before vulnerability upgrade"),"admin").get("sys_id").toString();for(String table:List.of("os_vulnerability_observation","os_vulnerability","os_vulnerability_scan"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_schema WHERE name='vulnerability'");db.update("DELETE FROM os_migration WHERE version>=68");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_vulnerability"));db.connection.rollback();assertEquals(67,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -975,10 +983,12 @@ class MigrationsTest {
                 try (var db = future.get(30, TimeUnit.SECONDS).open()) {
                     assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
                     assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
-                    assertEquals(12, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertEquals(14, db.count("SELECT COUNT(*) FROM os_schema"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='risk'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='security_incident'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='vulnerability'"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='portfolio'"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='demand'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='hr_case'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='customer_case'"));
                 }

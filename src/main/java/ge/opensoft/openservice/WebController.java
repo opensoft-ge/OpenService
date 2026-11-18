@@ -308,6 +308,18 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/portfolios") || path.equals("/api/openservice/portfolios")){
+            method(method,"GET");c.noQuery();c.uniqueQuery();SecurityIncidents.staff(c.db);var records=Service.page(c.db,"portfolio",Map.of("sysparm_limit","100"),"");return path.startsWith("/api/")?json(map("result",map("items",records.rows(),"total",records.total())),200):view(c,"portfolios",map("table","portfolio","definition",Service.schema(c.db,"portfolio"),"portfolios",records.rows(),"can_create_portfolio",RecordPolicy.allows(Service.schema(c.db,"portfolio"),"create",c.db.viewerRole),"can_create_demand",RecordPolicy.allows(Service.schema(c.db,"demand"),"read",c.db.viewerRole) && RecordPolicy.allows(Service.schema(c.db,"demand"),"create",c.db.viewerRole)));
+        }
+        Matcher portfolioBoard=Pattern.compile("/(?:record/portfolio|api/openservice/portfolios)/([0-9a-f]{32})/demands").matcher(path);
+        if(portfolioBoard.matches()){
+            method(method,"GET");c.uniqueQuery();if(!Set.of("year").containsAll(c.arguments().keySet()))throw new Failure(400,"Use planning year only");int year=Service.number(c.arguments().getOrDefault("year",Integer.toString(java.time.Year.now(java.time.ZoneOffset.UTC).getValue())),2000,2200);var result=DemandPlanning.board(c.db,portfolioBoard.group(1),year);return path.startsWith("/api/")?json(map("result",result),200):view(c,"portfolio-demands",map("table","portfolio","definition",Service.schema(c.db,"portfolio"),"page",result));
+        }
+        Matcher demand=Pattern.compile("/(?:record/demand|api/openservice/demands)/([0-9a-f]{32})/planning").matcher(path);
+        if(demand.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=demand.group(1);if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision","year","value","alignment","urgency","effort"))if(form.containsKey(field))form.put(field,Service.number(form.get(field).toString(),0,Integer.MAX_VALUE));input=form;}var result=DemandPlanning.save(c.db,id,input);return api?json(map("result",result),200):redirect("/record/demand/"+id+"/planning");}return api?json(map("result",DemandPlanning.page(c.db,id)),200):view(c,"demand-planning",map("table","demand","definition",Service.schema(c.db,"demand"),"page",DemandPlanning.page(c.db,id),"planningPath",path));
+        }
+
         if(path.equals("/vulnerabilities") || path.equals("/api/openservice/vulnerabilities")){
             method(method,"GET");c.noQuery();c.uniqueQuery();var result=VulnerabilityResponse.directory(c.db);return path.startsWith("/api/")?json(map("result",result),200):view(c,"vulnerabilities",map("table","vulnerability","definition",Service.schema(c.db,"vulnerability"),"page",result));
         }
@@ -887,6 +899,10 @@ public class WebController {
             var result=EventSearch.page(c.db,actor,c.arguments());
             return api?json(result,200):view(c,"events",map("table","events","search",result));
         }
+        return operationalRoutes(c,path,method);
+    }
+
+    private ModelAndView operationalRoutes(Request c, String path, String method) throws Exception {
         if (path.equals("/admin/operations")) {
             method(method, "GET", "POST");
             c.admin();

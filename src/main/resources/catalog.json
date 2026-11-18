@@ -451,5 +451,112 @@
         "admin"
       ]
     }
+  },
+  "portfolio": {
+    "label": "Portfolios",
+    "prefix": "PFO",
+    "fields": {
+      "short_description": "Portfolio name",
+      "description": "Portfolio purpose",
+      "state": "Status"
+    },
+    "states": {
+      "active": "Active",
+      "retired": "Retired"
+    },
+    "flow": {
+      "active": [
+        "retired"
+      ],
+      "retired": [
+        "active"
+      ]
+    },
+    "record_roles": {
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    }
+  },
+  "demand": {
+    "label": "Demands",
+    "prefix": "DMN",
+    "fields": {
+      "short_description": "Demand summary",
+      "description": "Business case",
+      "state": "Stage",
+      "priority": "Priority",
+      "score": "Assessment score"
+    },
+    "states": {
+      "draft": "Draft",
+      "screen": "Screening",
+      "qualified": "Qualified",
+      "approved": "Approved",
+      "deferred": "Deferred",
+      "rejected": "Rejected"
+    },
+    "flow": {
+      "draft": [
+        "screen"
+      ],
+      "screen": [
+        "qualified"
+      ],
+      "qualified": [
+        "screen",
+        "approved",
+        "deferred",
+        "rejected"
+      ],
+      "approved": [
+        "screen"
+      ],
+      "deferred": [
+        "screen"
+      ],
+      "rejected": [
+        "screen"
+      ]
+    },
+    "record_roles": {
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    },
+    "field_rules": {
+      "score": {
+        "type": "integer"
+      }
+    },
+    "transition_rules": {
+      "approved": {
+        "min_approvals": 1
+      }
+    }
   }
 }

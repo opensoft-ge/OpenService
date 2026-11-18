@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 68;
+    static final int VERSION = 69;
 
     private Migrations() {}
 
@@ -640,6 +640,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_vulnerability(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,alias VARCHAR(80) NOT NULL,origin TEXT NOT NULL,path TEXT NOT NULL,asset_id VARCHAR(32) NOT NULL,vulnerability VARCHAR(160) NOT NULL,group_id VARCHAR(32) NOT NULL,verify_revision INTEGER NOT NULL,verify_at TEXT NOT NULL,task_boundary INTEGER NOT NULL,UNIQUE(alias,asset_id,vulnerability))");
             db.update("CREATE TABLE IF NOT EXISTS os_vulnerability_observation(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,report_id VARCHAR(32) NOT NULL REFERENCES os_vulnerability_scan(report_id),observed_at TEXT NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
             db.update("INSERT INTO os_migration(version,name) VALUES(68,?)","asset-scoped vulnerability observations and remediation verification");
+        }
+
+        if(version<69){
+            db.update("CREATE TABLE IF NOT EXISTS os_demand_assessment(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,portfolio_id VARCHAR(32) NOT NULL,planning_year INTEGER NOT NULL,score INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_demand_portfolio_year ON os_demand_assessment(portfolio_id,planning_year,score)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(69,?)","scored portfolio demands and retained reviewed decisions");
         }
 
     }
