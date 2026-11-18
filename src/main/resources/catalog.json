@@ -175,5 +175,50 @@
     },
     "states": {},
     "flow": {}
+  },
+  "customer_case": {
+    "label": "Customer cases",
+    "prefix": "CS",
+    "fields": {
+      "short_description": "Summary",
+      "description": "Description",
+      "assigned_to": "Assigned to",
+      "assignment_group": "Assignment group",
+      "state": "State",
+      "priority": "Priority"
+    },
+    "states": {
+      "open": "Open",
+      "working": "In progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "flow": {
+      "open": [
+        "working"
+      ],
+      "working": [
+        "resolved"
+      ],
+      "resolved": [
+        "working",
+        "closed"
+      ],
+      "closed": []
+    },
+    "record_roles": {
+      "read": [
+        "admin",
+        "agent",
+        "requester"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    }
   }
 }

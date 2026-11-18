@@ -1,0 +1,25 @@
+package ge.opensoft.openservice;
+import static ge.opensoft.openservice.Values.*;
+import static ge.opensoft.openservice.TypedFields.require;
+import java.sql.SQLException;
+import java.util.*;
+/** Customer organizations and stable external contact bindings, administered independently of roles. */
+final class CustomerAccounts {
+ private CustomerAccounts() {}
+ static Map<String,Object> account(Store.Db db,String id)throws SQLException{var row=db.one("SELECT * FROM os_customer_account WHERE account_id=?",id);if(row==null)throw new Failure(404,"Customer account not found");return row;}
+ static Map<String,Object> contact(Store.Db db,String user)throws SQLException{var row=db.one("SELECT * FROM os_customer_contact WHERE user_id=?",user);return row==null?map("user_id",user,"account_id","","active",0,"revision",0):row;}
+ static Map<String,Object> page(Store.Db db,String id)throws SQLException{
+  Service.requireAccountAdministrator(db,db.viewerId);return map("account",account(db,id),"contacts",db.all("SELECT c.*,u.name,u.active AS user_active,u.role FROM os_customer_contact c JOIN os_user u ON u.user_id=c.user_id WHERE c.account_id=? ORDER BY u.name",id),"entitlements",CustomerEntitlements.list(db,id),"groups",Service.page(db,"sys_user_group",Map.of("sysparm_limit","100"),"").rows());
+ }
+ static Map<String,Object> lookup(Store.Db db,String username)throws SQLException{
+  Service.requireAccountAdministrator(db,db.viewerId);if(username.isEmpty())return null;String name=WorkJobs.text(username,80);var user=db.one("SELECT user_id,name FROM os_user WHERE name=? AND active=1 AND role='requester' AND password_reset_required=0",name);if(user==null)throw new Failure(404,"Active customer requester not found");var contact=contact(db,user.get("user_id").toString());return map("username",user.get("name"),"revision",contact.get("revision"),"active",contact.get("active"),"account",contact.get("account_id").equals("")?"Unassigned":account(db,contact.get("account_id").toString()).get("name"));
+ }
+ static Map<String,Object> save(Store.Db db,String id,Object input)throws SQLException{
+  Service.requireAccountAdministrator(db,db.viewerId);if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");var body=object(input);require(body.keySet().equals(Set.of("name","group_id","active","revision")),"Provide account name, support group, active and revision");String name=WorkJobs.text(body.get("name"),160),group=WorkJobs.text(body.get("group_id"),32);Service.readRecord(db,"sys_user_group",group);require(body.get("active") instanceof Boolean,"Choose active or inactive");var current=id.isEmpty()?map("revision",0):account(db,id);ProblemInvestigations.revision(body.get("revision"),current.get("revision"));
+  if(id.isEmpty()){require(db.count("SELECT COUNT(*) FROM os_customer_account")<200,"At most 200 customer accounts are supported");id=Values.id();}db.update("INSERT INTO os_customer_account(account_id,name,group_id,active,revision) VALUES(?,?,?,?,?) ON CONFLICT(account_id) DO UPDATE SET name=excluded.name,group_id=excluded.group_id,active=excluded.active,revision=excluded.revision",id,name,group,(Boolean)body.get("active")?1:0,((Number)current.get("revision")).intValue()+1);SecurityEvents.record(db,db.viewerId,db.viewerId,"customer.account_saved",map("account_id",id));return account(db,id);
+ }
+ static Map<String,Object> manage(Store.Db db,String id,Object input)throws SQLException{
+  Service.requireAccountAdministrator(db,db.viewerId);if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");account(db,id);var body=new LinkedHashMap<>(object(input));String operation=WorkJobs.text(body.remove("operation"),12);
+  switch(operation){case "account"->save(db,id,body);case "entitlement"->CustomerEntitlements.save(db,id,body);case "contact"->{require(body.keySet().equals(Set.of("username","active","revision")),"Provide contact username, active and revision");String name=WorkJobs.text(body.get("username"),80);var user=db.one("SELECT user_id FROM os_user WHERE name=? AND active=1 AND role='requester' AND password_reset_required=0",name);require(user!=null,"Choose an active requester with a usable account");String uid=user.get("user_id").toString();var current=contact(db,uid);ProblemInvestigations.revision(body.get("revision"),current.get("revision"));require(body.get("active") instanceof Boolean,"Choose active or inactive");require(db.count("SELECT COUNT(*) FROM os_customer_contact WHERE account_id=? AND user_id<>?",id,uid)<200,"At most 200 contacts belong to an account");db.update("INSERT INTO os_customer_contact(user_id,account_id,active,revision) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET account_id=excluded.account_id,active=excluded.active,revision=excluded.revision",uid,id,(Boolean)body.get("active")?1:0,((Number)current.get("revision")).intValue()+1);SecurityEvents.record(db,db.viewerId,uid,"customer.contact_saved",map("account_id",id));}default->throw new Failure(400,"Choose account, contact or entitlement");}return page(db,id);
+ }
+}

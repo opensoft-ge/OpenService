@@ -146,6 +146,7 @@ public class Store {
         boolean attachmentScanning;
         String viewerId;
         String viewerRole;
+        boolean customerIntake;
 
         public Db(Connection connection, boolean postgres) throws SQLException {
             this.connection = connection;

@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 58;
+    static final int VERSION = 59;
 
     private Migrations() {}
 
@@ -574,6 +574,17 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_major_update(update_id VARCHAR(32) PRIMARY KEY,parent_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,message TEXT NOT NULL,actor_id VARCHAR(32) NOT NULL,ordinal INTEGER NOT NULL,created VARCHAR(40) NOT NULL,UNIQUE(parent_id,ordinal))");
             db.update("INSERT INTO os_migration(version,name) VALUES(58,?)","major incident command, restoration and post-incident review");
         }
+        if(version<59){
+            db.update("CREATE TABLE IF NOT EXISTS os_customer_account(account_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,active INTEGER NOT NULL,group_id VARCHAR(32) NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_customer_contact(user_id VARCHAR(32) PRIMARY KEY REFERENCES os_user(user_id) ON DELETE CASCADE,account_id VARCHAR(32) NOT NULL REFERENCES os_customer_account(account_id),active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_customer_contact_account ON os_customer_contact(account_id)");
+            db.update("CREATE TABLE IF NOT EXISTS os_customer_entitlement(entitlement_id VARCHAR(32) PRIMARY KEY,account_id VARCHAR(32) NOT NULL REFERENCES os_customer_account(account_id),name VARCHAR(160) NOT NULL,description TEXT NOT NULL,active INTEGER NOT NULL,starts BIGINT NOT NULL,ends BIGINT NOT NULL,case_limit INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_customer_entitlement_account ON os_customer_entitlement(account_id)");
+            db.update("CREATE TABLE IF NOT EXISTS os_customer_case(record_id VARCHAR(32) PRIMARY KEY,account_id VARCHAR(32) NOT NULL REFERENCES os_customer_account(account_id),user_id VARCHAR(32) NOT NULL,entitlement_id VARCHAR(32) NOT NULL REFERENCES os_customer_entitlement(entitlement_id),account_revision INTEGER NOT NULL,contact_revision INTEGER NOT NULL,entitlement_revision INTEGER NOT NULL,account_name VARCHAR(160) NOT NULL,entitlement_name VARCHAR(160) NOT NULL,intake_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(40) NOT NULL,UNIQUE(user_id,intake_key))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_customer_case_entitlement ON os_customer_case(entitlement_id)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(59,?)","current customer accounts, contacts and entitled case intake");
+        }
+
     }
 
     private static void addColumn(Store.Db db, String table, String column, String definition)

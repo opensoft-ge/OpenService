@@ -160,6 +160,7 @@ public final class Service {
     }
 
     static long insert(Store.Db db, Map<String, Object> item) throws SQLException {
+        CustomerCases.insertion(db,item);
         ApprovalGate.creation(schema(db, item.get("table").toString()), object(item.get("data")));
         try (var query =
                 db.statement(

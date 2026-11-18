@@ -10,6 +10,8 @@ final class DockerDatabase {
 
     static synchronized String url() {
         if (url != null) return url;
+        String local=System.getenv("OPEN_SERVICE_TEST_POSTGRES_BIN");
+        if(local!=null){try{return url=LocalTestDatabase.start(local);}catch(Exception failure){throw new IllegalStateException("Local PostgreSQL test setup failed",failure);}}
         String name = "openservice-java-test-" + UUID.randomUUID().toString().replace("-", "");
         try {
             command(

@@ -15,6 +15,15 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void customerIntakeUpgradePreservesOwnershipAndUnits(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String group,user;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);group=Service.create(db,"sys_user_group",Values.map("short_description","Retained support team"),"admin").get("sys_id").toString();Service.createAccount(db,Values.map("name","UpgradeCustomer","role","requester","password",WorkflowSupport.PASSWORD));user=RecordAccess.owner(db,"UpgradeCustomer");for(String table:List.of("os_customer_case","os_customer_entitlement","os_customer_contact","os_customer_account"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_schema WHERE name='customer_case'");db.update("DELETE FROM os_migration WHERE version>=59");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_customer_account"));db.connection.rollback();assertEquals(58,db.count("SELECT MAX(version) FROM os_migration"));}
+        String record,account,entitlement;Map<String,Object> body;
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);account=CustomerAccounts.save(db,"",Values.map("name","Retained customer","group_id",group,"active",true,"revision",0)).get("account_id").toString();CustomerAccounts.manage(db,account,Values.map("operation","contact","username","UpgradeCustomer","active",true,"revision",0));var p=CustomerAccounts.manage(db,account,CustomerCasesAcceptance.entitlement("",0,1));entitlement=Values.objects(p.get("entitlements")).getFirst().get("entitlement_id").toString();db.viewerId=user;db.viewerRole="requester";body=Values.map("account_revision",1,"contact_revision",1,"entitlement_revision",1,"summary","Retained support case","description","Original customer details","key",Values.id());record=CustomerCases.create(db,entitlement,body).get("sys_id").toString();db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){db.viewerId=user;db.viewerRole="requester";assertEquals(record,CustomerCases.create(db,entitlement,body).get("sys_id"));assertEquals("Retained customer",CustomerCases.snapshot(db,record).get("account_name"));assertEquals(1L,db.count("SELECT COUNT(*) FROM os_customer_case WHERE entitlement_id=?",entitlement));assertEquals(404,assertThrows(Values.Failure.class,()->CustomerEntitlements.eligible(db,entitlement,System.currentTimeMillis())).status);assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void majorIncidentUpgradeRetainsCommandAndChronology(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String id,child;
         try(var db=store.open()){PlatformFoundationTest.bind(db);id=Service.create(db,"incident",Values.map("short_description","Retained incident"),"admin").get("sys_id").toString();child=Service.create(db,"incident",Values.map("short_description","Retained related incident"),"admin").get("sys_id").toString();db.update("DROP TABLE os_major_link");db.update("DROP TABLE os_major_update");db.update("DROP TABLE os_major_incident");db.update("DELETE FROM os_migration WHERE version>=58");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_major_incident"));db.connection.rollback();assertEquals(57,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -670,6 +679,7 @@ class MigrationsTest {
                                     .get("password");
             db.update("DROP TABLE os_support_conversation");
             db.update("DROP TABLE os_report_measurement");
+            db.update("DROP TABLE os_customer_contact");
             db.update("DROP INDEX ix_os_user_identity");
             db.update("ALTER TABLE os_user DROP COLUMN user_id");
             db.update("DELETE FROM os_migration WHERE version>=2");
@@ -886,7 +896,8 @@ class MigrationsTest {
                 try (var db = future.get(30, TimeUnit.SECONDS).open()) {
                     assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
                     assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
-                    assertEquals(7, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertEquals(8, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='customer_case'"));
                 }
             }
         }

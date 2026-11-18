@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void entitledCustomerCaseJourney() throws Exception { CustomerCasesBrowserAcceptance.run(this); }
     @Test void majorIncidentCommandJourney() throws Exception { MajorIncidentsBrowserAcceptance.run(this); }
     @Test void reviewedChangeSchedulingJourney() throws Exception { ChangeSchedulingBrowserAcceptance.run(this); }
     @Test void catalogueMultiTeamJourney() throws Exception { CatalogueWorkflowsBrowserAcceptance.run(this); }
@@ -1496,7 +1497,7 @@ class BrowserTest {
                 var page = context.newPage();
                 page.onPageError(errors::add);
                 login(page, "admin");
-                page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Accounts"))
+                page.locator("a.nav-item[href='/admin/accounts']")
                         .click();
                 page.getByRole(
                                 AriaRole.HEADING,

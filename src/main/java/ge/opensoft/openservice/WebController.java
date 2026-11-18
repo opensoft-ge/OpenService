@@ -210,7 +210,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
+                                && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
                         && !path.matches("/(?:support|api/openservice/support)(?:/[0-9a-f]{32})?")
                         && !path.matches(
@@ -503,6 +503,25 @@ public class WebController {
             else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));result=CatalogueQuestions.edit(c.db,c.db.viewerId,id,form);}
             return api?json(map("result",result),200):redirect("/admin/catalogue/"+id+"/questions");
         }
+        Matcher customerAccount=Pattern.compile("/(admin|api/openservice)/customer-accounts(?:/([0-9a-f]{32}))?").matcher(path);
+        if(customerAccount.matches()){
+            c.admin();method(method,"GET","POST");c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(customerAccount.group(2),"");Map<String,Object> result;
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","case_limit"))if(form.containsKey(field))form.put(field,Service.number(form.get(field).toString(),0,Integer.MAX_VALUE));String active=Objects.toString(form.get("active"),"");TypedFields.require(Set.of("true","false").contains(active),"Choose active or inactive");form.put("active",Boolean.parseBoolean(active));input=form;}result=id.isEmpty()?CustomerAccounts.save(c.db,id,input):CustomerAccounts.manage(c.db,id,input);if(!api)return redirect("/admin/customer-accounts/"+(id.isEmpty()?result.get("account_id"):id));}
+            else if(id.isEmpty()){c.noQuery();result=map("accounts",c.db.all("SELECT * FROM os_customer_account ORDER BY name,account_id LIMIT 200"),"groups",Service.page(c.db,"sys_user_group",Map.of("sysparm_limit","100"),"").rows());}
+            else{TypedFields.require(Set.of("username").containsAll(c.arguments().keySet()),"Use username only for contact lookup");result=CustomerAccounts.page(c.db,id);result.put("selected_contact",CustomerAccounts.lookup(c.db,c.arguments().getOrDefault("username","")));}
+            return api?json(map("result",result),200):view(c,id.isEmpty()?"customer-accounts":"customer-account",map("table","customer_case","definition",map("label","Customer service"),"page",result));
+        }
+        if(Set.of("/customer-service","/api/openservice/customer-service").contains(path)){
+            method(method,"GET");c.uniqueQuery();var result=CustomerCases.portal(c.db,c.arguments());return path.startsWith("/api/")?json(map("result",result),200):view(c,"customer-service",map("table","customer_case","definition",map("label","Customer service"),"page",result));
+        }
+        Matcher customerOffering=Pattern.compile("/(customer-service|api/openservice/customer-service)/entitlements/([0-9a-f]{32})").matcher(path);
+        if(customerOffering.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=customerOffering.group(2);boolean api=path.startsWith("/api/");
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("account_revision","contact_revision","entitlement_revision"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));input=form;}var item=CustomerCases.create(c.db,id,input);return api?json(map("result",FieldAccess.serialize(c.db,item)),201):redirect("/record/customer_case/"+item.get("sys_id"));}
+            var result=CustomerCases.offering(c.db,id);return api?json(map("result",result),200):view(c,"customer-intake",map("table","customer_case","definition",map("label","Customer service"),"page",result,"intakeKey",Values.id()));
+        }
+        Matcher customerSnapshot=Pattern.compile("/api/openservice/customer-cases/([0-9a-f]{32})/intake").matcher(path);
+        if(customerSnapshot.matches()){method(method,"GET");c.noQuery();var result=CustomerCases.snapshot(c.db,customerSnapshot.group(1));return json(map("result",result),200);}
         if(Set.of("/major-incidents","/api/openservice/major-incidents").contains(path)){
             method(method,"GET");c.uniqueQuery();var result=MajorIncidents.queue(c.db,c.arguments());return path.startsWith("/api/")?json(map("result",result),200):view(c,"major-incident-queue",map("table","incident","queue",result));
         }
@@ -2953,6 +2972,7 @@ public class WebController {
                         "definition",
                         definition,
                         "submittedAnswers",item!=null && table.equals("sc_request") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"description")?CatalogueQuestions.answers(c.db,id):List.of(),
+                        "customerIntake",item!=null && table.equals("customer_case") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"description")?CustomerCases.snapshot(c.db,id):null,
                         "catalogueProgress",item!=null && table.equals("sc_request") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"state")?CatalogueWorkflows.progress(c.db,id):null,
                         "hasFulfilment",item!=null && table.equals("sc_request") && Fulfilment.readable(c.db) && c.db.count("SELECT COUNT(*) FROM os_fulfilment WHERE request_id=?",id)>0,
                         "canWriteRecord",
