@@ -1034,6 +1034,10 @@ public class WebController {
         if(noticeTarget.matches()){
             method(method,"GET");c.noQuery();c.uniqueQuery();String target=NoticeTargets.open(c.db,noticeTarget.group(1));return path.startsWith("/api/")?json(map("result",map("url",target)),200):redirect(target);
         }
+        Matcher workflowInsights=Pattern.compile("/(?:workspace/([a-z_][a-z_0-9]*)/insights|api/openservice/insights/([a-z_][a-z_0-9]*))").matcher(path);
+        if(workflowInsights.matches()){
+            method(method,"GET");c.uniqueQuery();boolean api=path.startsWith("/api/");String table=Objects.toString(workflowInsights.group(1),workflowInsights.group(2));var result=WorkflowInsights.page(c.db,table,c.arguments(),java.time.Instant.now().getEpochSecond());return api?json(map("result",result),200):view(c,"workflow-insights",map("table",table,"page",result));
+        }
         Matcher knowledgeGovernance=Pattern.compile("/(?:admin|api/openservice)/knowledge/([0-9a-f]{32})/review").matcher(path);
         if(knowledgeGovernance.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();c.noQuery();boolean api=path.startsWith("/api/");String id=knowledgeGovernance.group(1);Map<String,Object> result;
