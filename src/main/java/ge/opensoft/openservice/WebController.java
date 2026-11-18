@@ -308,6 +308,14 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/assets") || path.equals("/api/openservice/assets")){
+            method(method,"GET");c.noQuery();c.uniqueQuery();SecurityIncidents.staff(c.db);var records=Service.page(c.db,"alm_asset",Map.of("sysparm_limit","100"),"");return path.startsWith("/api/")?json(map("result",map("items",records.rows(),"total",records.total())),200):view(c,"assets",map("table","alm_asset","definition",Service.schema(c.db,"alm_asset"),"assets",records.rows(),"can_create",RecordPolicy.allows(Service.schema(c.db,"alm_asset"),"create",c.db.viewerRole),"can_create_stockroom",RecordPolicy.allows(Service.schema(c.db,"stockroom"),"read",c.db.viewerRole) && RecordPolicy.allows(Service.schema(c.db,"stockroom"),"create",c.db.viewerRole)));
+        }
+        Matcher custody=Pattern.compile("/(?:record/alm_asset|api/openservice/assets)/([0-9a-f]{32})/custody").matcher(path);
+        if(custody.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=custody.group(1);if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));input=form;}var result=AssetCustody.save(c.db,id,input);return api?json(map("result",result),200):redirect(path);}return api?json(map("result",AssetCustody.page(c.db,id)),200):view(c,"asset-custody",map("table","alm_asset","definition",Service.schema(c.db,"alm_asset"),"page",AssetCustody.page(c.db,id),"custodyPath",path));
+        }
+
         Matcher conversion=Pattern.compile("/(?:record/demand|api/openservice/demands)/([0-9a-f]{32})/project").matcher(path);
         if(conversion.matches()){
             method(method,"POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("record_revision",Service.number(Objects.toString(form.get("record_revision"),""),0,Integer.MAX_VALUE));input=form;}var result=ProjectDelivery.convert(c.db,conversion.group(1),input);return api?json(map("result",result),200):redirect("/record/project/"+result.get("sys_id")+"/delivery");

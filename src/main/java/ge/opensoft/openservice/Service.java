@@ -165,6 +165,7 @@ public final class Service {
         RiskAssessments.insertion(item);
         DemandPlanning.insertion(item);
         ProjectDelivery.insertion(item);
+        AssetCustody.insertion(item);
         SecurityIncidents.insertion(db,item);
         VulnerabilityResponse.insertion(db,item);
         EmployeeOnboarding.insertion(db,item.get("sys_id").toString());
@@ -207,6 +208,7 @@ public final class Service {
         RiskAssessments.guard(db,item);
         DemandPlanning.guard(db,item);
         ProjectDelivery.guard(db,item);
+        AssetCustody.guard(db,item);
         SecurityIncidents.guard(db,item);
         VulnerabilityResponse.guard(db,item);
         FieldDispatch.parentGuard(db,item);
@@ -291,6 +293,7 @@ public final class Service {
     public static void remove(Store.Db db, Map<String, Object> item, String actor)
             throws SQLException {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
+        AssetCustody.deleting(db,item.get("sys_id").toString());
         ProjectDelivery.deleting(db,item.get("sys_id").toString());
         RecordScopes.deleting(db,item.get("sys_id").toString());
         WorkTasks.deleting(db,item.get("sys_id").toString());

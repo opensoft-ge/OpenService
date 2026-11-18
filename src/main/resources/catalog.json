@@ -617,5 +617,97 @@
         "type": "date"
       }
     }
+  },
+  "alm_asset": {
+    "label": "Inventory assets",
+    "prefix": "AST",
+    "fields": {
+      "short_description": "Asset name",
+      "description": "Asset details",
+      "asset_tag": "Asset tag",
+      "model": "Model",
+      "serial_number": "Serial number",
+      "state": "Custody state"
+    },
+    "states": {
+      "registered": "Registered",
+      "in_stock": "In stock",
+      "in_use": "In use",
+      "retired": "Retired"
+    },
+    "flow": {
+      "registered": [
+        "in_stock"
+      ],
+      "in_stock": [
+        "in_use",
+        "retired"
+      ],
+      "in_use": [
+        "in_stock"
+      ],
+      "retired": []
+    },
+    "record_roles": {
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    },
+    "field_rules": {
+      "asset_tag": {
+        "type": "string",
+        "max_length": 80
+      }
+    }
+  },
+  "stockroom": {
+    "label": "Stockrooms",
+    "prefix": "STK",
+    "fields": {
+      "short_description": "Stockroom name",
+      "description": "Stockroom location and instructions",
+      "state": "Availability"
+    },
+    "states": {
+      "active": "Active",
+      "retired": "Retired"
+    },
+    "flow": {
+      "active": [
+        "retired"
+      ],
+      "retired": [
+        "active"
+      ]
+    },
+    "record_roles": {
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    }
   }
 }

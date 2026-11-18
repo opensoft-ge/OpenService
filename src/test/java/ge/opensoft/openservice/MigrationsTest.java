@@ -983,13 +983,15 @@ class MigrationsTest {
                 try (var db = future.get(30, TimeUnit.SECONDS).open()) {
                     assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
                     assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
-                    assertEquals(15, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertEquals(17, db.count("SELECT COUNT(*) FROM os_schema"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='risk'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='security_incident'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='vulnerability'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='portfolio'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='demand'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='project'"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='alm_asset'"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='stockroom'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='hr_case'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='customer_case'"));
                 }
@@ -1004,5 +1006,13 @@ class MigrationsTest {
         for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Retained before project upgrade",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));var page=ProjectDelivery.page(db,project);assertEquals("complete",Values.object(page.get("record")).get("state"));assertEquals(demand,Values.object(page.get("demand")).get("sys_id"));assertEquals(demand,RecordScopes.scope(db,project).get("parent_id"));var schedule=ProjectDelivery.schedulePage(db,project,task);assertEquals(true,schedule.get("current"));assertEquals(true,Values.object(Values.object(schedule.get("schedule")).get("detail")).get("milestone"));assertEquals("Retained verified delivery outcome",Values.object(schedule.get("task")).get("outcome"));assertEquals(1,Values.objects(schedule.get("history")).size());assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
     }
 
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void assetUpgradeRetainsCustody(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String retained,asset,stock,ci;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before inventory upgrade"),"admin").get("sys_id").toString();db.update("DROP TABLE os_asset_movement");db.update("DROP TABLE os_asset_identity");db.update("DELETE FROM os_schema WHERE name IN ('alm_asset','stockroom')");db.update("DELETE FROM os_migration WHERE version>=71");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_asset_identity"));db.connection.rollback();assertEquals(70,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","UpgradeCustodyRecipient","role","requester","password",WorkflowSupport.PASSWORD));stock=Service.create(db,"stockroom",Values.map("short_description","Retained stockroom"),"admin").get("sys_id").toString();ci=Service.create(db,"cmdb_ci",Values.map("short_description","Retained operational CI"),"admin").get("sys_id").toString();asset=Service.create(db,"alm_asset",Values.map("short_description","Retained inventory asset","asset_tag","UPGRADE-ASSET-001","model","Retained model","serial_number","Retained serial"),"admin").get("sys_id").toString();AssetCustody.save(db,asset,Values.map("operation","receive","revision",0,"record_revision",0,"reason","Retained receipt evidence","stockroom_id",stock,"ci_id",ci));AssetCustody.save(db,asset,Values.map("operation","issue","revision",1,"record_revision",1,"reason","Retained handover evidence","username","UpgradeCustodyRecipient"));AssetCustody.save(db,asset,Values.map("operation","return","revision",2,"record_revision",2,"reason","Retained return evidence","stockroom_id",stock));AssetCustody.save(db,asset,Values.map("operation","retire","revision",3,"record_revision",3,"reason","Retained retirement evidence","disposition","donated"));db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Retained before inventory upgrade",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));var p=AssetCustody.page(db,asset);assertEquals("retired",Values.object(p.get("record")).get("state"));assertEquals(4,Values.objects(p.get("history")).size());assertEquals(ci,Values.object(p.get("ci")).get("sys_id"));assertEquals("Retained retirement evidence",Values.object(Values.object(p.get("movement")).get("detail")).get("reason"));assertEquals("UpgradeCustodyRecipient",Values.object(Values.objects(p.get("history")).get(2).get("assignee")).get("name"));assertEquals(stock,Values.object(Values.objects(p.get("history")).get(1).get("stockroom")).get("sys_id"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
 
 }

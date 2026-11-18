@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 70;
+    static final int VERSION = 71;
 
     private Migrations() {}
 
@@ -652,6 +652,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_project_origin(project_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,demand_id VARCHAR(32) NOT NULL UNIQUE REFERENCES os_record(sys_id),demand_revision INTEGER NOT NULL,assessment_revision INTEGER NOT NULL,actor_id VARCHAR(32) NOT NULL,created TEXT NOT NULL)");
             db.update("CREATE TABLE IF NOT EXISTS os_project_schedule(task_id VARCHAR(32) NOT NULL REFERENCES os_case_task(task_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(task_id,revision))");
             db.update("INSERT INTO os_migration(version,name) VALUES(70,?)","demand delivery projects with reviewed task and milestone schedules");
+        }
+
+        if(version<71){
+            db.update("CREATE TABLE IF NOT EXISTS os_asset_identity(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id),asset_tag VARCHAR(80) NOT NULL UNIQUE,ci_id VARCHAR(32) NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_asset_movement(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),revision INTEGER NOT NULL,state VARCHAR(20) NOT NULL,stockroom_id VARCHAR(32) NOT NULL,assignee_id VARCHAR(32) NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_asset_custody_stock ON os_asset_movement(stockroom_id,state)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(71,?)","distinct asset identity and retained inventory custody movements");
         }
 
     }
