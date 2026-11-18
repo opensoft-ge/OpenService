@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 73;
+    static final int VERSION = 74;
 
     private Migrations() {}
 
@@ -673,6 +673,14 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_ai_triage(run_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL,record_id VARCHAR(32) NOT NULL,record_revision INTEGER NOT NULL,source_fields TEXT NOT NULL,envelope TEXT NOT NULL,state VARCHAR(20) NOT NULL,created_at BIGINT NOT NULL,action_fingerprint VARCHAR(64) NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_ai_triage_owner ON os_ai_triage(owner_id,record_id)");
             db.update("INSERT INTO os_migration(version,name) VALUES(73,?)","reviewed incident AI triage and retained execution receipts");
+        }
+
+        if(version<74){
+            db.update("CREATE TABLE IF NOT EXISTS os_discovery_source(source_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,alias VARCHAR(80) NOT NULL,path TEXT NOT NULL,priority INTEGER NOT NULL,attributes TEXT NOT NULL,allow_create INTEGER NOT NULL,adopt_existing INTEGER NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_discovery_identity(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id),serial_number VARCHAR(160) NOT NULL UNIQUE)");
+            db.update("CREATE TABLE IF NOT EXISTS os_discovery_report(report_id VARCHAR(32) PRIMARY KEY,source_id VARCHAR(32) NOT NULL REFERENCES os_discovery_source(source_id),external_id VARCHAR(160) NOT NULL,sha256 VARCHAR(64) NOT NULL,provenance_hash VARCHAR(64) NOT NULL,observed_at TEXT NOT NULL,source_revision INTEGER NOT NULL,created TEXT NOT NULL,actor_id VARCHAR(32) NOT NULL,detail TEXT NOT NULL,UNIQUE(source_id,external_id))");
+            db.update("CREATE TABLE IF NOT EXISTS os_discovery_field(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),field VARCHAR(80) NOT NULL,source_id VARCHAR(32) NOT NULL REFERENCES os_discovery_source(source_id),priority INTEGER NOT NULL,observed_at TEXT NOT NULL,value_hash VARCHAR(64) NOT NULL,report_id VARCHAR(32) NOT NULL,released INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(record_id,field))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(74,?)","native CI discovery identity and per-field source reconciliation");
         }
 
     }

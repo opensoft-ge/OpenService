@@ -166,6 +166,7 @@ public final class Service {
         DemandPlanning.insertion(item);
         ProjectDelivery.insertion(item);
         AssetCustody.insertion(item);
+        DiscoveryReconciliation.guard(db,item);
         SecurityIncidents.insertion(db,item);
         VulnerabilityResponse.insertion(db,item);
         EmployeeOnboarding.insertion(db,item.get("sys_id").toString());
@@ -209,6 +210,7 @@ public final class Service {
         DemandPlanning.guard(db,item);
         ProjectDelivery.guard(db,item);
         AssetCustody.guard(db,item);
+        DiscoveryReconciliation.guard(db,item);
         SecurityIncidents.guard(db,item);
         VulnerabilityResponse.guard(db,item);
         FieldDispatch.parentGuard(db,item);
@@ -294,6 +296,7 @@ public final class Service {
             throws SQLException {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
         AssetCustody.deleting(db,item.get("sys_id").toString());
+        DiscoveryReconciliation.deleting(db,item.get("sys_id").toString());
         ProjectDelivery.deleting(db,item.get("sys_id").toString());
         RecordScopes.deleting(db,item.get("sys_id").toString());
         WorkTasks.deleting(db,item.get("sys_id").toString());
