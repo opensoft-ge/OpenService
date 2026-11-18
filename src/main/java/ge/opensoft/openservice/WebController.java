@@ -620,6 +620,13 @@ public class WebController {
             return view(c,"connector-console",map("table","operations","connector",ConnectorConsole.page(c.db,alias),"probeKey",id(),"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
         }
 
+        Matcher clockPolicy=Pattern.compile("/(admin|api/openservice)/clock-policies(?:/([0-9a-f]{32}))?").matcher(path);
+        if(clockPolicy.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(clockPolicy.group(2),"");
+            if(method.equals("POST")){c.noQuery();var result=ConditionalClocks.save(c.db,id,api?body(c):ConditionalClocks.form(c.db,c.arguments()));return api?json(map("result",result),200):redirect("/admin/clock-policies/"+object(result.get("policy")).get("policy_id"));}
+            var result=ConditionalClocks.page(c.db,id,c.arguments());return api?json(map("result",result),200):view(c,"clock-policies",map("table","operations","page",result));
+        }
+
         Matcher clockEscalation=Pattern.compile("/(?:api/openservice/clocks|record/([a-z][a-z0-9_]*)/([0-9a-f]{32})/clocks)/([0-9a-f]{32})/escalation").matcher(path);
         if(clockEscalation.matches()){
             method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();String id=clockEscalation.group(3);boolean api=path.startsWith("/api/");var current=SlaEscalations.page(c.db,id);var clock=object(current.get("clock"));if(!api && (!clock.get("table_name").equals(clockEscalation.group(1)) || !clock.get("record_id").equals(clockEscalation.group(2))))throw new Failure(404,"Clock is not on this record");

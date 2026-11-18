@@ -156,6 +156,7 @@ public final class Service {
         data.put("number", definition.get("prefix") + String.format(Locale.ROOT, "%07d", sequence));
         save(db, item);
         audit(db, item, actor, "created", map("after", serialize(item)));
+        ConditionalClocks.changed(db,item,System.currentTimeMillis());
         return item;
     }
 
@@ -289,6 +290,7 @@ public final class Service {
                         ((Number) item.get("revision")).intValue() + 1));
         save(db, item);
         audit(db, item, actor, "updated", map("before", before, "after", serialize(item)));
+        ConditionalClocks.changed(db,item,System.currentTimeMillis());
         return item;
     }
 

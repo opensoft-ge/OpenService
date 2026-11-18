@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 77;
+    static final int VERSION = 78;
 
     private Migrations() {}
 
@@ -702,6 +702,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_sla_escalation(sla_id VARCHAR(32) PRIMARY KEY REFERENCES os_sla(sla_id) ON DELETE CASCADE,definition TEXT NOT NULL,owner_id VARCHAR(32) NOT NULL,created_at BIGINT NOT NULL)");
             db.update("CREATE TABLE IF NOT EXISTS os_sla_threshold(sla_id VARCHAR(32) NOT NULL REFERENCES os_sla(sla_id) ON DELETE CASCADE,percent INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(sla_id,percent))");
             db.update("INSERT INTO os_migration(version,name) VALUES(77,?)","known original SLA budgets and current-recipient warning receipts");
+        }
+
+        if(version<78){
+            db.update("CREATE TABLE IF NOT EXISTS os_clock_policy(policy_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,table_name VARCHAR(80) NOT NULL,definition TEXT NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL,owner_id VARCHAR(32) NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_clock_binding(policy_id VARCHAR(32) NOT NULL REFERENCES os_clock_policy(policy_id),record_id VARCHAR(32) NOT NULL,sla_id VARCHAR(32) NOT NULL,definition TEXT NOT NULL,revision INTEGER NOT NULL,last_outcome VARCHAR(40) NOT NULL,PRIMARY KEY(policy_id,record_id))");
+            db.update("CREATE TABLE IF NOT EXISTS os_clock_transition(policy_id VARCHAR(32) NOT NULL,record_id VARCHAR(32) NOT NULL,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(policy_id,record_id,revision),FOREIGN KEY(policy_id,record_id) REFERENCES os_clock_binding(policy_id,record_id))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(78,?)","reusable state-based service clock policies with retained transitions");
         }
 
     }

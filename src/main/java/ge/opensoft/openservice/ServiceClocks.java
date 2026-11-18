@@ -89,7 +89,7 @@ final class ServiceClocks {
         var rows=db.all("SELECT sla_id,purpose,state,remaining_ms,last_tick,breached_at FROM os_sla WHERE table_name=? AND record_id=? ORDER BY last_tick DESC,sla_id LIMIT 101",table,id);
         boolean more=rows.size()>100;
         if(more) rows.removeLast();
-        return map("table",table,"record_id",id,"clocks",rows,"truncated",more);
+        return map("table",table,"record_id",id,"clocks",rows,"truncated",more,"policies",ConditionalClocks.history(db,table,id));
     }
 
     static void control(Store.Db db, String actor, String id, String operation, long now)
