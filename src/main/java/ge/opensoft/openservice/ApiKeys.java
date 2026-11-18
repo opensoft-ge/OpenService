@@ -122,6 +122,10 @@ final class ApiKeys {
                         key.get("user_id"),
                         key.get("auth_revision"));
         if (user == null) throw new Failure(401, "Invalid API key");
+        boolean mail=key.get("table_name").equals("sc_request") && path.matches("/api/openservice/inbound-mail/[0-9a-f]{32}");
+        if(mail){
+            if(!method.equals("POST") || ((Number)key.get("can_write")).intValue()!=1)throw new Failure(403,"API key does not permit this operation");
+        }else{
         String collection = "/api/now/table/" + Pattern.quote(key.get("table_name").toString());
         boolean record = path.matches(collection + "/[0-9a-f]{32}");
         if (!path.matches(collection) && !record)
@@ -132,6 +136,7 @@ final class ApiKeys {
                                 ? !Set.of("PATCH", "PUT").contains(method)
                                 : !method.equals("POST"))))
             throw new Failure(403, "API key does not permit this operation");
+        }
         user.put("api_key_id", key.get("key_id"));
         return user;
     }

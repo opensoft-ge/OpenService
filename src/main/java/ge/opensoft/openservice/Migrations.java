@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 71;
+    static final int VERSION = 72;
 
     private Migrations() {}
 
@@ -659,6 +659,14 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_asset_movement(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),revision INTEGER NOT NULL,state VARCHAR(20) NOT NULL,stockroom_id VARCHAR(32) NOT NULL,assignee_id VARCHAR(32) NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
             db.update("CREATE INDEX IF NOT EXISTS ix_asset_custody_stock ON os_asset_movement(stockroom_id,state)");
             db.update("INSERT INTO os_migration(version,name) VALUES(71,?)","distinct asset identity and retained inventory custody movements");
+        }
+
+        if(version<72){
+            db.update("CREATE TABLE IF NOT EXISTS os_inbound_mailbox(mailbox_id VARCHAR(32) PRIMARY KEY,address VARCHAR(254) NOT NULL UNIQUE,sender_domain VARCHAR(253) NOT NULL,gateway_id VARCHAR(32) NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_inbound_mail_thread(thread_id VARCHAR(32) PRIMARY KEY,mailbox_id VARCHAR(32) NOT NULL REFERENCES os_inbound_mailbox(mailbox_id),sender_id VARCHAR(32) NOT NULL,record_id VARCHAR(32) NOT NULL,created TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_inbound_mail_receipt(mailbox_id VARCHAR(32) NOT NULL REFERENCES os_inbound_mailbox(mailbox_id),delivery_id VARCHAR(160) NOT NULL,fingerprint VARCHAR(64) NOT NULL,sender_id VARCHAR(32) NOT NULL,record_id VARCHAR(32) NOT NULL,thread_id VARCHAR(32) NOT NULL REFERENCES os_inbound_mail_thread(thread_id),gateway_id VARCHAR(32) NOT NULL,mailbox_revision INTEGER NOT NULL,created TEXT NOT NULL,PRIMARY KEY(mailbox_id,delivery_id))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_mail_receipt_thread ON os_inbound_mail_receipt(thread_id)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(72,?)","authenticated inbound mailboxes and owned request reply threads");
         }
 
     }

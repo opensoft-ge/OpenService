@@ -308,6 +308,13 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher inbound=Pattern.compile("/api/openservice/inbound-mail/([0-9a-f]{32})").matcher(path);
+        if(inbound.matches()){method(method,"POST");c.noQuery();c.uniqueQuery();return json(map("result",InboundMail.submit(c.db,c.user,inbound.group(1),body(c))),200);}
+        Matcher mailbox=Pattern.compile("/(?:admin/inbound-mail|api/openservice/inbound-mailboxes)(?:/(new|[0-9a-f]{32}))?").matcher(path);
+        if(mailbox.matches()){
+            method(method,"GET","POST");c.admin();c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(mailbox.group(1),"");if(id.equals("new"))id="";if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));String active=Objects.toString(form.get("active"),"");if(!Set.of("true","false").contains(active))throw new Failure(400,"Choose active or inactive");form.put("active",Boolean.valueOf(active));input=form;}var result=InboundMail.configure(c.db,id,input);return api?json(map("result",result),200):redirect("/admin/inbound-mail/"+object(result.get("mailbox")).get("mailbox_id"));}var result=InboundMail.adminPage(c.db,id);return api?json(map("result",result),200):view(c,"inbound-mail",map("table","operations","page",result,"mailboxPath",id.isEmpty()?"/admin/inbound-mail/new":path));
+        }
+
         if(path.equals("/assets") || path.equals("/api/openservice/assets")){
             method(method,"GET");c.noQuery();c.uniqueQuery();SecurityIncidents.staff(c.db);var records=Service.page(c.db,"alm_asset",Map.of("sysparm_limit","100"),"");return path.startsWith("/api/")?json(map("result",map("items",records.rows(),"total",records.total())),200):view(c,"assets",map("table","alm_asset","definition",Service.schema(c.db,"alm_asset"),"assets",records.rows(),"can_create",RecordPolicy.allows(Service.schema(c.db,"alm_asset"),"create",c.db.viewerRole),"can_create_stockroom",RecordPolicy.allows(Service.schema(c.db,"stockroom"),"read",c.db.viewerRole) && RecordPolicy.allows(Service.schema(c.db,"stockroom"),"create",c.db.viewerRole)));
         }

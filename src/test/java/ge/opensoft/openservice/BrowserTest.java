@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void inboundMailRequestReplyAndMailboxControlJourney() throws Exception { InboundMailBrowserAcceptance.run(this); }
     @Test void assetReceiptHandoverReturnAndRetirementJourney() throws Exception { AssetCustodyBrowserAcceptance.run(this); }
     @Test void approvedDemandProjectMilestoneJourney() throws Exception { ProjectDeliveryBrowserAcceptance.run(this); }
     @Test void scoredPortfolioDemandDecisionJourney() throws Exception { DemandPlanningBrowserAcceptance.run(this); }
