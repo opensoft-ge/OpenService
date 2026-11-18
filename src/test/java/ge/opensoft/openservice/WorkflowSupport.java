@@ -16,6 +16,11 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void majorIncidentsRun() throws Exception { MajorIncidentsAcceptance.run(this); }
+    @Test void majorIncidentsDecisions() throws Exception { MajorIncidentsAcceptance.decisions(this); }
+    @Test void majorIncidentsBoundaries() throws Exception { MajorIncidentsAcceptance.boundaries(this); }
+    @Test void majorIncidentsAuthority() throws Exception { MajorIncidentsAcceptance.authority(this); }
+    @Test void majorIncidentsCapacityAndGates() throws Exception { MajorIncidentsAcceptance.capacityAndGates(this); }
     @Test void changeSchedulingWorkflow() throws Exception { ChangeSchedulingAcceptance.run(this); }
     @Test void changeSchedulingBoundaries() throws Exception { ChangeSchedulingAcceptance.boundaries(this); }
     @Test void changeSchedulingAuthority() throws Exception { ChangeSchedulingAcceptance.authority(this); }
@@ -155,7 +160,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",

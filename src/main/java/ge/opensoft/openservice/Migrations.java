@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 57;
+    static final int VERSION = 58;
 
     private Migrations() {}
 
@@ -566,6 +566,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_change_schedule(change_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,ci_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),starts BIGINT NOT NULL,ends BIGINT NOT NULL,revision INTEGER NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_change_schedule_ci ON os_change_schedule(ci_id,starts,ends)");
             db.update("INSERT INTO os_migration(version,name) VALUES(57,?)","change reservations with current maintenance and blackout windows");
+        }
+        if(version<58){
+            db.update("CREATE TABLE IF NOT EXISTS os_major_incident(incident_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,status VARCHAR(20) NOT NULL,commander_id VARCHAR(32) NOT NULL,proposer_id VARCHAR(32) NOT NULL,proposal TEXT NOT NULL,decision TEXT NOT NULL,impact TEXT NOT NULL,restoration TEXT NOT NULL,review_cause TEXT NOT NULL,review_lessons TEXT NOT NULL,review_actions TEXT NOT NULL,created VARCHAR(40) NOT NULL,updated VARCHAR(40) NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_major_link(child_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id),major_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_major_link_root ON os_major_link(major_id)");
+            db.update("CREATE TABLE IF NOT EXISTS os_major_update(update_id VARCHAR(32) PRIMARY KEY,parent_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,message TEXT NOT NULL,actor_id VARCHAR(32) NOT NULL,ordinal INTEGER NOT NULL,created VARCHAR(40) NOT NULL,UNIQUE(parent_id,ordinal))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(58,?)","major incident command, restoration and post-incident review");
         }
     }
 

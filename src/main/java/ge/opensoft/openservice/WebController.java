@@ -503,6 +503,15 @@ public class WebController {
             else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));result=CatalogueQuestions.edit(c.db,c.db.viewerId,id,form);}
             return api?json(map("result",result),200):redirect("/admin/catalogue/"+id+"/questions");
         }
+        if(Set.of("/major-incidents","/api/openservice/major-incidents").contains(path)){
+            method(method,"GET");c.uniqueQuery();var result=MajorIncidents.queue(c.db,c.arguments());return path.startsWith("/api/")?json(map("result",result),200):view(c,"major-incident-queue",map("table","incident","queue",result));
+        }
+        Matcher majorIncident=Pattern.compile("/(record/incident|api/openservice/incidents)/([0-9a-f]{32})/major").matcher(path);
+        if(majorIncident.matches()){
+            method(method,"GET","POST");c.uniqueQuery();boolean api=path.startsWith("/api/");String id=majorIncident.group(2);Map<String,Object> result;
+            if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));if(form.containsKey("child_revision"))form.put("child_revision",Service.number(form.get("child_revision").toString(),0,Integer.MAX_VALUE));input=form;}result=MajorIncidents.command(c.db,id,input);if(!api)return redirect(path);}
+            else result=MajorIncidents.page(c.db,id,c.arguments());return api?json(map("result",result),200):view(c,"major-incident",map("table","incident","page",result,"query",c.arguments().getOrDefault("q","")));
+        }
         Matcher changeWindows=Pattern.compile("/(admin|api/openservice)/change-windows/([0-9a-f]{32})").matcher(path);
         if(changeWindows.matches()){
             c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String ci=changeWindows.group(2);Map<String,Object> result;
