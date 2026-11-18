@@ -16,6 +16,19 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void reportSchedulesAuthority() throws Exception { ReportSchedulesAcceptance.authority(this); }
+    @Test void reportSchedulesLimits() throws Exception { ReportSchedulesAcceptance.limits(this); }
+    @Test void reportSchedulesProofs() throws Exception { ReportSchedulesAcceptance.proofs(this); }
+    @Test void reportSchedulesRetries() throws Exception { ReportSchedulesAcceptance.retries(this); }
+
+    @Test void reportSchedulesConfiguration() throws Exception { ReportSchedulesAcceptance.configuration(this); }
+    @Test void reportSchedulesIsolation() throws Exception { ReportSchedulesAcceptance.isolation(this); }
+    @Test void reportSchedulesInvalidation() throws Exception { ReportSchedulesAcceptance.invalidation(this); }
+    @Test void reportSchedulesDefinition() throws Exception { ReportSchedulesAcceptance.definition(this); }
+    @Test void reportSchedulesJobs() throws Exception { ReportSchedulesAcceptance.jobs(this); }
+    @Test void reportSchedulesConcurrency() throws Exception { ReportSchedulesAcceptance.concurrency(this); }
+
+    @Test void reportSchedulesRun() throws Exception { ReportSchedulesAcceptance.run(this); }
     @Test void groupApprovalsConfiguration() throws Exception { GroupApprovalsAcceptance.configuration(this); }
     @Test void groupApprovalsRejection() throws Exception { GroupApprovalsAcceptance.rejection(this); }
     @Test void groupApprovalsManual() throws Exception { GroupApprovalsAcceptance.manual(this); }
@@ -370,7 +383,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_approval_group", "os_directory", "os_offboarding", "os_totp_recovery", "os_totp_setup", "os_totp_challenge", "os_totp_attempt", "os_totp", "os_oidc_challenge", "os_oidc_binding", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_report_schedule", "os_approval_group", "os_directory", "os_offboarding", "os_totp_recovery", "os_totp_setup", "os_totp_challenge", "os_totp_attempt", "os_totp", "os_oidc_challenge", "os_oidc_binding", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }

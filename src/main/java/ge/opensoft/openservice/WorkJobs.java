@@ -32,7 +32,7 @@ final class WorkJobs {
                 "Provide kind, key, payload and optional run_at");
         String kind = text(body.get("kind"), 40), key = text(body.get("key"), 80);
         require(
-                Set.of("notification", "connector.read", "connector.write", "migration.step", "migration.fetch", "approval.reminder", "workflow.run").contains(kind),
+                Set.of("notification", "connector.read", "connector.write", "migration.step", "migration.fetch", "approval.reminder", "workflow.run", "report.capture").contains(kind),
                 "Unsupported job kind");
         var payload = object(body.get("payload"));
         String serialized = JSON.writeValueAsString(new TreeMap<>(payload));
@@ -69,6 +69,7 @@ final class WorkJobs {
         if(kind.equals("connector.write")){require(key.equals(payload.get("key")),"Job key must match the reviewed action key");ConnectorActions.validate(store,db,payload,true);}
         if(kind.equals("migration.fetch"))MigrationFetch.validate(db,actor,payload);
         if(kind.equals("approval.reminder"))ScheduledApprovalReminders.validate(db,actor,payload);
+        if(kind.equals("report.capture"))ReportSchedules.validate(db,actor,key,payload);
         if(kind.equals("workflow.run"))EventWorkflows.validate(db,actor,key,payload);
         var user = db.one("SELECT auth_revision FROM os_user WHERE user_id=?", actor);
         String id = id();
@@ -85,6 +86,7 @@ final class WorkJobs {
                 Outbox.encrypt(store.secret, serialized),
                 availableAt,
                 now);
+        if(kind.equals("report.capture"))ReportSchedules.queued(db,actor,id,payload);
         if(kind.equals("workflow.run"))EventWorkflows.queued(db,id,payload);
         SecurityEvents.record(db, actor, actor, "work.queued", map("job_id", id, "kind", kind));
         return db.one("SELECT " + COLUMNS + " FROM os_work WHERE job_id=?", id);
@@ -136,6 +138,7 @@ final class WorkJobs {
             try {
                 var receipt=object(Outbox.decrypt(store.secret,encrypted).get("receipt"));
                 var allowed=switch(row.get("kind").toString()) {
+                    case "report.capture" -> Set.of("schedule_id","measurement_id","created");
                     case "workflow.run" -> Set.of("run_id","record_id","steps");
                     case "notification" -> Set.of("delivered");
                     case "approval.reminder" -> Set.of("delivered","duplicate");

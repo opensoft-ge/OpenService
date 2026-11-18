@@ -1144,4 +1144,13 @@ class MigrationsTest {
         try(var db=store.open()){PlatformFoundationTest.bind(db);db.update("UPDATE os_user SET auth_revision=auth_revision+1 WHERE user_id=?",f.get("aId"));db.connection.commit();}try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);var recordItem=Service.record(db,table,record);assertEquals(409,assertThrows(Values.Failure.class,()->Service.update(db,table,recordItem,Values.map("state","2"),"admin","admin","0")).status);}
     }
 
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void measurementScheduleUpgradeRetainsQueuedWork(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String retained;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before scheduled measurements"),"admin").get("sys_id").toString();db.update("DROP TABLE os_report_schedule");db.update("DELETE FROM os_migration WHERE version>=86");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_report_schedule"));db.connection.rollback();assertEquals(85,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);var f=ReportSchedulesAcceptance.seed(store);String report=f.get("report").toString();try(var db=store.open()){PlatformFoundationTest.bind(db);ReportSchedules.save(db,report,Values.map("revision",0,"interval_minutes",5,"enabled",true));db.connection.commit();}ReportSchedules.dispatch(store);
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals(1,db.count("SELECT COUNT(*) FROM os_report_schedule"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_work WHERE kind='report.capture' AND state='queued'"));assertEquals("Retained before scheduled measurements",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+        assertTrue(new WorkWorker(new Store(env)).runOne(System.currentTimeMillis()+1000));assertEquals(1,ReportSchedulesAcceptance.captures(new Store(env),report));try(var db=store.open()){PlatformFoundationTest.bind(db);ReportSchedules.save(db,report,Values.map("revision",1,"interval_minutes",5,"enabled",false));db.connection.commit();}assertFalse(new WorkWorker(new Store(env)).runOne(System.currentTimeMillis()+1000));assertEquals(1,ReportSchedulesAcceptance.captures(store,report));
+    }
+
 }

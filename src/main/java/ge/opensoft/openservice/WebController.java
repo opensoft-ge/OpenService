@@ -945,6 +945,13 @@ public class WebController {
         if(migrationRows.matches()){
             method(method,"GET");c.admin();c.uniqueQuery();boolean detail=migrationRows.group(2)!=null,api=path.startsWith("/api/");if(detail)c.noQuery();var result=detail?MigrationRows.inspect(c.db,migrationRows.group(1),migrationRows.group(2),migrationRows.group(3)):MigrationRows.page(c.db,migrationRows.group(1),c.arguments());return api?json(map("result",result),200):view(c,detail?"migration-row":"migration-rows",map("table","migration","inspection",result));
         }
+
+        var measurementSchedule=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/measurement-schedule").matcher(path);
+        if(measurementSchedule.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();c.noQuery();boolean api=path.startsWith("/api/");String id=measurementSchedule.group(1);Map<String,Object> page;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String number:List.of("revision","interval_minutes"))form.put(number,Service.number(Objects.toString(form.get(number),""),0,Integer.MAX_VALUE));String flag=Objects.toString(form.get("enabled"),"");if(!Set.of("true","false").contains(flag))throw new Failure(400,"Choose collection status");form.put("enabled",Boolean.valueOf(flag));input=form;}page=ReportSchedules.save(c.db,id,input);if(!api)return redirect("/reports/"+id+"/measurement-schedule");}else page=ReportSchedules.page(c.db,id);
+            return api?json(map("result",page),200):view(c,"report-schedule",map("table","reports","page",page));
+        }
         Matcher measurements=Pattern.compile("/(?:reports|api/openservice/reports)/([0-9a-f]{32})/measurements").matcher(path);
         if(measurements.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=measurements.group(1);

@@ -1,0 +1,41 @@
+package ge.opensoft.openservice;
+import static ge.opensoft.openservice.Values.*;
+import static ge.opensoft.openservice.TypedFields.require;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.util.*;
+
+/** Recurring current-value observations, privately bound to a current administrator. */
+final class ReportSchedules {
+ private ReportSchedules() {}
+ static void cleanup(Store.Db db)throws SQLException {db.update("DELETE FROM os_report_schedule WHERE report_id NOT IN (SELECT report_id FROM os_saved_report) OR owner_id NOT IN (SELECT user_id FROM os_user)");}
+ static Map<String,Object> page(Store.Db db,String report)throws SQLException {
+  var context=ReportMeasurements.context(db,report);var row=db.one("SELECT * FROM os_report_schedule WHERE report_id=? AND owner_id=?",report,db.viewerId);
+  var schedule=row==null?map("schedule_id","","revision",0,"interval_minutes",60,"enabled",false,"next_at_utc","","status","not_configured","last_job","","job_state","none"):new LinkedHashMap<>(row);
+  if(row!=null){schedule.put("enabled",((Number)row.get("enabled")).intValue()==1);schedule.put("next_at_utc",Instant.ofEpochMilli(((Number)row.get("next_at")).longValue()).toString());var job=db.one("SELECT state FROM os_work WHERE job_id=?",row.get("last_job"));schedule.put("job_state",job==null?"none":job.get("state"));schedule.remove("auth_revision");schedule.remove("definition_hash");}
+  return map("report",context.get("report"),"schedule",schedule);
+ }
+ static Map<String,Object> save(Store.Db db,String report,Object input)throws SQLException {
+  if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");var context=ReportMeasurements.context(db,report);var body=object(input);require(body.keySet().equals(Set.of("revision","interval_minutes","enabled")),"Provide revision, interval_minutes and enabled");require(body.get("revision") instanceof Integer && ((Integer)body.get("revision"))>=0,"Provide a nonnegative integer revision");require(body.get("interval_minutes") instanceof Integer && ((Integer)body.get("interval_minutes"))>=5 && ((Integer)body.get("interval_minutes"))<=10080,"Use an interval of 5 to 10080 whole minutes");require(body.get("enabled") instanceof Boolean,"Enabled must be boolean");
+  var row=db.one("SELECT * FROM os_report_schedule WHERE report_id=? AND owner_id=?",report,db.viewerId);int revision=row==null?0:((Number)row.get("revision")).intValue();if(!body.get("revision").equals(revision))throw new Failure(409,"Schedule changed; reload before saving");boolean enabled=body.get("enabled").equals(true);String schedule=row==null?id():row.get("schedule_id").toString();var actor=db.one("SELECT auth_revision FROM os_user WHERE user_id=?",db.viewerId);
+  if(row==null){require(db.count("SELECT COUNT(*) FROM os_report_schedule")<200,"Measurement schedule limit reached");db.update("INSERT INTO os_report_schedule(schedule_id,report_id,owner_id,revision,auth_revision,definition_hash,interval_minutes,enabled,next_at,last_job,status) VALUES(?,?,?,0,?,'',60,0,0,'','paused')",schedule,report,db.viewerId,actor.get("auth_revision"));}
+  db.update("UPDATE os_report_schedule SET revision=?,auth_revision=?,definition_hash=?,interval_minutes=?,enabled=?,next_at=?,status=? WHERE schedule_id=?",revision+1,actor.get("auth_revision"),context.get("definition_hash"),body.get("interval_minutes"),enabled?1:0,System.currentTimeMillis(),enabled?"enabled":"paused",schedule);SecurityEvents.record(db,db.viewerId,db.viewerId,"report.schedule_saved",map("schedule_id",schedule,"revision",revision+1,"enabled",enabled));return page(db,report);
+ }
+ static Map<String,Object> authority(Store.Db db,String schedule,String actor)throws SQLException {
+  var row=db.one("SELECT * FROM os_report_schedule WHERE schedule_id=? AND owner_id=?",schedule,actor);if(row==null)throw new Failure(404,"Measurement schedule not found");var user=db.one("SELECT * FROM os_user WHERE user_id=?",actor);if(user==null || ((Number)user.get("active")).intValue()!=1 || !user.get("role").equals("admin") || ((Number)user.get("password_reset_required")).intValue()!=0 || ((Number)user.get("auth_revision")).longValue()!=((Number)row.get("auth_revision")).longValue())throw new Failure(403,"Measurement schedule authority is no longer current");db.viewerId=actor;db.viewerRole="admin";var context=ReportMeasurements.context(db,row.get("report_id").toString());if(!context.get("definition_hash").equals(row.get("definition_hash")))throw new Failure(409,"Report definition changed; review and reauthorize its schedule");if(((Number)row.get("enabled")).intValue()!=1)throw new Failure(409,"Measurement schedule is paused");return row;
+ }
+ static Map<String,Object> payload(Map<String,Object> schedule){return map("schedule_id",schedule.get("schedule_id"),"revision",schedule.get("revision"),"scheduled_at",schedule.get("next_at"));}
+ static String key(Map<String,Object> payload){return "measurement:"+payload.get("schedule_id")+":"+payload.get("revision")+":"+payload.get("scheduled_at");}
+ static Map<String,Object> validate(Store.Db db,String actor,String key,Object input)throws SQLException {
+  var body=object(input);require(body.keySet().equals(Set.of("schedule_id","revision","scheduled_at")),"Provide schedule_id, revision and scheduled_at");String id=WorkJobs.text(body.get("schedule_id"),32);require(id.matches("[0-9a-f]{32}"),"Invalid schedule ID");require(body.get("revision") instanceof Number && body.get("scheduled_at") instanceof Number,"Use numeric schedule revision and due time");var row=authority(db,id,actor);if(!row.get("revision").toString().equals(body.get("revision").toString()) || !row.get("next_at").toString().equals(body.get("scheduled_at").toString()) || !key(body).equals(key))throw new Failure(409,"Schedule work does not match the current due slot");if(((Number)row.get("next_at")).longValue()>System.currentTimeMillis())throw new Failure(409,"Measurement schedule is not due yet");if(db.count("SELECT COUNT(*) FROM os_work WHERE job_id=? AND state IN ('queued','processing')",row.get("last_job"))>0)throw new Failure(409,"The previous collection is still pending");return row;
+ }
+ static void queued(Store.Db db,String actor,String job,Map<String,Object> body)throws SQLException {
+  var row=db.one("SELECT interval_minutes FROM os_report_schedule WHERE schedule_id=? AND owner_id=?",body.get("schedule_id"),actor);db.update("UPDATE os_report_schedule SET last_job=?,next_at=?,status='enabled' WHERE schedule_id=?",job,System.currentTimeMillis()+((Number)row.get("interval_minutes")).longValue()*60000,body.get("schedule_id"));
+ }
+ static void dispatch(Store store)throws Exception {
+  try(var db=store.open()){if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");cleanup(db);var rows=db.all("SELECT s.* FROM os_report_schedule s WHERE s.enabled=1 AND s.next_at<=? AND NOT EXISTS(SELECT 1 FROM os_work w WHERE w.job_id=s.last_job AND w.state IN ('queued','processing')) ORDER BY s.next_at,s.schedule_id LIMIT 10",System.currentTimeMillis());for(var row:rows){var savepoint=db.connection.setSavepoint();try{String actor=row.get("owner_id").toString();authority(db,row.get("schedule_id").toString(),actor);var payload=payload(row);WorkJobs.enqueue(store,db,actor,map("kind","report.capture","key",key(payload),"payload",payload));}catch(Failure unavailable){db.connection.rollback(savepoint);db.update("UPDATE os_report_schedule SET enabled=0,status='REPORT_OR_AUTHORITY_UNAVAILABLE' WHERE schedule_id=?",row.get("schedule_id"));}}db.connection.commit();}
+ }
+ static Map<String,Object> execute(Store.Db db,Map<String,Object> job,Map<String,Object> body)throws SQLException {
+  var row=authority(db,WorkJobs.text(body.get("schedule_id"),32),db.viewerId);if(!row.get("revision").toString().equals(body.get("revision").toString()) || !row.get("last_job").equals(job.get("job_id")) || !key(body).equals(job.get("dedupe")))throw new Failure(409,"This collection no longer matches the active schedule");String capture=org.apache.commons.codec.digest.DigestUtils.sha256Hex(key(body)).substring(0,32);var result=ReportMeasurements.capture(db,row.get("report_id").toString(),map("key",capture));return map("schedule_id",row.get("schedule_id"),"measurement_id",result.get("measurement_id"),"created",result.get("created"));
+ }
+}

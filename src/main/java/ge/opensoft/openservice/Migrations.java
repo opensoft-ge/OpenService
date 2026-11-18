@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 85;
+    static final int VERSION = 86;
 
     private Migrations() {}
 
@@ -753,6 +753,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_approval_group(approval_id VARCHAR(32) PRIMARY KEY,group_id VARCHAR(32) NOT NULL,stage_index INTEGER NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(85,?)","ordered group approval evidence");
         }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=86")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_report_schedule(schedule_id VARCHAR(32) PRIMARY KEY,report_id VARCHAR(32) NOT NULL,owner_id VARCHAR(32) NOT NULL,revision INTEGER NOT NULL,auth_revision BIGINT NOT NULL,definition_hash VARCHAR(64) NOT NULL,interval_minutes INTEGER NOT NULL,enabled INTEGER NOT NULL,next_at BIGINT NOT NULL,last_job VARCHAR(32) NOT NULL,status VARCHAR(80) NOT NULL,UNIQUE(report_id,owner_id))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_report_schedule_due ON os_report_schedule(enabled,next_at)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(86,?)","recurring private report measurement schedules");
+        }
+
 
 
 

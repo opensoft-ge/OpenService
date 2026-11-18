@@ -39,6 +39,7 @@ final class WorkWorker {
 
     boolean runOne(long now) throws Exception {
         EventWorkflows.dispatch(store);
+        ReportSchedules.dispatch(store);
         Map<String, Object> job;
         try (var db = store.open()) {
             job = WorkJobs.claim(db, now);
@@ -75,6 +76,7 @@ final class WorkWorker {
                     var payload = Outbox.decrypt(store.secret, job.get("envelope").toString());
                     Object output =
                             switch (job.get("kind").toString()) {
+                                case "report.capture" -> ReportSchedules.execute(db,job,payload);
                                 case "workflow.run" -> EventWorkflows.execute(db,job,payload);
                                 case "notification" ->
                                         Notifications.deliver(
