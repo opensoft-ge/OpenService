@@ -10,6 +10,13 @@ final class RecordAccess {
     private RecordAccess() {}
 
     static String filter(Store.Db db, String recordId, List<Object> parameters) throws SQLException {
+        String own=directFilter(db,recordId,parameters);
+        if(db.viewerId==null || "admin".equals(db.viewerRole))return own;
+        String parent=directFilter(db,"scope_guard.parent_id",parameters);
+        return "("+own+") AND NOT EXISTS (SELECT 1 FROM os_record_scope scope_guard WHERE scope_guard.record_id="+recordId+" AND NOT ("+parent+"))";
+    }
+
+    static String directFilter(Store.Db db, String recordId, List<Object> parameters) throws SQLException {
         // Unbound connections are internal setup/test transactions; HTTP binds every principal.
         if (db.viewerId == null || "admin".equals(db.viewerRole)) return "1=1";
         var readable=new ArrayList<Object>();

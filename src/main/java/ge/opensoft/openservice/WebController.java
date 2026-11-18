@@ -307,6 +307,15 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher recordScope=Pattern.compile("/(?:admin|api/openservice)/record-scopes/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32})").matcher(path);
+        if(recordScope.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();String table=recordScope.group(1),id=recordScope.group(2);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){
+                c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","record_revision"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));if(form.containsKey("parent_revision"))form.put("parent_revision",Service.number(form.get("parent_revision").toString(),0,Integer.MAX_VALUE));input=form;}
+                result=RecordScopes.save(c.db,table,id,input);if(!api)return redirect(path);
+            }else result=RecordScopes.view(c.db,table,id,c.arguments());
+            return api?json(map("result",result),200):view(c,"record-scope",map("table",table,"boundary",result,"query",c.arguments().getOrDefault("q",""),"scopePath","/admin/record-scopes/"+table+"/"+id));
+        }
         Matcher changePlan=Pattern.compile("/(?:record|api/openservice)/change_request/([0-9a-f]{32})/plan").matcher(path);
         if(changePlan.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=changePlan.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;

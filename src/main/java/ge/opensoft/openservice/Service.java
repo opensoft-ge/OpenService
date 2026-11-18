@@ -271,6 +271,7 @@ public final class Service {
     public static void remove(Store.Db db, Map<String, Object> item, String actor)
             throws SQLException {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
+        RecordScopes.deleting(db,item.get("sys_id").toString());
         TypedFields.deleting(db, item);
         audit(db, item, actor, "deleted", map("before", serialize(item)));
         db.update("DELETE FROM os_attachment WHERE record_id=?", item.get("sys_id"));
@@ -288,6 +289,7 @@ public final class Service {
         db.update("DELETE FROM os_problem_link WHERE incident_id=? OR problem_id=?",item.get("sys_id"),item.get("sys_id"));
         db.update("DELETE FROM os_problem_analysis WHERE problem_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_plan WHERE change_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_record_scope WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
 

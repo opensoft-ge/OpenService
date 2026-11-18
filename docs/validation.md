@@ -1,6 +1,6 @@
 # Latest 50-round batch verification
 
-Round **2 of 50** in the [new feature report](auto50-2026-11-18.md) passes **974 tests**, zero failures/errors/skips. Whole Java: **8128/8128 lines, 5401/5401 branches, 571/571 methods**; exact gate passes all five accumulated changed Java files. Both browser-script gates pass. Frozen sources match the local feature commit; existing image/deployment evidence retains its original scope.
+Round **3 of 50** in the [new feature report](auto50-2026-11-18.md) passes **981 tests**, zero failures/errors/skips. Whole Java: **8172/8172 lines, 5465/5465 branches, 576/576 methods**; exact gate passes all seven accumulated changed Java files. Both browser-script gates pass. Frozen sources match the local feature commit; existing image/deployment evidence retains its original scope.
 
 # Automatic development batch — latest verification
 

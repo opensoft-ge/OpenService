@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 53;
+    static final int VERSION = 54;
 
     private Migrations() {}
 
@@ -543,6 +543,11 @@ final class Migrations {
         if(version<53){
             db.update("CREATE TABLE IF NOT EXISTS os_change_plan(change_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(53,?)","reviewed change planning and readiness");
+        }
+        if(version<54){
+            db.update("CREATE TABLE IF NOT EXISTS os_record_scope(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,parent_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),revision INTEGER NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_record_scope_parent ON os_record_scope(parent_id)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(54,?)","live parent permission boundaries for linked records");
         }
     }
 

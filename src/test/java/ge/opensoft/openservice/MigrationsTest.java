@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void parentScopeUpgradePreservesRecordsAndBoundaries(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String parent,child;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);parent=Service.create(db,"problem",Values.map("short_description","Retained parent"),"admin").get("sys_id").toString();child=Service.create(db,"incident",Values.map("short_description","Retained child"),"admin").get("sys_id").toString();db.update("DROP TABLE os_record_scope");db.update("DELETE FROM os_migration WHERE version>=54");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_record_scope"));db.connection.rollback();assertEquals(53,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);RecordScopes.save(db,"incident",child,Values.map("operation","attach","revision",0,"record_revision",0,"parent_table","problem","parent_id",parent,"parent_revision",0));db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);var v=RecordScopes.view(db,"incident",child,Map.of());assertEquals(parent,Values.object(v.get("parent")).get("sys_id"));assertEquals(1,Values.object(v.get("scope")).get("revision"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void changePlanningUpgradePreservesRecordsAndRollsBack(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String id;
         try(var db=store.open()){PlatformFoundationTest.bind(db);id=Service.create(db,"change_request",Values.map("short_description","Retained change"),"admin").get("sys_id").toString();db.update("DROP TABLE os_change_plan");db.update("DELETE FROM os_migration WHERE version>=53");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_change_plan"));db.connection.rollback();assertEquals(52,db.count("SELECT MAX(version) FROM os_migration"));}
