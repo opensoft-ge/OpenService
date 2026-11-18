@@ -150,6 +150,7 @@ public class Store {
         boolean customerResolutionReopen;
         boolean fieldDispatchCommand;
         boolean fieldVisitCommand;
+        boolean securityIntake;
         boolean employeeIntake;
         boolean employeePortal;
 

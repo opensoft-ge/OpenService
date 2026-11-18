@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 66;
+    static final int VERSION = 67;
 
     private Migrations() {}
 
@@ -626,6 +626,13 @@ final class Migrations {
         if(version<66){
             db.update("CREATE TABLE IF NOT EXISTS os_risk_assessment(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
             db.update("INSERT INTO os_migration(version,name) VALUES(66,?)","native risk assessment history and reviewed treatment");
+        }
+
+        if(version<67){
+            db.update("CREATE TABLE IF NOT EXISTS os_security_team(group_id VARCHAR(32) PRIMARY KEY,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_security_case(record_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,group_id VARCHAR(32) NOT NULL,actor_id VARCHAR(32) NOT NULL,intake_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,analysis_epoch INTEGER NOT NULL DEFAULT 0,UNIQUE(actor_id,intake_key))");
+            db.update("CREATE TABLE IF NOT EXISTS os_security_document(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(67,?)","restricted native security investigations and containment");
         }
 
     }

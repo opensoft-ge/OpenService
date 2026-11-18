@@ -344,5 +344,62 @@
         "min_approvals": 1
       }
     }
+  },
+  "security_incident": {
+    "label": "Security incidents",
+    "prefix": "SEC",
+    "fields": {
+      "short_description": "Security incident summary",
+      "description": "Security incident description",
+      "assigned_to": "Assigned to",
+      "assignment_group": "Assignment group",
+      "state": "State",
+      "priority": "Priority"
+    },
+    "states": {
+      "analysis": "Analysis",
+      "contain": "Containment",
+      "review": "Review",
+      "closed": "Closed"
+    },
+    "flow": {
+      "analysis": [
+        "contain",
+        "review"
+      ],
+      "contain": [
+        "analysis",
+        "review"
+      ],
+      "review": [
+        "analysis",
+        "closed"
+      ],
+      "closed": [
+        "analysis"
+      ]
+    },
+    "record_roles": {
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    },
+    "transition_rules": {
+      "closed": {
+        "min_approvals": 1
+      }
+    }
   }
 }

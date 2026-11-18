@@ -308,6 +308,21 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/security") || path.equals("/api/openservice/security")){
+            method(method,"GET");c.noQuery();c.uniqueQuery();var result=SecurityIncidents.directory(c.db);return path.startsWith("/api/")?json(map("result",result),200):view(c,"security",map("table","security_incident","definition",Service.schema(c.db,"security_incident"),"page",result,"intakeKey",Values.id()));
+        }
+        if(Set.of("/security/teams","/api/openservice/security/teams","/security/intake","/api/openservice/security/intake").contains(path)){
+            method(method,"POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/"),enroll=path.endsWith("/teams");Object input;
+            if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");if(enroll){form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(Objects.toString(form.get("active"),"")),"Choose active or inactive");form.put("active",Boolean.parseBoolean(form.get("active").toString()));}input=form;}
+            var result=enroll?SecurityIncidents.enroll(c.db,input):SecurityIncidents.intake(c.db,input);return api?json(map("result",result),enroll?200:201):redirect(enroll?"/security":"/record/security_incident/"+result.get("sys_id")+"/response");
+        }
+        Matcher securityResponse=Pattern.compile("/(?:record/security_incident|api/openservice/security-incidents)/([0-9a-f]{32})/response").matcher(path);
+        if(securityResponse.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String id=securityResponse.group(1);boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));if("analyze".equals(form.get("operation"))){var assets=new ArrayList<String>();for(String field:new ArrayList<>(form.keySet()))if(field.startsWith("asset_")){TypedFields.require(form.remove(field).equals("true"),"Choose affected configuration items");assets.add(field.substring(6));}form.put("assets",assets);var evidence=new ArrayList<String>();for(String field:new ArrayList<>(form.keySet()))if(field.startsWith("evidence_")){TypedFields.require(form.remove(field).equals("true"),"Choose case evidence");evidence.add(field.substring(9));}form.put("evidence",evidence);}input=form;}result=SecurityIncidents.document(c.db,id,input);if(!api)return redirect(path);}else result=SecurityIncidents.page(c.db,id);
+            return api?json(map("result",result),200):view(c,"security-response",map("table","security_incident","definition",Service.schema(c.db,"security_incident"),"page",result,"responsePath","/record/security_incident/"+id+"/response"));
+        }
+
         if(path.equals("/admin/employee-services") || path.equals("/api/openservice/employee-services")){
             method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");Map<String,Object> result;
             if(method.equals("POST")){c.noQuery();Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(Objects.toString(form.get("active"),"")),"Choose active or inactive");form.put("active",Boolean.parseBoolean(form.get("active").toString()));input=form;}result=EmployeeServices.save(c.db,input);if(!api)return redirect("/admin/employee-services");}
@@ -2736,7 +2751,7 @@ public class WebController {
                             page.offset(),
                             "canCreateRecord",
                             !Set.of("reader", "requester").contains(c.role())
-                                    && !Set.of("hr_case","customer_case").contains(table)
+                                    && !Set.of("hr_case","customer_case","security_incident").contains(table)
                                     && RecordPolicy.allows(definition, "create", c.role()),
                             "overview",
                             path.equals("/"),

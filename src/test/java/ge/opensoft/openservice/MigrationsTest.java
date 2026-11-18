@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void securityUpgradeRetainsRestrictedEvidence(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String retained,incident,group,file=Values.id();
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained ordinary incident"),"admin").get("sys_id").toString();for(String table:List.of("os_security_document","os_security_case","os_security_team"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_schema WHERE name='security_incident'");db.update("DELETE FROM os_migration WHERE version>=67");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_security_document"));db.connection.rollback();assertEquals(66,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);group=Service.create(db,"sys_user_group",Values.map("short_description","Upgrade security team"),"admin").get("sys_id").toString();SecurityIncidents.enroll(db,Values.map("group_id",group,"revision",0,"active",true));incident=SecurityIncidents.intake(db,Values.map("group_id",group,"summary","Retained security incident","description","Restricted retained details","key",Values.id())).get("sys_id").toString();db.update("INSERT INTO os_attachment(sys_id,record_id,name,content_type,content) VALUES(?,?,?,?,?)",file,incident,"security-proof.txt","text/plain","Retained evidence".getBytes());SecurityIncidents.document(db,incident,Values.map("operation","analyze","revision",0,"record_revision",0,"classification","false_positive","findings","Retained investigated evidence","assets",List.of(),"evidence",List.of(file)));Service.update(db,"security_incident",Service.record(db,"security_incident",incident),Values.map("state","review"),"admin","admin","1");SecurityIncidents.document(db,incident,Values.map("operation","review","revision",1,"record_revision",2,"code","false_positive","notes","Retained closure review"));db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Retained ordinary incident",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));var page=SecurityIncidents.page(db,incident);assertEquals(2,Values.objects(page.get("history")).size());assertEquals(true,page.get("current"));assertEquals("Retained closure review",Values.object(Values.object(page.get("document")).get("closure")).get("notes"));assertEquals(true,Values.objects(Values.object(page.get("document")).get("evidence")).getFirst().get("available"));assertEquals(1,SecurityIncidents.team(db,group).get("active"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void riskAssessmentUpgradeRetainsHistory(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String retained,risk;
         try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","UpgradeRiskOwner","role","agent","password",WorkflowSupport.PASSWORD));retained=Service.create(db,"incident",Values.map("short_description","Retained incident before risk upgrade"),"admin").get("sys_id").toString();db.update("DROP TABLE os_risk_assessment");db.update("DELETE FROM os_schema WHERE name='risk'");db.update("DELETE FROM os_migration WHERE version>=66");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_risk_assessment"));db.connection.rollback();assertEquals(65,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -957,8 +965,9 @@ class MigrationsTest {
                 try (var db = future.get(30, TimeUnit.SECONDS).open()) {
                     assertEquals(Migrations.VERSION, db.count("SELECT COUNT(*) FROM os_migration"));
                     assertEquals(1, db.count("SELECT COUNT(*) FROM os_user"));
-                    assertEquals(10, db.count("SELECT COUNT(*) FROM os_schema"));
+                    assertEquals(11, db.count("SELECT COUNT(*) FROM os_schema"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='risk'"));
+                    assertNotNull(db.one("SELECT name FROM os_schema WHERE name='security_incident'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='hr_case'"));
                     assertNotNull(db.one("SELECT name FROM os_schema WHERE name='customer_case'"));
                 }
