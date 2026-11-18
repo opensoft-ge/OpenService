@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void typedRelationshipReviewAndImpactJourney() throws Exception { TypedRelationshipsBrowserAcceptance.run(this); }
     @Test void discoveryReconciliationJourney() throws Exception { DiscoveryReconciliationBrowserAcceptance.run(this); }
     @Test void reviewedIncidentTriageAppliesOneAuthorizedChange() throws Exception { IncidentTriageBrowserAcceptance.run(this); }
     @Test void inboundMailRequestReplyAndMailboxControlJourney() throws Exception { InboundMailBrowserAcceptance.run(this); }

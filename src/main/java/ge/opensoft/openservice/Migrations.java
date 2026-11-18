@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 74;
+    static final int VERSION = 75;
 
     private Migrations() {}
 
@@ -681,6 +681,14 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_discovery_report(report_id VARCHAR(32) PRIMARY KEY,source_id VARCHAR(32) NOT NULL REFERENCES os_discovery_source(source_id),external_id VARCHAR(160) NOT NULL,sha256 VARCHAR(64) NOT NULL,provenance_hash VARCHAR(64) NOT NULL,observed_at TEXT NOT NULL,source_revision INTEGER NOT NULL,created TEXT NOT NULL,actor_id VARCHAR(32) NOT NULL,detail TEXT NOT NULL,UNIQUE(source_id,external_id))");
             db.update("CREATE TABLE IF NOT EXISTS os_discovery_field(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id),field VARCHAR(80) NOT NULL,source_id VARCHAR(32) NOT NULL REFERENCES os_discovery_source(source_id),priority INTEGER NOT NULL,observed_at TEXT NOT NULL,value_hash VARCHAR(64) NOT NULL,report_id VARCHAR(32) NOT NULL,released INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(record_id,field))");
             db.update("INSERT INTO os_migration(version,name) VALUES(74,?)","native CI discovery identity and per-field source reconciliation");
+        }
+
+        if(version<75){
+            db.update("CREATE TABLE IF NOT EXISTS os_relation_type(type_id VARCHAR(32) PRIMARY KEY,source_table VARCHAR(80) NOT NULL,target_table VARCHAR(80) NOT NULL,forward_label VARCHAR(80) NOT NULL,inverse_label VARCHAR(80) NOT NULL,propagates INTEGER NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_typed_relation(relation_id VARCHAR(32) PRIMARY KEY,type_id VARCHAR(32) NOT NULL REFERENCES os_relation_type(type_id),source_id VARCHAR(32) NOT NULL,target_id VARCHAR(32) NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL,updated TEXT NOT NULL,UNIQUE(type_id,source_id,target_id))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_typed_relation_target ON os_typed_relation(target_id,active)");
+            db.update("CREATE TABLE IF NOT EXISTS os_relation_history(relation_id VARCHAR(32) NOT NULL REFERENCES os_typed_relation(relation_id),revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(relation_id,revision))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(75,?)","governed typed record relationships with retained reviewed changes");
         }
 
     }

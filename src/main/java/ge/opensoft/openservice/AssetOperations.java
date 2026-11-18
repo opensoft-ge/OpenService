@@ -62,7 +62,7 @@ final class AssetOperations {
             String access = RecordAccess.filter(db, "r.sys_id", params);
             for (var row :
                     db.all(
-                            "SELECT r.* FROM os_dependency d JOIN os_record r ON"
+                            "SELECT r.* FROM (SELECT dependent,dependency FROM os_dependency UNION SELECT e.source_id,e.target_id FROM os_typed_relation e JOIN os_relation_type k ON k.type_id=e.type_id WHERE e.active=1 AND k.propagates=1) d JOIN os_record r ON"
                                 + " r.sys_id=d.dependent AND r.\"table\"='cmdb_ci' WHERE"
                                 + " d.dependency=? AND "
                                     + access
