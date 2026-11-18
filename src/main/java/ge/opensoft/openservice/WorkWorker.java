@@ -38,6 +38,7 @@ final class WorkWorker {
     }
 
     boolean runOne(long now) throws Exception {
+        EventWorkflows.dispatch(store);
         Map<String, Object> job;
         try (var db = store.open()) {
             job = WorkJobs.claim(db, now);
@@ -74,6 +75,7 @@ final class WorkWorker {
                     var payload = Outbox.decrypt(store.secret, job.get("envelope").toString());
                     Object output =
                             switch (job.get("kind").toString()) {
+                                case "workflow.run" -> EventWorkflows.execute(db,job,payload);
                                 case "notification" ->
                                         Notifications.deliver(
                                                 db, job.get("job_id").toString(), payload, now);
@@ -133,6 +135,7 @@ final class WorkWorker {
                         job.get("job_id"),
                         job.get("lease"));
                 WorkAttempts.finish(db,job.get("job_id"),job.get("lease"),Math.max(now,System.currentTimeMillis()),continuing?"continued":state.equals("queued")?"retry_scheduled":state,error);
+                EventWorkflows.finished(db,job.get("job_id").toString(),state,error);
                 WorkFailureAlerts.send(db,job.get("job_id").toString(),state,Math.max(now,System.currentTimeMillis()));
                 db.connection.commit();
             }

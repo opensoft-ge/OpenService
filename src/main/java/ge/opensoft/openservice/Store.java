@@ -154,6 +154,7 @@ public class Store {
         boolean securityIntake;
         boolean employeeIntake;
         boolean employeePortal;
+        boolean workflowExecution;
 
         public Db(Connection connection, boolean postgres) throws SQLException {
             this.connection = connection;

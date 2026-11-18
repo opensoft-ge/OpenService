@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 78;
+    static final int VERSION = 79;
 
     private Migrations() {}
 
@@ -709,6 +709,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_clock_binding(policy_id VARCHAR(32) NOT NULL REFERENCES os_clock_policy(policy_id),record_id VARCHAR(32) NOT NULL,sla_id VARCHAR(32) NOT NULL,definition TEXT NOT NULL,revision INTEGER NOT NULL,last_outcome VARCHAR(40) NOT NULL,PRIMARY KEY(policy_id,record_id))");
             db.update("CREATE TABLE IF NOT EXISTS os_clock_transition(policy_id VARCHAR(32) NOT NULL,record_id VARCHAR(32) NOT NULL,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(policy_id,record_id,revision),FOREIGN KEY(policy_id,record_id) REFERENCES os_clock_binding(policy_id,record_id))");
             db.update("INSERT INTO os_migration(version,name) VALUES(78,?)","reusable state-based service clock policies with retained transitions");
+        }
+
+        if(version<79){
+            db.update("CREATE TABLE IF NOT EXISTS os_event_flow(flow_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,table_name VARCHAR(80) NOT NULL,definition TEXT NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL,owner_id VARCHAR(32) NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_event_run(run_id VARCHAR(32) PRIMARY KEY,flow_id VARCHAR(32) NOT NULL REFERENCES os_event_flow(flow_id),record_id VARCHAR(32) NOT NULL,record_revision INTEGER NOT NULL,flow_revision INTEGER NOT NULL,owner_id VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,triggered_by VARCHAR(32) NOT NULL,created_at BIGINT NOT NULL,job_id VARCHAR(32) NOT NULL,state VARCHAR(20) NOT NULL,detail TEXT NOT NULL,UNIQUE(flow_id,record_id))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_event_run_pending ON os_event_run(state,created_at)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(79,?)","durable record-triggered native action workflows and retained run receipts");
         }
 
     }

@@ -24,6 +24,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void durableEventWorkflowConfigurationAndExecutionJourney() throws Exception { EventWorkflowsBrowserAcceptance.run(this); }
     @Test void conditionalClockPolicyAndAutomaticLifecycleJourney() throws Exception { ConditionalClocksBrowserAcceptance.run(this); }
     @Test void slaEscalationPlanAndRecipientReviewJourney() throws Exception { SlaEscalationsBrowserAcceptance.run(this); }
     @Test void recordedOutageRecoveryAndAvailabilityJourney() throws Exception { ServiceOutagesBrowserAcceptance.run(this); }

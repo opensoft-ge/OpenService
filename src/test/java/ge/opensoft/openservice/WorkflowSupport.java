@@ -16,6 +16,16 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void eventWorkflowsAvailability() throws Exception { EventWorkflowsAcceptance.availability(this); }
+    @Test void eventWorkflowsRun() throws Exception { EventWorkflowsAcceptance.run(this); }
+    @Test void eventWorkflowsModes() throws Exception { EventWorkflowsAcceptance.modes(this); }
+    @Test void eventWorkflowsConfiguration() throws Exception { EventWorkflowsAcceptance.configuration(this); }
+    @Test void eventWorkflowsAuthority() throws Exception { EventWorkflowsAcceptance.authority(this); }
+    @Test void eventWorkflowsRollback() throws Exception { EventWorkflowsAcceptance.rollback(this); }
+    @Test void eventWorkflowsJobs() throws Exception { EventWorkflowsAcceptance.jobs(this); }
+    @Test void eventWorkflowsCapacity() throws Exception { EventWorkflowsAcceptance.capacity(this); }
+    @Test void eventWorkflowsConcurrency() throws Exception { EventWorkflowsAcceptance.concurrency(this); }
+
     @Test void conditionalClocksDisableUnavailable() throws Exception { ConditionalClocksAcceptance.disableUnavailable(this); }
     @Test void conditionalClocksEdges() throws Exception { ConditionalClocksAcceptance.edges(this); }
     @Test void conditionalClocksRun() throws Exception { ConditionalClocksAcceptance.run(this); }
@@ -295,7 +305,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }

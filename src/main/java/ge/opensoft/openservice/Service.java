@@ -157,6 +157,7 @@ public final class Service {
         save(db, item);
         audit(db, item, actor, "created", map("after", serialize(item)));
         ConditionalClocks.changed(db,item,System.currentTimeMillis());
+        EventWorkflows.changed(db,item,Map.of(),true,System.currentTimeMillis());
         return item;
     }
 
@@ -291,6 +292,7 @@ public final class Service {
         save(db, item);
         audit(db, item, actor, "updated", map("before", before, "after", serialize(item)));
         ConditionalClocks.changed(db,item,System.currentTimeMillis());
+        EventWorkflows.changed(db,item,before,false,System.currentTimeMillis());
         return item;
     }
 

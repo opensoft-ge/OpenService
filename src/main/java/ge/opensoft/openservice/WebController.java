@@ -620,6 +620,17 @@ public class WebController {
             return view(c,"connector-console",map("table","operations","connector",ConnectorConsole.page(c.db,alias),"probeKey",id(),"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
         }
 
+        Matcher eventFlow=Pattern.compile("/(admin|api/openservice)/event-flows(?:/([0-9a-f]{32}))?").matcher(path);
+        if(eventFlow.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(eventFlow.group(2),"");
+            if(method.equals("POST")){c.noQuery();var result=EventWorkflows.save(c.db,id,api?body(c):EventWorkflows.form(c.arguments()));return api?json(map("result",result),200):redirect("/admin/event-flows/"+object(result.get("flow")).get("flow_id"));}
+            var result=EventWorkflows.page(c.db,id,c.arguments());return api?json(map("result",result),200):view(c,"event-flows",map("table","operations","page",result,"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
+        }
+        Matcher flowHistory=Pattern.compile("/(record|api/openservice/records)/([a-z][a-z0-9_]*)/([0-9a-f]{32})/automation").matcher(path);
+        if(flowHistory.matches()){
+            method(method,"GET");c.noQuery();c.uniqueQuery();var result=EventWorkflows.history(c.db,flowHistory.group(2),flowHistory.group(3));return path.startsWith("/api/")?json(map("result",result),200):view(c,"event-flow-history",map("table",flowHistory.group(2),"page",result,"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
+        }
+
         Matcher clockPolicy=Pattern.compile("/(admin|api/openservice)/clock-policies(?:/([0-9a-f]{32}))?").matcher(path);
         if(clockPolicy.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(clockPolicy.group(2),"");
