@@ -36,6 +36,7 @@ final class AuthenticationEvents {
                     "browser",
                     "Browser sign-in",
                     "oidc", "Organizational sign-in",
+                    "mfa", "Second-factor verification", "mfa-management", "Factor management verification",
                     "basic",
                     "API sign-in",
                     "email-enroll",

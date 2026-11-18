@@ -157,8 +157,12 @@ final class Oidc {
     }
 
     static boolean current(Store store,Store.Db db,Map<String,Object> user,HttpSession session)throws Exception {
-        Object fingerprint=session.getAttribute("oidc_configuration");if(fingerprint==null)return true;
-        try {var config=settings(store);return fingerprint.equals(config.get("fingerprint")) && db.count("SELECT COUNT(*) FROM os_oidc_binding WHERE binding_id=? AND user_id=? AND issuer=?",session.getAttribute("oidc_binding"),user.get("user_id"),config.get("issuer"))==1;}
+        return permits(store,db,user,session.getAttribute("oidc_configuration"),session.getAttribute("oidc_binding"));
+    }
+
+    static boolean permits(Store store,Store.Db db,Map<String,Object> user,Object fingerprint,Object binding)throws Exception {
+        if(fingerprint==null)return true;
+        try {var config=settings(store);return fingerprint.equals(config.get("fingerprint")) && db.count("SELECT COUNT(*) FROM os_oidc_binding WHERE binding_id=? AND user_id=? AND issuer=?",binding,user.get("user_id"),config.get("issuer"))==1;}
         catch(Failure unavailable) {return false;}
     }
 }

@@ -1107,4 +1107,13 @@ class MigrationsTest {
         }
     }
 
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void authenticatorUpgradeRetainsVerifiedFactorAndSingleUseRecovery(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String retained;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before authenticator"),"admin").get("sys_id").toString();for(String table:List.of("os_totp_recovery","os_totp_setup","os_totp_challenge","os_totp_attempt","os_totp"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_migration WHERE version>=82");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_totp"));db.connection.rollback();assertEquals(81,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);String code;long now=System.currentTimeMillis();try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","FactorUpgrade","password",WorkflowSupport.PASSWORD,"role","agent"));var user=TotpAcceptance.user(db,"FactorUpgrade");TotpAcceptance.install(store,db,"FactorUpgrade",TotpAcceptance.SEED,-1);code=Totp.recovery(db,user.get("user_id").toString()).getFirst();Totp.start(store,db,user,"retained-factor-browser",now);db.connection.commit();}
+        store=new Store(env);try(var db=store.open()){assertEquals("FactorUpgrade",Totp.complete(store,db,"retained-factor-browser",Values.map("code",code),now).get("name"));db.connection.commit();}
+        for(int n=0;n<2;n++){store=new Store(env);final var current=store;try(var db=store.open()){assertEquals(401,assertThrows(Values.Failure.class,()->Totp.complete(current,db,"retained-factor-browser",Values.map("code",code),now)).status);assertEquals(9,db.count("SELECT COUNT(*) FROM os_totp_recovery"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_totp"));assertEquals(TotpAcceptance.SEED,Totp.seed(store,db.one("SELECT envelope FROM os_totp").get("envelope").toString()));PlatformFoundationTest.bind(db);assertEquals("Retained before authenticator",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}
+    }
+
 }

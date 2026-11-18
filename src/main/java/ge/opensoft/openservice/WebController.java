@@ -132,7 +132,7 @@ public class WebController {
                 throw new Failure(413, "Request exceeds 6 MB");
             String path = request.getRequestURI(), method = request.getMethod();
             boolean publicPath =
-                    Set.of("/healthz", "/login", "/forgot", "/oidc/start", "/oidc/callback")
+                    Set.of("/healthz", "/login", "/forgot", "/oidc/start", "/oidc/callback", "/mfa")
                                     .contains(path)
                             || path.matches("/(?:join|recover|verify-email)/[A-Za-z0-9_-]{32}");
             var user =
@@ -202,6 +202,7 @@ public class WebController {
                                         "/api/openservice/me/email",
                                         "/api/openservice/me/notifications",
                                         "/account/notifications",
+                                        "/account/mfa", "/api/openservice/me/mfa",
                                         "/account/profile",
                                         "/api/openservice/me/profile",
                                         "/api/openservice/me/password",
@@ -308,6 +309,13 @@ public class WebController {
     }
 
     private ModelAndView signIn(Request c,Map<String,Object> user)throws Exception {
+        if(!Totp.enabled(c.db,user.get("user_id").toString()))return finishSignIn(c,user);
+        if(c.db.postgres)c.db.all("SELECT pg_advisory_xact_lock(18439,4)");Authentication.requireCurrent(c.db,user);
+        BrowserSessions.remove(c.db,c.session.getId());c.http.changeSessionId();Collections.list(c.session.getAttributeNames()).forEach(c.session::removeAttribute);c.session.setAttribute("csrf",csrf());
+        Totp.start(store,c.db,user,c.session.getId(),System.currentTimeMillis());return redirect("/mfa");
+    }
+
+    private ModelAndView finishSignIn(Request c,Map<String,Object> user)throws Exception {
                 if (c.db.postgres) c.db.all("SELECT pg_advisory_xact_lock(18439,4)");
                 Authentication.requireCurrent(c.db, user);
                 BrowserSessions.remove(c.db, c.session.getId());
@@ -334,6 +342,21 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/mfa")) {
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();
+            if(method.equals("POST")){checkCsrf(c,c.parameter("csrf",""));var input=new LinkedHashMap<String,Object>(c.arguments());input.remove("csrf");return finishSignIn(c,Totp.complete(store,c.db,c.session.getId(),input,System.currentTimeMillis()));}
+            if(!Totp.pending(c.db,c.session.getId(),System.currentTimeMillis()))return redirect("/login");
+            return new ModelAndView("mfa-login",map("csrf",c.session.getAttribute("csrf")));
+        }
+        if(path.equals("/account/mfa") || path.equals("/api/openservice/me/mfa")) {
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();
+            if(c.session.getAttribute("user")==null || c.http.getHeader("Authorization")!=null)throw new Failure(403,"Use your current browser session to manage authentication factors");
+            boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}result=Totp.manage(store,c.db,c.user,c.session.getId(),input,System.currentTimeMillis());}
+            else result=Totp.page(c.db,c.user,c.session.getId(),System.currentTimeMillis());
+            return api?json(map("result",result),200):view(c,"mfa-account",map("table","account","page",result));
+        }
+
         if(path.equals("/oidc/start")) {
             method(method,"POST");c.noQuery();c.uniqueQuery();checkCsrf(c,c.parameter("csrf",""));
             if(!c.arguments().keySet().equals(Set.of("csrf")))throw new Failure(400,"Use the organizational sign-in button");

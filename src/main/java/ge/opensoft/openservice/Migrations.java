@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 81;
+    static final int VERSION = 82;
 
     private Migrations() {}
 
@@ -729,6 +729,15 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_oidc_challenge(state_hash VARCHAR(64) PRIMARY KEY,session_hash VARCHAR(64) NOT NULL,expires_at BIGINT NOT NULL,configuration VARCHAR(64) NOT NULL,envelope TEXT NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_oidc_challenge_expiry ON os_oidc_challenge(expires_at)");
             db.update("INSERT INTO os_migration(version,name) VALUES(81,?)","explicit OIDC identity bindings and one-use browser-bound challenges");
+        }
+
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=82")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_totp(user_id VARCHAR(32) PRIMARY KEY,envelope TEXT NOT NULL,last_step BIGINT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_totp_setup(user_id VARCHAR(32) PRIMARY KEY,session_hash VARCHAR(64) NOT NULL,auth_revision BIGINT NOT NULL,expires_at BIGINT NOT NULL,envelope TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_totp_recovery(user_id VARCHAR(32) NOT NULL,digest VARCHAR(64) NOT NULL,PRIMARY KEY(user_id,digest))");
+            db.update("CREATE TABLE IF NOT EXISTS os_totp_challenge(session_hash VARCHAR(64) PRIMARY KEY,user_id VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,expires_at BIGINT NOT NULL,envelope TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_totp_attempt(user_id VARCHAR(32) PRIMARY KEY,failures INTEGER NOT NULL,expires_at BIGINT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(82,?)","verified TOTP enrollment, single-use recovery and browser second-factor challenges");
         }
 
     }
