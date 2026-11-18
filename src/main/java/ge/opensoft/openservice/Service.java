@@ -192,6 +192,7 @@ public final class Service {
         Fulfilment.guard(db,item);
         ChangePlanning.guard(db,item);
         WorkTasks.guard(db,item);
+        CatalogueWorkflows.settle(db,item);
         db.update(
                 "UPDATE os_record SET data="
                         + db.jsonParameter()
@@ -294,6 +295,7 @@ public final class Service {
         db.update("DELETE FROM os_record_scope WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_case_task WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_task_plan WHERE parent_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_catalog_workflow_order WHERE request_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
 

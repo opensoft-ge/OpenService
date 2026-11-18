@@ -82,7 +82,7 @@ final class WorkTasks {
             }
             db.update("UPDATE os_case_task SET summary=?,details=?,group_id=?,assignee_id=?,state=?,required=?,predecessors=?,outcome=?,note=?,revision=revision+1 WHERE task_id=?",task.get("summary"),task.get("details"),task.get("group_id"),task.get("assignee_id"),task.get("state"),task.get("required"),JSON.writeValueAsString(task.get("predecessors")),task.get("outcome"),task.get("note"),taskId);
         }
-        db.update("UPDATE os_task_plan SET revision=revision+1 WHERE parent_id=?",id);String actor=Service.account(db,db.viewerId).get("name").toString();if(structural)Service.update(db,table,parent,map(),actor,db.viewerRole,body.get("record_revision").toString());Service.audit(db,parent,actor,"worktask."+operation,map("task_id",taskId));return page(db,table,id);
+        db.update("UPDATE os_task_plan SET revision=revision+1 WHERE parent_id=?",id);String actor=Service.account(db,db.viewerId).get("name").toString();if(structural)Service.update(db,table,parent,map(),actor,db.viewerRole,body.get("record_revision").toString());Service.audit(db,parent,actor,"worktask."+operation,map("task_id",taskId));if(Set.of("claim","complete").contains(operation))CatalogueWorkflows.advance(db,parent);return page(db,table,id);
     }
 
     static Map<String,Object> queue(Store.Db db,Map<String,String> args) throws SQLException {

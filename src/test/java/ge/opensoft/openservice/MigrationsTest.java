@@ -15,6 +15,15 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void catalogueWorkflowUpgradeRetainsReviewedPlans(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String offering,group;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);offering=Catalogue.save(db,db.viewerId,"",CatalogueAcceptance.offering("Retained offering",0,true)).get("offering_id").toString();group=Service.create(db,"sys_user_group",Values.map("short_description","Retained team"),"admin").get("sys_id").toString();db.update("DROP TABLE os_catalog_workflow_order");db.update("DROP TABLE os_catalog_workflow");db.update("DELETE FROM os_migration WHERE version>=56");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_catalog_workflow"));db.connection.rollback();assertEquals(55,db.count("SELECT MAX(version) FROM os_migration"));}
+        String request;
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);CatalogueWorkflows.save(db,offering,Values.map("operation","add","revision",1,"summary","Retained step","details","Original instructions","group_id",group));CatalogueWorkflows.save(db,offering,Values.map("operation","enable","revision",2));request=Catalogue.order(db,offering,Values.map("revision",3,"details","Upgrade request","key",Values.id())).get("sys_id").toString();db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals(1,Values.object(CatalogueWorkflows.settings(db,offering).get("workflow")).get("enabled"));assertEquals(1L,((Number)CatalogueWorkflows.progress(db,request).get("remaining")).longValue());assertTrue(db.one("SELECT steps FROM os_catalog_workflow_order WHERE request_id=?",request).get("steps").toString().contains("Original instructions"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void workTaskUpgradeRetainsAssignmentsAndDependencies(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String parent,group;
         try(var db=store.open()){PlatformFoundationTest.bind(db);parent=Service.create(db,"incident",Values.map("short_description","Retained case"),"admin").get("sys_id").toString();group=Service.create(db,"sys_user_group",Values.map("short_description","Retained team"),"admin").get("sys_id").toString();db.update("DROP TABLE os_case_task");db.update("DROP TABLE os_task_plan");db.update("DELETE FROM os_migration WHERE version>=55");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_case_task"));db.connection.rollback();assertEquals(54,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -218,7 +227,7 @@ class MigrationsTest {
     void catalogueUpgradeAndConcurrentOrdersPreserveExactlyOneRequest(boolean postgres) throws Exception {
         var env=configuration(postgres);var store=new Store(env);
         try(var db=store.open()){
-            db.update("DROP TABLE os_catalog_order");db.update("DROP TABLE os_offering");db.update("DELETE FROM os_migration WHERE version>=37");db.connection.commit();
+            db.update("DROP TABLE os_catalog_workflow_order");db.update("DROP TABLE os_catalog_workflow");db.update("DROP TABLE os_catalog_order");db.update("DROP TABLE os_offering");db.update("DELETE FROM os_migration WHERE version>=37");db.connection.commit();
             Migrations.apply(db);assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.rollback();assertEquals(36,db.count("SELECT MAX(version) FROM os_migration"));
         }
         var upgraded=new Store(env);String offering,key=Values.id();

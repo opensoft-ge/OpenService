@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 55;
+    static final int VERSION = 56;
 
     private Migrations() {}
 
@@ -554,6 +554,11 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_case_task(task_id VARCHAR(32) PRIMARY KEY,parent_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,ordinal INTEGER NOT NULL,summary VARCHAR(160) NOT NULL,details TEXT NOT NULL,group_id VARCHAR(32) NOT NULL,assignee_id VARCHAR(32) NOT NULL,state VARCHAR(20) NOT NULL,required INTEGER NOT NULL,predecessors TEXT NOT NULL,outcome TEXT NOT NULL,note TEXT NOT NULL,revision INTEGER NOT NULL,UNIQUE(parent_id,ordinal))");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_case_task_group ON os_case_task(group_id,state)");
             db.update("INSERT INTO os_migration(version,name) VALUES(55,?)","dependent team work and parent completion gates");
+        }
+        if(version<56){
+            db.update("CREATE TABLE IF NOT EXISTS os_catalog_workflow(offering_id VARCHAR(32) PRIMARY KEY REFERENCES os_offering(offering_id) ON DELETE CASCADE,enabled INTEGER NOT NULL,steps TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_catalog_workflow_order(request_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,offering_id VARCHAR(32) NOT NULL,offering_revision INTEGER NOT NULL,steps TEXT NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(56,?)","reviewed catalogue plans and multi-team fulfilment");
         }
     }
 

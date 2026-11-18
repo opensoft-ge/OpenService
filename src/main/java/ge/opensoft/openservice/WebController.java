@@ -503,6 +503,19 @@ public class WebController {
             else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));result=CatalogueQuestions.edit(c.db,c.db.viewerId,id,form);}
             return api?json(map("result",result),200):redirect("/admin/catalogue/"+id+"/questions");
         }
+        Matcher catalogueWorkflow=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/workflow").matcher(path);
+        if(catalogueWorkflow.matches()){
+            c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=catalogueWorkflow.group(2);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));input=form;}result=CatalogueWorkflows.save(c.db,id,input);if(!api)return redirect(path);}
+            else result=CatalogueWorkflows.settings(c.db,id);
+            return api?json(map("result",result),200):view(c,"catalogue-workflow",map("table","catalogue","offering",result.get("offering"),"workflow",result.get("workflow"),"groups",RecordAccess.groups(c.db)));
+        }
+        Matcher requestWorkflow=Pattern.compile("/(requests|api/openservice/requests)/([0-9a-f]{32})/workflow").matcher(path);
+        if(requestWorkflow.matches()){
+            boolean api=path.startsWith("/api/");method(method,api?new String[]{"GET","POST"}:new String[]{"POST"});c.noQuery();c.uniqueQuery();String id=requestWorkflow.group(2);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("record_revision",Service.number(Objects.toString(form.get("record_revision"),""),0,Integer.MAX_VALUE));input=form;}result=CatalogueWorkflows.reconcile(c.db,id,input);if(!api)return redirect("/record/sc_request/"+id);}
+            else result=CatalogueWorkflows.progress(c.db,id);return json(map("result",result),200);
+        }
         Matcher catalogueRouting=Pattern.compile("/(admin|api/openservice)/catalogue/([0-9a-f]{32})/routing").matcher(path);
         if(catalogueRouting.matches()){
             boolean api=path.startsWith("/api/");c.admin();method(method,api?"PUT":"POST");c.noQuery();c.uniqueQuery();String id=catalogueRouting.group(2);Object input;
@@ -2919,6 +2932,7 @@ public class WebController {
                         "definition",
                         definition,
                         "submittedAnswers",item!=null && table.equals("sc_request") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"description")?CatalogueQuestions.answers(c.db,id):List.of(),
+                        "catalogueProgress",item!=null && table.equals("sc_request") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"state")?CatalogueWorkflows.progress(c.db,id):null,
                         "hasFulfilment",item!=null && table.equals("sc_request") && Fulfilment.readable(c.db) && c.db.count("SELECT COUNT(*) FROM os_fulfilment WHERE request_id=?",id)>0,
                         "canWriteRecord",
                         !Set.of("reader", "requester").contains(c.role())
