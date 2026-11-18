@@ -308,6 +308,19 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher conversion=Pattern.compile("/(?:record/demand|api/openservice/demands)/([0-9a-f]{32})/project").matcher(path);
+        if(conversion.matches()){
+            method(method,"POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("record_revision",Service.number(Objects.toString(form.get("record_revision"),""),0,Integer.MAX_VALUE));input=form;}var result=ProjectDelivery.convert(c.db,conversion.group(1),input);return api?json(map("result",result),200):redirect("/record/project/"+result.get("sys_id")+"/delivery");
+        }
+        Matcher project=Pattern.compile("/(?:record/project|api/openservice/projects)/([0-9a-f]{32})/delivery").matcher(path);
+        if(project.matches()){
+            method(method,"GET");c.noQuery();c.uniqueQuery();var result=ProjectDelivery.page(c.db,project.group(1));return path.startsWith("/api/")?json(map("result",result),200):view(c,"project-delivery",map("table","project","definition",Service.schema(c.db,"project"),"page",result));
+        }
+        Matcher projectSchedule=Pattern.compile("/(?:record/project|api/openservice/projects)/([0-9a-f]{32})/schedule/([0-9a-f]{32})").matcher(path);
+        if(projectSchedule.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=projectSchedule.group(1),task=projectSchedule.group(2);if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String field:List.of("revision","record_revision","task_revision"))form.put(field,Service.number(Objects.toString(form.get(field),""),0,Integer.MAX_VALUE));String milestone=Objects.toString(form.get("milestone"),"");if(!Set.of("true","false").contains(milestone))throw new Failure(400,"Choose task or milestone");form.put("milestone",Boolean.valueOf(milestone));input=form;}var result=ProjectDelivery.schedule(c.db,id,task,input);return api?json(map("result",result),200):redirect(path);}return api?json(map("result",ProjectDelivery.schedulePage(c.db,id,task)),200):view(c,"project-schedule",map("table","project","definition",Service.schema(c.db,"project"),"page",ProjectDelivery.schedulePage(c.db,id,task),"schedulePath",path));
+        }
+
         if(path.equals("/portfolios") || path.equals("/api/openservice/portfolios")){
             method(method,"GET");c.noQuery();c.uniqueQuery();SecurityIncidents.staff(c.db);var records=Service.page(c.db,"portfolio",Map.of("sysparm_limit","100"),"");return path.startsWith("/api/")?json(map("result",map("items",records.rows(),"total",records.total())),200):view(c,"portfolios",map("table","portfolio","definition",Service.schema(c.db,"portfolio"),"portfolios",records.rows(),"can_create_portfolio",RecordPolicy.allows(Service.schema(c.db,"portfolio"),"create",c.db.viewerRole),"can_create_demand",RecordPolicy.allows(Service.schema(c.db,"demand"),"read",c.db.viewerRole) && RecordPolicy.allows(Service.schema(c.db,"demand"),"create",c.db.viewerRole)));
         }

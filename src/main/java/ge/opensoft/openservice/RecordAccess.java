@@ -40,7 +40,7 @@ final class RecordAccess {
                 + " access.owner_id=?) OR (access.visibility='group' AND EXISTS (SELECT 1 FROM"
                 + " os_group_member m JOIN os_record g ON g.sys_id=m.group_id AND"
                 + " g.\"table\"='sys_user_group' WHERE m.group_id=access.group_id AND"
-                + " m.user_id=?)))) AND " + CustomerCases.filter(db,recordId,parameters)+" AND "+EmployeeCases.filter(db,recordId,parameters)+" AND "+EmployeeOnboarding.filter(db,recordId,parameters)+" AND "+SecurityIncidents.filter(db,recordId,parameters)+" AND "+VulnerabilityResponse.filter(db,recordId,parameters);
+                + " m.user_id=?)))) AND " + CustomerCases.filter(db,recordId,parameters)+" AND "+EmployeeCases.filter(db,recordId,parameters)+" AND "+EmployeeOnboarding.filter(db,recordId,parameters)+" AND "+SecurityIncidents.filter(db,recordId,parameters)+" AND "+VulnerabilityResponse.filter(db,recordId,parameters)+" AND "+ProjectDelivery.filter(recordId);
     }
 
     static String journalFilter(Store.Db db) {

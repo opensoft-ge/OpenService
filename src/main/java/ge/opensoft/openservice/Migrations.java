@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 69;
+    static final int VERSION = 70;
 
     private Migrations() {}
 
@@ -646,6 +646,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_demand_assessment(record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,revision INTEGER NOT NULL,portfolio_id VARCHAR(32) NOT NULL,planning_year INTEGER NOT NULL,score INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(record_id,revision))");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_demand_portfolio_year ON os_demand_assessment(portfolio_id,planning_year,score)");
             db.update("INSERT INTO os_migration(version,name) VALUES(69,?)","scored portfolio demands and retained reviewed decisions");
+        }
+
+        if(version<70){
+            db.update("CREATE TABLE IF NOT EXISTS os_project_origin(project_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,demand_id VARCHAR(32) NOT NULL UNIQUE REFERENCES os_record(sys_id),demand_revision INTEGER NOT NULL,assessment_revision INTEGER NOT NULL,actor_id VARCHAR(32) NOT NULL,created TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_project_schedule(task_id VARCHAR(32) NOT NULL REFERENCES os_case_task(task_id) ON DELETE CASCADE,revision INTEGER NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(task_id,revision))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(70,?)","demand delivery projects with reviewed task and milestone schedules");
         }
 
     }

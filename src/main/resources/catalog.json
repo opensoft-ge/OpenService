@@ -558,5 +558,64 @@
         "min_approvals": 1
       }
     }
+  },
+  "project": {
+    "label": "Projects",
+    "prefix": "PRJ",
+    "fields": {
+      "short_description": "Project name",
+      "description": "Project objective",
+      "state": "Stage",
+      "start_on": "Project start date",
+      "finish_on": "Project finish date"
+    },
+    "states": {
+      "planning": "Planning",
+      "active": "Active",
+      "complete": "Complete",
+      "cancelled": "Cancelled"
+    },
+    "flow": {
+      "planning": [
+        "active",
+        "cancelled"
+      ],
+      "active": [
+        "planning",
+        "complete",
+        "cancelled"
+      ],
+      "complete": [
+        "planning"
+      ],
+      "cancelled": [
+        "planning"
+      ]
+    },
+    "record_roles": {
+      "read": [
+        "admin",
+        "agent"
+      ],
+      "create": [
+        "admin",
+        "agent"
+      ],
+      "update": [
+        "admin",
+        "agent"
+      ],
+      "delete": [
+        "admin"
+      ]
+    },
+    "field_rules": {
+      "start_on": {
+        "type": "date"
+      },
+      "finish_on": {
+        "type": "date"
+      }
+    }
   }
 }

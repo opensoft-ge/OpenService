@@ -164,6 +164,7 @@ public final class Service {
         EmployeeCases.insertion(db,item);
         RiskAssessments.insertion(item);
         DemandPlanning.insertion(item);
+        ProjectDelivery.insertion(item);
         SecurityIncidents.insertion(db,item);
         VulnerabilityResponse.insertion(db,item);
         EmployeeOnboarding.insertion(db,item.get("sys_id").toString());
@@ -205,6 +206,7 @@ public final class Service {
         EmployeeOnboarding.guard(db,item);
         RiskAssessments.guard(db,item);
         DemandPlanning.guard(db,item);
+        ProjectDelivery.guard(db,item);
         SecurityIncidents.guard(db,item);
         VulnerabilityResponse.guard(db,item);
         FieldDispatch.parentGuard(db,item);
@@ -289,6 +291,7 @@ public final class Service {
     public static void remove(Store.Db db, Map<String, Object> item, String actor)
             throws SQLException {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
+        ProjectDelivery.deleting(db,item.get("sys_id").toString());
         RecordScopes.deleting(db,item.get("sys_id").toString());
         WorkTasks.deleting(db,item.get("sys_id").toString());
         EmployeeOnboarding.deleting(db,item.get("sys_id").toString());
@@ -314,6 +317,8 @@ public final class Service {
         db.update("DELETE FROM os_record_scope WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_field_dispatch WHERE task_id IN (SELECT task_id FROM os_case_task WHERE parent_id=?)",item.get("sys_id"));
         db.update("DELETE FROM os_field_visit WHERE task_id IN (SELECT task_id FROM os_case_task WHERE parent_id=?)",item.get("sys_id"));
+        db.update("DELETE FROM os_project_schedule WHERE task_id IN (SELECT task_id FROM os_case_task WHERE parent_id=?)",item.get("sys_id"));
+        db.update("DELETE FROM os_project_origin WHERE project_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_case_task WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_task_plan WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_catalog_workflow_order WHERE request_id=?",item.get("sys_id"));
