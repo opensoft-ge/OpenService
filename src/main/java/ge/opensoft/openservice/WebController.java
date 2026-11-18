@@ -119,7 +119,7 @@ public class WebController {
             if(request.getRequestURI().startsWith("/api/"))return json(map("error",map("message","Service Unavailable","detail",detail),"status","failure"),503);
             return new ModelAndView("error",map("errorTitle","Service Unavailable","errorDetail",detail),HttpStatus.SERVICE_UNAVAILABLE);
         }
-        try (var db = acquired) { return dispatch(db, request, response); }
+        try (var db = acquired) { SqlSessions.REQUEST_DATABASE.set(db);try { return dispatch(db, request, response); } finally { SqlSessions.REQUEST_DATABASE.remove(); } }
     }
 
     private ModelAndView dispatch(

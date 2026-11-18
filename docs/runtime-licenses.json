@@ -566,5 +566,22 @@
         "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
       }
     ]
+  },
+  {
+    "artifact": "spring-session-core-4.1.1.jar",
+    "licenses": [
+      {
+        "name": "Broadcom Foundation License",
+        "source": "Published Maven POM; no license URL supplied"
+      }
+    ],
+    "artifact_license": {
+      "name": "Apache License, Version 2.0",
+      "path": "META-INF/LICENSE.txt",
+      "copy": "licenses/spring-session-core-4.1.1-LICENSE.txt"
+    },
+    "provenance_note": "Unresolved discrepancy: upstream Maven POM and local POM match and declare Broadcom Foundation License; shipped JAR LICENSE and official 4.1.1 documentation state Apache 2.0. Recorded 2026-11-18. Not legal clearance.",
+    "pom_url": "https://repo.maven.apache.org/maven2/org/springframework/session/spring-session-core/4.1.1/spring-session-core-4.1.1.pom",
+    "documentation_url": "https://docs.spring.io/spring-session/reference/index.html"
   }
 ]

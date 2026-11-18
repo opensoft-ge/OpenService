@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 96;
+    static final int VERSION = 97;
 
     private Migrations() {}
 
@@ -807,6 +807,12 @@ final class Migrations {
         if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=96")==0) {
             db.update("CREATE TABLE IF NOT EXISTS os_bulk_receipt(actor_id VARCHAR(32) NOT NULL REFERENCES os_user(user_id),request_key VARCHAR(32) NOT NULL,table_name VARCHAR(80) NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(26) NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(actor_id,request_key))");
             db.update("INSERT INTO os_migration(version,name) VALUES(96,?)","reviewed atomic bulk record changes");
+        }
+
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=97")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_shared_session(session_hash VARCHAR(64) PRIMARY KEY,created_at BIGINT NOT NULL,last_seen BIGINT NOT NULL,expires_at BIGINT NOT NULL,envelope TEXT NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_shared_session_expiry ON os_shared_session(expires_at)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(97,?)","encrypted shared browser session state");
         }
 
     }

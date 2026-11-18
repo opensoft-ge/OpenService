@@ -37,6 +37,8 @@ final class Operations {
                 store.postgres ? "PostgreSQL" : "SQLite",
                 "schema",
                 Migrations.VERSION,
+                "shared_browser_sessions",
+                env.getProperty("SHARED_BROWSER_SESSIONS", Boolean.class, false),
                 "secure_cookies",
                 env.getProperty("COOKIE_SECURE", Boolean.class, true),
                 "email_enabled",
