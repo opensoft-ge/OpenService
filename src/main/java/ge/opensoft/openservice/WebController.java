@@ -210,7 +210,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && (Set.of("/requests", "/api/openservice/requests").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
+                                && (Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
                         && !path.matches("/(?:support|api/openservice/support)(?:/[0-9a-f]{32})?")
                         && !path.matches(
@@ -502,6 +502,17 @@ public class WebController {
             if(api)result=CatalogueQuestions.save(c.db,c.db.viewerId,id,body(c));
             else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),1,Integer.MAX_VALUE));result=CatalogueQuestions.edit(c.db,c.db.viewerId,id,form);}
             return api?json(map("result",result),200):redirect("/admin/catalogue/"+id+"/questions");
+        }
+        if(Set.of("/customer-service/notifications","/api/openservice/customer-service/notifications").contains(path)){
+            method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));String enabled=Objects.toString(form.get("enabled"),"");TypedFields.require(Set.of("true","false").contains(enabled),"Choose enabled or disabled");form.put("enabled",Boolean.parseBoolean(enabled));input=form;}result=CustomerReplies.preference(c.db,input);if(!api)return redirect("/customer-service/notifications");}else result=CustomerReplies.preference(c.db);
+            return api?json(map("result",result),200):view(c,"customer-notifications",map("table","customer_case","definition",map("label","Customer service"),"preference",result));
+        }
+        Matcher customerReplies=Pattern.compile("/(?:record/customer_case|api/openservice/customer-cases)/([0-9a-f]{32})/replies").matcher(path);
+        if(customerReplies.matches()){
+            method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");String id=customerReplies.group(1);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("record_revision",Service.number(Objects.toString(form.get("record_revision"),""),0,Integer.MAX_VALUE));String email=Objects.toString(form.get("email"),"");TypedFields.require(Set.of("true","false").contains(email),"Choose portal only or email delivery");form.put("email",Boolean.parseBoolean(email));input=form;}result=CustomerReplies.publish(store,c.db,id,input);if(!api)return redirect("/record/customer_case/"+id+"/replies");}else result=CustomerReplies.page(store,c.db,id);
+            return api?json(map("result",result),200):view(c,"customer-replies",map("table","customer_case","definition",map("label","Customer service"),"page",result,"replyKey",Values.id()));
         }
         Matcher customerAccount=Pattern.compile("/(admin|api/openservice)/customer-accounts(?:/([0-9a-f]{32}))?").matcher(path);
         if(customerAccount.matches()){
@@ -877,7 +888,7 @@ public class WebController {
                     200);
         }
         if (path.equals("/") && c.role().equals("requester")) return redirect("/requests");
-        if (Set.of("/requests", "/api/openservice/requests").contains(path)) {
+        if (Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path)) {
             method(method, "GET", "POST");
             c.noQuery();
             if (method.equals("POST")) {

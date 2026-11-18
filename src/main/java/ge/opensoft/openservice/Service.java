@@ -303,6 +303,7 @@ public final class Service {
         db.update("DELETE FROM os_catalog_workflow_order WHERE request_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_schedule WHERE change_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_window WHERE ci_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_customer_reply WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_major_update WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_major_incident WHERE incident_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));

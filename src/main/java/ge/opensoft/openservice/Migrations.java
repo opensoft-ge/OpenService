@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 59;
+    static final int VERSION = 60;
 
     private Migrations() {}
 
@@ -583,6 +583,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_customer_case(record_id VARCHAR(32) PRIMARY KEY,account_id VARCHAR(32) NOT NULL REFERENCES os_customer_account(account_id),user_id VARCHAR(32) NOT NULL,entitlement_id VARCHAR(32) NOT NULL REFERENCES os_customer_entitlement(entitlement_id),account_revision INTEGER NOT NULL,contact_revision INTEGER NOT NULL,entitlement_revision INTEGER NOT NULL,account_name VARCHAR(160) NOT NULL,entitlement_name VARCHAR(160) NOT NULL,intake_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,created VARCHAR(40) NOT NULL,UNIQUE(user_id,intake_key))");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_customer_case_entitlement ON os_customer_case(entitlement_id)");
             db.update("INSERT INTO os_migration(version,name) VALUES(59,?)","current customer accounts, contacts and entitled case intake");
+        }
+
+        if(version<60){
+            db.update("CREATE TABLE IF NOT EXISTS os_customer_delivery(user_id VARCHAR(32) PRIMARY KEY REFERENCES os_user(user_id) ON DELETE CASCADE,enabled INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_customer_reply(reply_id VARCHAR(32) PRIMARY KEY,record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,actor_id VARCHAR(32) NOT NULL,actor_name VARCHAR(80) NOT NULL,ordinal INTEGER NOT NULL,body TEXT NOT NULL,created VARCHAR(40) NOT NULL,submission_key VARCHAR(32) NOT NULL,fingerprint VARCHAR(64) NOT NULL,job_id VARCHAR(32) NOT NULL,UNIQUE(record_id,actor_id,submission_key),UNIQUE(record_id,ordinal))");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_customer_reply_record ON os_customer_reply(record_id)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(60,?)","published customer replies and current email preferences");
         }
 
     }

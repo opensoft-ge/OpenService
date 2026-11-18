@@ -106,6 +106,7 @@ final class EmailOnboarding {
     }
 
     static boolean valid(Store.Db db, String kind, Map<String, Object> payload) throws Exception {
+        if(kind.equals("email.customer_reply"))return CustomerReplies.valid(db,payload);
         String path = payload.get("path").toString();
         try {
             if (kind.equals("email.enrollment")) {

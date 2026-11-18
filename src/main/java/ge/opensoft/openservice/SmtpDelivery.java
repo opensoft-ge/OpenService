@@ -61,8 +61,10 @@ final class SmtpDelivery implements DeliveryWorker.Sender {
         var helper = new MimeMessageHelper(message, "UTF-8");
         helper.setFrom(from);
         helper.setTo(payload.get("email").toString());
-        helper.setSubject("OpenService account access");
+        boolean reply="customer_reply".equals(payload.get("type"));
+        helper.setSubject(reply?"OpenService customer support reply":"OpenService account access");
         helper.setText(
+                reply?"Your support team published this reply:\n\n"+payload.get("body")+"\n\nView the case and respond in OpenService:\n"+base+payload.get("path"):
                 "Use this single-use link to complete your OpenService account request:\n\n"
                         + base
                         + payload.get("path")

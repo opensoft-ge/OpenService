@@ -15,6 +15,15 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void customerReplyUpgradeRetainsPublicTextAndDelivery(boolean postgres)throws Exception{
+        var env=configuration(postgres).withProperty("DELIVERY_ENABLED","true").withProperty("PUBLIC_BASE_URL","https://example.invalid");var store=new Store(env);String record,user;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","UpgradeReplyCustomer","role","requester","password",WorkflowSupport.PASSWORD));user=RecordAccess.owner(db,"UpgradeReplyCustomer");db.update("UPDATE os_user SET email='upgrade@example.invalid',email_verified=1 WHERE user_id=?",user);String group=Service.create(db,"sys_user_group",Values.map("short_description","Upgrade support"),"admin").get("sys_id").toString();String account=CustomerAccounts.save(db,"",Values.map("name","Upgrade reply organization","group_id",group,"active",true,"revision",0)).get("account_id").toString();CustomerAccounts.manage(db,account,Values.map("operation","contact","username","UpgradeReplyCustomer","active",true,"revision",0));String entitlement=Values.objects(CustomerAccounts.manage(db,account,CustomerCasesAcceptance.entitlement("",0,0)).get("entitlements")).getFirst().get("entitlement_id").toString();db.viewerId=user;db.viewerRole="requester";record=CustomerCases.create(db,entitlement,Values.map("account_revision",1,"contact_revision",1,"entitlement_revision",1,"summary","Retained case","description","Retained problem","key",Values.id())).get("sys_id").toString();db.update("DROP TABLE os_customer_reply");db.update("DROP TABLE os_customer_delivery");db.update("DELETE FROM os_migration WHERE version>=60");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_customer_reply"));db.connection.rollback();assertEquals(59,db.count("SELECT MAX(version) FROM os_migration"));}
+        var submission=Values.map("record_revision",0,"key",Values.id(),"body","Retained public response","email",true);
+        store=new Store(env);try(var db=store.open()){db.viewerId=user;db.viewerRole="requester";CustomerReplies.preference(db,Values.map("revision",0,"enabled",true));PlatformFoundationTest.bind(db);CustomerReplies.publish(store,db,record,submission);db.connection.commit();}
+        for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var replies=Values.objects(CustomerReplies.publish(store,db,record,submission).get("replies"));assertEquals(1,replies.size());assertEquals("Retained public response",replies.getFirst().get("body"));assertEquals("queued",replies.getFirst().get("delivery"));var job=db.one("SELECT envelope FROM os_outbox WHERE kind='email.customer_reply'");assertTrue(CustomerReplies.valid(db,Outbox.decrypt(store.secret,job.get("envelope").toString())));db.viewerId=user;db.viewerRole="requester";assertEquals(1,CustomerReplies.preference(db).get("enabled"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void customerIntakeUpgradePreservesOwnershipAndUnits(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String group,user;
         try(var db=store.open()){PlatformFoundationTest.bind(db);group=Service.create(db,"sys_user_group",Values.map("short_description","Retained support team"),"admin").get("sys_id").toString();Service.createAccount(db,Values.map("name","UpgradeCustomer","role","requester","password",WorkflowSupport.PASSWORD));user=RecordAccess.owner(db,"UpgradeCustomer");for(String table:List.of("os_customer_case","os_customer_entitlement","os_customer_contact","os_customer_account"))db.update("DROP TABLE "+table);db.update("DELETE FROM os_schema WHERE name='customer_case'");db.update("DELETE FROM os_migration WHERE version>=59");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_customer_account"));db.connection.rollback();assertEquals(58,db.count("SELECT MAX(version) FROM os_migration"));}
@@ -679,6 +688,7 @@ class MigrationsTest {
                                     .get("password");
             db.update("DROP TABLE os_support_conversation");
             db.update("DROP TABLE os_report_measurement");
+            db.update("DROP TABLE os_customer_delivery");
             db.update("DROP TABLE os_customer_contact");
             db.update("DROP INDEX ix_os_user_identity");
             db.update("ALTER TABLE os_user DROP COLUMN user_id");
