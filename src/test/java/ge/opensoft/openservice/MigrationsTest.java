@@ -15,6 +15,14 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void problemInvestigationUpgradePreservesRecordsAndRollsBack(boolean postgres)throws Exception{
+        var env=configuration(postgres);var store=new Store(env);String incident,problem;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);incident=Service.create(db,"incident",Values.map("short_description","Retained incident"),"admin").get("sys_id").toString();problem=Service.create(db,"problem",Values.map("short_description","Retained problem"),"admin").get("sys_id").toString();db.update("DROP TABLE os_problem_link");db.update("DROP TABLE os_problem_analysis");db.update("DELETE FROM os_migration WHERE version>=52");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_problem_link"));db.connection.rollback();assertEquals(51,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=new Store(env).open()){db.update("INSERT INTO os_problem_link(incident_id,problem_id) VALUES(?,?)",incident,problem);db.update("INSERT INTO os_problem_analysis(problem_id,revision,cause,workaround,published) VALUES(?,1,'Retained cause','Retained workaround',1)",problem);db.connection.commit();}
+        for(int n=0;n<2;n++)try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals("Retained workaround",ProblemInvestigations.incident(db,incident).get("workaround"));assertEquals(1,Values.objects(ProblemInvestigations.problem(db,problem).get("incidents")).size());assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));assertTrue(Passwords.matches(db.one("SELECT password FROM os_user WHERE name='admin'").get("password").toString(),"migration-test-password"));}
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void measurementUpgradePreservesReportDefinitions(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String table=ReportFormsAcceptance.seed(store),id=ReportMeasurementsAcceptance.save(store,table,Values.map("field","amount"),false);
         try(var db=store.open()){db.update("DROP TABLE os_report_measurement");db.update("DELETE FROM os_migration WHERE version>=51");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_report_measurement"));db.connection.rollback();assertEquals(50,db.count("SELECT MAX(version) FROM os_migration"));}

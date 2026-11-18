@@ -307,6 +307,19 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher problemOptions=Pattern.compile("/(?:record|api/openservice)/incident/([0-9a-f]{32})/problem-options").matcher(path);
+        if(problemOptions.matches()){
+            method(method,"GET");c.uniqueQuery();String id=problemOptions.group(1);var source=ProblemInvestigations.record(c.db,"incident",id);RecordPolicy.require(Service.schema(c.db,"incident"),"update",c.db.viewerRole);var search=ReferenceSearch.search(c.db,"problem",c.arguments());return path.startsWith("/api/")?json(map("result",search),200):view(c,"problem-options",map("table","incident","incident",FieldAccess.serialize(c.db,source),"search",search,"query",c.arguments().getOrDefault("q",""),"pickerPath","/record/incident/"+id+"/problem-options"));
+        }
+        Matcher investigation=Pattern.compile("/(?:record|api/openservice)/(incident|problem)/([0-9a-f]{32})/investigation").matcher(path);
+        if(investigation.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=investigation.group(1),id=investigation.group(2);boolean api=path.startsWith("/api/"),incident=table.equals("incident");Map<String,Object> result;
+            if(method.equals("POST")){
+                Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));if(!incident){form.put("record_revision",Service.number(Objects.toString(form.get("record_revision"),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(form.get("publish")),"Choose draft or published");form.put("publish",Boolean.parseBoolean(form.get("publish").toString()));}input=form;}
+                result=incident?ProblemInvestigations.link(c.db,id,input):ProblemInvestigations.save(c.db,id,input);if(!api)return redirect(path);
+            }else result=incident?ProblemInvestigations.incident(c.db,id):ProblemInvestigations.problem(c.db,id);
+            return api?json(map("result",result),200):view(c,incident?"incident-problem":"problem-investigation",map("table",table,"investigation",result));
+        }
         Matcher configurationHistory=Pattern.compile("/(admin|api/openservice)/configuration/history(?:/([0-9a-f]{32})(/download)?)?").matcher(path);
         if(configurationHistory.matches()){
             method(method,"GET");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=configurationHistory.group(2);

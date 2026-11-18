@@ -48,6 +48,14 @@ public final class Service {
 
     public static Map<String, Object> record(Store.Db db, String table, String id)
             throws SQLException {
+        return findRecord(db,table,id,true);
+    }
+
+    static Map<String,Object> readRecord(Store.Db db,String table,String id) throws SQLException {
+        return findRecord(db,table,id,false);
+    }
+
+    private static Map<String,Object> findRecord(Store.Db db,String table,String id,boolean lock) throws SQLException {
         RecordPolicy.read(db,schema(db,table));
         var parameters = new ArrayList<Object>(List.of(table, id));
         String access = RecordAccess.filter(db, "os_record.sys_id", parameters);
@@ -55,7 +63,7 @@ public final class Service {
                 db.one(
                         "SELECT * FROM os_record WHERE \"table\"=? AND sys_id=? AND "
                                 + access
-                                + (db.postgres ? " FOR UPDATE" : ""),
+                                + (db.postgres && lock ? " FOR UPDATE" : ""),
                         parameters.toArray());
         if (item == null) throw new Failure(404, "Record not found");
         return item;
@@ -276,6 +284,8 @@ public final class Service {
                     "account.group_deleted",
                     map("group_id", item.get("sys_id")));
         db.update("DELETE FROM os_group_member WHERE group_id=?", item.get("sys_id"));
+        db.update("DELETE FROM os_problem_link WHERE incident_id=? OR problem_id=?",item.get("sys_id"),item.get("sys_id"));
+        db.update("DELETE FROM os_problem_analysis WHERE problem_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record WHERE sys_id=?", item.get("sys_id"));
     }
 
