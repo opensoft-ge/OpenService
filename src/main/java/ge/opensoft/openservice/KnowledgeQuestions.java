@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import org.apache.commons.codec.digest.DigestUtils;
 /** Public-snapshot assistance with explicit preview and bounded completed attempts. No action tools. */
 final class KnowledgeQuestions {
+ static final String PROMPT_VERSION="knowledge-question.v1";
  private KnowledgeQuestions() {}
  static Map<String,Object> context(Store store,Store.Db db,String id) throws Exception {
   var article=object(KnowledgeFeedback.page(db,id).get("article"));var source=map("article_id",id,"version",article.get("version"),"title",article.get("title"),"content",article.get("content"));String content=JSON.writeValueAsString(source);require(content.length()<=16000,"Published source exceeds the assistance limit");

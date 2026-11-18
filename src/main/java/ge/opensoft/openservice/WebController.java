@@ -1347,6 +1347,13 @@ public class WebController {
             }
         }
 
+        Matcher evaluation=Pattern.compile("/(?:admin|api/openservice)/ai-evaluations(?:/([0-9a-f]{32}))?").matcher(path);
+        if(evaluation.matches()){
+            c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String suite=Objects.toString(evaluation.group(1),"");Map<String,Object> result;
+            if(method.equals("GET"))result=suite.isEmpty()?AssistantEvaluations.directory(c.db):AssistantEvaluations.page(store,c.db,suite);else{Object input=api?body(c):AssistantEvaluations.form(c.arguments());result=suite.isEmpty()?AssistantEvaluations.create(store,c.db,input):AssistantEvaluations.command(store,c.db,suite,input);if(!api && (suite.isEmpty() || Boolean.TRUE.equals(result.get("deleted"))))return redirect("/admin/ai-evaluations"+(result.containsKey("suite_id")?"/"+result.get("suite_id"):""));}
+            return api?json(map("result",result),method.equals("POST") && suite.isEmpty()?201:200):view(c,suite.isEmpty()?"ai-evaluations":"ai-evaluation",map("table","knowledge","page",result,"runKey",Values.id(),"exportJson",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(result)));
+        }
+
         Matcher mappingAssessment=Pattern.compile("/(?:admin|api/openservice)/migration-mappings(?:/([0-9a-f]{32}))?").matcher(path);
         if(mappingAssessment.matches()){
             c.admin();method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String assessment=Objects.toString(mappingAssessment.group(1),"");Map<String,Object> result;
