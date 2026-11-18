@@ -19,6 +19,7 @@ final class PublishedKnowledge {
         var data = object(FieldAccess.serialize(db, item));
         String title = WorkJobs.text(data.get("short_description"), 1000),
                 content = WorkJobs.text(data.get("text"), 100000);
+        KnowledgeReviews.consume(db, actor, id, "publish");
         int version = nextVersion(db, id);
         db.update(
                 "INSERT INTO os_publication(article_id,version,title,content,published_at)"
@@ -45,6 +46,7 @@ final class PublishedKnowledge {
 
     static Map<String,Object> restore(Store.Db db, String actor, String id, Object input) throws SQLException {
         Service.requireAccountAdministrator(db, actor);
+        KnowledgeReviews.instantRestore(db,id);
         var item = Service.record(db,"kb_knowledge",id);
         require(RecordAccess.status(db,id).get("visibility").equals("workspace"),
                 "Private or group articles cannot be published to all requesters");
@@ -65,6 +67,7 @@ final class PublishedKnowledge {
 
     static void retire(Store.Db db, String actor, String id) throws SQLException {
         Service.requireAccountAdministrator(db, actor);
+        KnowledgeReviews.consume(db, actor, id, "retire");
         if (db.update("UPDATE os_publication SET retired=1 WHERE article_id=?", id) == 0)
             throw new Failure(404, "Published article not found");
         SecurityEvents.record(db, actor, actor, "knowledge.retired", map("article_id", id));

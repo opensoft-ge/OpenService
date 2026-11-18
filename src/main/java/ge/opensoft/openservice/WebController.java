@@ -1034,6 +1034,12 @@ public class WebController {
         if(noticeTarget.matches()){
             method(method,"GET");c.noQuery();c.uniqueQuery();String target=NoticeTargets.open(c.db,noticeTarget.group(1));return path.startsWith("/api/")?json(map("result",map("url",target)),200):redirect(target);
         }
+        Matcher knowledgeGovernance=Pattern.compile("/(?:admin|api/openservice)/knowledge/([0-9a-f]{32})/review").matcher(path);
+        if(knowledgeGovernance.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();c.noQuery();boolean api=path.startsWith("/api/");String id=knowledgeGovernance.group(1);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("confirm","true".equals(form.get("confirm")));input=form;}result=KnowledgeReviews.act(c.db,id,input);if(!api)return redirect("/admin/knowledge/"+id+"/review");}else result=KnowledgeReviews.page(c.db,id);
+            return api?json(map("result",result),200):view(c,"knowledge-review",map("table","knowledge","page",result));
+        }
         Matcher knowledgeDraft=Pattern.compile("/(?:admin|api/openservice)/knowledge/([0-9a-f]{32})/draft").matcher(path);
         if(knowledgeDraft.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=knowledgeDraft.group(1);Map<String,Object> result;

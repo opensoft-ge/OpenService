@@ -16,6 +16,13 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void knowledgeReviewsRollback() throws Exception { KnowledgeReviewsAcceptance.rollback(this); }
+    @Test void knowledgeReviewsAuthority() throws Exception { KnowledgeReviewsAcceptance.authority(this); }
+    @Test void knowledgeReviewsLifecycle() throws Exception { KnowledgeReviewsAcceptance.lifecycle(this); }
+    @Test void knowledgeReviewsStale() throws Exception { KnowledgeReviewsAcceptance.stale(this); }
+    @Test void knowledgeReviewsValidation() throws Exception { KnowledgeReviewsAcceptance.validation(this); }
+    @Test void knowledgeReviewsConcurrency() throws Exception { KnowledgeReviewsAcceptance.concurrency(this); }
+    @Test void knowledgeReviewsRun() throws Exception { KnowledgeReviewsAcceptance.run(this); }
     @Test void dashboardsLimitsAndMetrics() throws Exception { DashboardsAcceptance.limitsAndMetrics(this); }
     @Test void dashboardsRoleAndFields() throws Exception { DashboardsAcceptance.roleAndFields(this); }
 
@@ -393,7 +400,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_dashboard_group", "os_dashboard", "os_report_schedule", "os_approval_group", "os_directory", "os_offboarding", "os_totp_recovery", "os_totp_setup", "os_totp_challenge", "os_totp_attempt", "os_totp", "os_oidc_challenge", "os_oidc_binding", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_knowledge_review", "os_knowledge_policy", "os_dashboard_group", "os_dashboard", "os_report_schedule", "os_approval_group", "os_directory", "os_offboarding", "os_totp_recovery", "os_totp_setup", "os_totp_challenge", "os_totp_attempt", "os_totp", "os_oidc_challenge", "os_oidc_binding", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }

@@ -1162,4 +1162,13 @@ class MigrationsTest {
         try(var db=store.open()){PlatformFoundationTest.bind(db);GroupMembers.change(db,team,db.viewerId,Values.map("user_id",RecordAccess.owner(db,"DashboardUpgradeReader")),false);db.connection.commit();}try(var db=new Store(env).open()){ApprovalTest.as(db,"DashboardUpgradeReader");assertEquals(404,assertThrows(Values.Failure.class,()->Dashboards.show(db,id)).status);}
     }
 
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void knowledgeReviewUpgradeRetainsPendingAuthority(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String retained;
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before knowledge review"),"admin").get("sys_id").toString();db.update("DROP TABLE os_knowledge_review");db.update("DROP TABLE os_knowledge_policy");db.update("DELETE FROM os_migration WHERE version>=88");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_knowledge_review"));db.connection.rollback();assertEquals(87,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);String id=KnowledgeDraftsAcceptance.seed(store);try(var db=store.open()){PlatformFoundationTest.bind(db);Service.createAccount(db,Values.map("name","KnowledgeUpgradeReviewer","role","admin","password",WorkflowSupport.PASSWORD));String reviewer=RecordAccess.owner(db,"KnowledgeUpgradeReviewer");KnowledgeReviews.act(db,id,KnowledgeReviewsAcceptance.body(KnowledgeReviews.page(db,id),"configure",Values.map("reviewer_id",reviewer)));KnowledgeReviews.act(db,id,KnowledgeReviewsAcceptance.body(KnowledgeReviews.page(db,id),"submit",Values.map("intent","publish")));db.connection.commit();}
+        try(var db=new Store(env).open()){ApprovalTest.as(db,"KnowledgeUpgradeReviewer");assertEquals(true,KnowledgeReviews.page(db,id).get("can_decide"));KnowledgeReviews.act(db,id,KnowledgeReviewsAcceptance.body(KnowledgeReviews.page(db,id),"approve",Values.map("reason","Retained review")));db.connection.commit();}
+        try(var db=new Store(env).open()){PlatformFoundationTest.bind(db);assertEquals(true,KnowledgeReviews.page(db,id).get("can_apply"));KnowledgeReviews.act(db,id,KnowledgeReviewsAcceptance.body(KnowledgeReviews.page(db,id),"apply",Values.map()));assertEquals(3,db.count("SELECT COUNT(*) FROM os_publication WHERE article_id=?",id));assertEquals("Retained before knowledge review",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.commit();}
+    }
+
 }
