@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 62;
+    static final int VERSION = 63;
 
     private Migrations() {}
 
@@ -602,6 +602,11 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_field_dispatch(task_id VARCHAR(32) PRIMARY KEY REFERENCES os_case_task(task_id) ON DELETE CASCADE,technician_id VARCHAR(32) NOT NULL,starts BIGINT NOT NULL,ends BIGINT NOT NULL,location VARCHAR(240) NOT NULL,status VARCHAR(16) NOT NULL,reason TEXT NOT NULL,revision INTEGER NOT NULL)");
             db.update("CREATE INDEX IF NOT EXISTS ix_os_field_dispatch_time ON os_field_dispatch(technician_id,status,starts,ends)");
             db.update("INSERT INTO os_migration(version,name) VALUES(62,?)","calendar-aware field task dispatch and technician decisions");
+        }
+
+        if(version<63){
+            db.update("CREATE TABLE IF NOT EXISTS os_field_visit(task_id VARCHAR(32) PRIMARY KEY REFERENCES os_case_task(task_id) ON DELETE CASCADE,revision INTEGER NOT NULL,phase VARCHAR(12) NOT NULL,checklist TEXT NOT NULL,answers TEXT NOT NULL,parts TEXT NOT NULL,evidence TEXT NOT NULL,notes TEXT NOT NULL,travelled BIGINT NOT NULL,arrived BIGINT NOT NULL,ended BIGINT NOT NULL,evidence_required INTEGER NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(63,?)","field visit execution checks part usage and evidence receipts");
         }
 
     }

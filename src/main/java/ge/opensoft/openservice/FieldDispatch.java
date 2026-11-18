@@ -26,13 +26,13 @@ final class FieldDispatch {
         var shown=new LinkedHashMap<>(dispatch);shown.put("technician",db.one("SELECT COALESCE((SELECT name FROM os_user WHERE user_id=?),'Unassigned or removed') AS name",dispatch.get("technician_id")).get("name"));
         boolean booked=Set.of("assigned","accepted").contains(dispatch.get("status")),valid=true;
         if(booked)try{FieldAvailability.eligible(db,table,id,task,dispatch.get("technician_id").toString(),((Number)dispatch.get("starts")).longValue(),((Number)dispatch.get("ends")).longValue());}catch(Failure unavailable){valid=false;}
-        return map("parent",FieldAccess.serialize(db,parent),"task",task,"dispatch",shown,"technicians",choices,"start",((Number)dispatch.get("revision")).intValue()==0?"":Instant.ofEpochMilli(((Number)dispatch.get("starts")).longValue()).toString(),"end",((Number)dispatch.get("revision")).intValue()==0?"":Instant.ofEpochMilli(((Number)dispatch.get("ends")).longValue()).toString(),"eligible",valid,"owned",dispatch.get("technician_id").equals(db.viewerId),"booked",booked,"mutable",!WorkTasks.closed(db,parent,WorkTasks.plan(db,id)),"can_manage",RecordPolicy.allows(Service.schema(db,table),"update",db.viewerRole));
+        return map("visit_phase",FieldVisits.current(db,taskId).get("phase"),"parent",FieldAccess.serialize(db,parent),"task",task,"dispatch",shown,"technicians",choices,"start",((Number)dispatch.get("revision")).intValue()==0?"":Instant.ofEpochMilli(((Number)dispatch.get("starts")).longValue()).toString(),"end",((Number)dispatch.get("revision")).intValue()==0?"":Instant.ofEpochMilli(((Number)dispatch.get("ends")).longValue()).toString(),"eligible",valid,"owned",dispatch.get("technician_id").equals(db.viewerId),"booked",booked,"mutable",!WorkTasks.closed(db,parent,WorkTasks.plan(db,id)),"can_manage",RecordPolicy.allows(Service.schema(db,table),"update",db.viewerRole));
     }
 
     static Map<String,Object> command(Store.Db db,String table,String id,String taskId,Object input) throws SQLException {
         if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");
         var parent=WorkTasks.record(db,table,id);var task=WorkTasks.task(db,id,taskId);team(db,task);RecordPolicy.require(Service.schema(db,table),"update",db.viewerRole);
-        var current=current(db,taskId);var body=object(input);String operation=WorkJobs.text(body.get("operation"),7);boolean assign=operation.equals("assign"),accept=operation.equals("accept");
+        FieldVisits.guardDispatch(db,taskId);var current=current(db,taskId);var body=object(input);String operation=WorkJobs.text(body.get("operation"),7);boolean assign=operation.equals("assign"),accept=operation.equals("accept");
         require(Set.of("assign","accept","reject","release").contains(operation),"Choose a field dispatch action");
         var keys=new HashSet<>(Set.of("operation","revision","task_revision","record_revision"));keys.addAll(assign?Set.of("technician_id","start","end","location"):Set.of("reason"));
         require(body.keySet().equals(keys),"Provide only the selected dispatch fields");
@@ -68,11 +68,11 @@ final class FieldDispatch {
 
     static void guard(Store.Db db,String task,String operation) throws SQLException {
         String status=current(db,task).get("status").toString();
-        if(!db.fieldDispatchCommand && Set.of("assigned","accepted").contains(status) && !operation.equals("waive") && !(status.equals("accepted") && Set.of("complete","cancel").contains(operation)))throw new Failure(409,"Use the field dispatch workbench before changing this assigned task");
+        if(!db.fieldDispatchCommand && !db.fieldVisitCommand && Set.of("assigned","accepted").contains(status) && !operation.equals("waive") && !(status.equals("accepted") && Set.of("complete","cancel").contains(operation)))throw new Failure(409,"Use the field dispatch workbench before changing this assigned task");
     }
 
     static void finished(Store.Db db,String task,String state) throws SQLException {
-        if(Set.of("complete","cancelled").contains(state))db.update("UPDATE os_field_dispatch SET status=?,revision=revision+1 WHERE task_id=? AND status='accepted'",state,task);
+        if(Set.of("complete","cancelled").contains(state))db.update("UPDATE os_field_dispatch SET status=?,revision=revision+1 WHERE task_id=? AND status IN ('assigned','accepted')",state,task);
     }
 
     static void parentGuard(Store.Db db,Map<String,Object> parent) throws SQLException {

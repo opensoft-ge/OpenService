@@ -301,6 +301,7 @@ public final class Service {
         db.update("DELETE FROM os_change_plan WHERE change_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record_scope WHERE record_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_field_dispatch WHERE task_id IN (SELECT task_id FROM os_case_task WHERE parent_id=?)",item.get("sys_id"));
+        db.update("DELETE FROM os_field_visit WHERE task_id IN (SELECT task_id FROM os_case_task WHERE parent_id=?)",item.get("sys_id"));
         db.update("DELETE FROM os_case_task WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_task_plan WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_catalog_workflow_order WHERE request_id=?",item.get("sys_id"));
