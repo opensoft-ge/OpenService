@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 72;
+    static final int VERSION = 73;
 
     private Migrations() {}
 
@@ -669,6 +669,12 @@ final class Migrations {
             db.update("INSERT INTO os_migration(version,name) VALUES(72,?)","authenticated inbound mailboxes and owned request reply threads");
         }
 
+        if(version<73){
+            db.update("CREATE TABLE IF NOT EXISTS os_ai_triage(run_id VARCHAR(32) PRIMARY KEY,owner_id VARCHAR(32) NOT NULL,record_id VARCHAR(32) NOT NULL,record_revision INTEGER NOT NULL,source_fields TEXT NOT NULL,envelope TEXT NOT NULL,state VARCHAR(20) NOT NULL,created_at BIGINT NOT NULL,action_fingerprint VARCHAR(64) NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_ai_triage_owner ON os_ai_triage(owner_id,record_id)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(73,?)","reviewed incident AI triage and retained execution receipts");
+        }
+
     }
 
     private static void addColumn(Store.Db db, String table, String column, String definition)
@@ -691,5 +697,7 @@ final class Migrations {
                 }
             }
         }
+
+
     }
 }

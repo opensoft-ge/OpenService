@@ -308,6 +308,13 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        Matcher triage=Pattern.compile("/(?:record/incident|api/openservice/incidents)/([0-9a-f]{32})/triage(?:/([0-9a-f]{32}))?").matcher(path);
+        if(triage.matches()){
+            method(method,"GET","POST");c.noQuery();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=triage.group(1),run=Objects.toString(triage.group(2),"");Map<String,Object> result;
+            if(method.equals("GET"))result=IncidentTriage.page(store,c.db,id,run);else{Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");if(form.containsKey("priority")){form.put("proposal",map("priority",form.remove("priority"),"group_id",form.remove("group_id"),"rationale",form.remove("rationale")));}for(String flag:List.of("allow_external","confirm"))if(form.containsKey(flag))form.put(flag,"true".equals(form.get(flag)));input=form;}result=run.isEmpty()?IncidentTriage.generate(store,c.db,id,input):IncidentTriage.command(store,c.db,id,run,input);if(!api && run.isEmpty() && result.get("run")!=null)return redirect("/record/incident/"+id+"/triage/"+object(result.get("run")).get("run_id"));}
+            return api?json(map("result",result),200):view(c,"incident-triage",map("table","incident","page",result,"triagePath",path,"incidentId",id));
+        }
+
         Matcher inbound=Pattern.compile("/api/openservice/inbound-mail/([0-9a-f]{32})").matcher(path);
         if(inbound.matches()){method(method,"POST");c.noQuery();c.uniqueQuery();return json(map("result",InboundMail.submit(c.db,c.user,inbound.group(1),body(c))),200);}
         Matcher mailbox=Pattern.compile("/(?:admin/inbound-mail|api/openservice/inbound-mailboxes)(?:/(new|[0-9a-f]{32}))?").matcher(path);
