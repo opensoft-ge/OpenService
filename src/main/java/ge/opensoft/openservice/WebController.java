@@ -620,6 +620,17 @@ public class WebController {
             return view(c,"connector-console",map("table","operations","connector",ConnectorConsole.page(c.db,alias),"probeKey",id(),"workEnabled",store.environment.getProperty("WORK_ENABLED",Boolean.class,false)));
         }
 
+
+        Matcher integrationProfile=Pattern.compile("/(admin|api/openservice)/integration-profiles(?:/([0-9a-f]{32}))?").matcher(path);
+        if(integrationProfile.matches()){
+            method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(integrationProfile.group(2),"");
+            if(method.equals("POST")){c.noQuery();var result=SignedEvents.save(store,c.db,id,api?body(c):SignedEvents.form(c.arguments()));if(api)return json(map("result",result),200);if(result.get("issued_secret").toString().isEmpty())return redirect("/admin/integration-profiles/"+object(result.get("profile")).get("profile_id"));return view(c,"integration-profiles",map("table","operations","page",result,"issuedSecret",result.get("issued_secret")));}
+            var result=SignedEvents.page(c.db,id,c.arguments());return api?json(map("result",result),200):view(c,"integration-profiles",map("table","operations","page",result,"issuedSecret",""));
+        }
+        Matcher signedEvent=Pattern.compile("/api/openservice/inbound-events/([a-z][a-z0-9_]*)/([0-9a-f]{32})").matcher(path);
+        if(signedEvent.matches()){
+            method(method,"POST");c.noQuery();c.uniqueQuery();var result=SignedEvents.receive(store,c.db,c.user,signedEvent.group(1),signedEvent.group(2),c.http.getContentType(),Collections.list(c.http.getHeaders("X-OpenService-Event")),Collections.list(c.http.getHeaders("X-OpenService-Timestamp")),Collections.list(c.http.getHeaders("X-OpenService-Signature")),c.http.getInputStream().readNBytes(16385),System.currentTimeMillis());return json(map("result",result),Boolean.TRUE.equals(result.get("duplicate"))?200:201);
+        }
         Matcher eventFlow=Pattern.compile("/(admin|api/openservice)/event-flows(?:/([0-9a-f]{32}))?").matcher(path);
         if(eventFlow.matches()){
             method(method,"GET","POST");c.admin();c.uniqueQuery();boolean api=path.startsWith("/api/");String id=Objects.toString(eventFlow.group(2),"");

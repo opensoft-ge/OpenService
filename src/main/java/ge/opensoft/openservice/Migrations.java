@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 79;
+    static final int VERSION = 80;
 
     private Migrations() {}
 
@@ -716,6 +716,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_event_run(run_id VARCHAR(32) PRIMARY KEY,flow_id VARCHAR(32) NOT NULL REFERENCES os_event_flow(flow_id),record_id VARCHAR(32) NOT NULL,record_revision INTEGER NOT NULL,flow_revision INTEGER NOT NULL,owner_id VARCHAR(32) NOT NULL,auth_revision BIGINT NOT NULL,triggered_by VARCHAR(32) NOT NULL,created_at BIGINT NOT NULL,job_id VARCHAR(32) NOT NULL,state VARCHAR(20) NOT NULL,detail TEXT NOT NULL,UNIQUE(flow_id,record_id))");
             db.update("CREATE INDEX IF NOT EXISTS ix_event_run_pending ON os_event_run(state,created_at)");
             db.update("INSERT INTO os_migration(version,name) VALUES(79,?)","durable record-triggered native action workflows and retained run receipts");
+        }
+
+        if(version<80){
+            db.update("CREATE TABLE IF NOT EXISTS os_signed_profile(profile_id VARCHAR(32) PRIMARY KEY,name VARCHAR(160) NOT NULL,table_name VARCHAR(80) NOT NULL,gateway_id VARCHAR(32) NOT NULL,definition TEXT NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL,envelope TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_signed_receipt(profile_id VARCHAR(32) NOT NULL REFERENCES os_signed_profile(profile_id),event_id VARCHAR(160) NOT NULL,fingerprint VARCHAR(64) NOT NULL,record_id VARCHAR(32) NOT NULL,profile_revision INTEGER NOT NULL,gateway_id VARCHAR(32) NOT NULL,key_id VARCHAR(32) NOT NULL,created VARCHAR(40) NOT NULL,PRIMARY KEY(profile_id,event_id))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(80,?)","signed scoped inbound integration events and retained deduplication receipts");
         }
 
     }

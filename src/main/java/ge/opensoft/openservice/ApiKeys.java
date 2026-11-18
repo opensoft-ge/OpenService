@@ -123,7 +123,8 @@ final class ApiKeys {
                         key.get("auth_revision"));
         if (user == null) throw new Failure(401, "Invalid API key");
         boolean mail=key.get("table_name").equals("sc_request") && path.matches("/api/openservice/inbound-mail/[0-9a-f]{32}");
-        if(mail){
+        boolean event=path.matches("/api/openservice/inbound-events/"+Pattern.quote(key.get("table_name").toString())+"/[0-9a-f]{32}");
+        if(mail || event){
             if(!method.equals("POST") || ((Number)key.get("can_write")).intValue()!=1)throw new Failure(403,"API key does not permit this operation");
         }else{
         String collection = "/api/now/table/" + Pattern.quote(key.get("table_name").toString());

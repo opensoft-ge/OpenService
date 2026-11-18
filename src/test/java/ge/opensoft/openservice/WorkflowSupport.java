@@ -16,6 +16,14 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void signedEventsEdges() throws Exception { SignedEventsAcceptance.edges(this); }
+    @Test void signedEventsRun() throws Exception { SignedEventsAcceptance.run(this); }
+    @Test void signedEventsBoundaries() throws Exception { SignedEventsAcceptance.boundaries(this); }
+    @Test void signedEventsConfiguration() throws Exception { SignedEventsAcceptance.configuration(this); }
+    @Test void signedEventsAuthority() throws Exception { SignedEventsAcceptance.authority(this); }
+    @Test void signedEventsCapacity() throws Exception { SignedEventsAcceptance.capacity(this); }
+    @Test void signedEventsConcurrency() throws Exception { SignedEventsAcceptance.concurrency(this); }
+
     @Test void eventWorkflowsAvailability() throws Exception { EventWorkflowsAcceptance.availability(this); }
     @Test void eventWorkflowsRun() throws Exception { EventWorkflowsAcceptance.run(this); }
     @Test void eventWorkflowsModes() throws Exception { EventWorkflowsAcceptance.modes(this); }
@@ -305,7 +313,7 @@ abstract class WorkflowSupport {
                             "os_email_enrollment",
                             "os_password_exclusion",
                             "os_approval",
-                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
+                            "os_knowledge_feedback", "os_browser_session", "os_api_key", "os_work", "os_notice_target", "os_notice", "os_connector", "os_signed_receipt","os_signed_profile","os_event_run", "os_event_flow", "os_clock_transition", "os_clock_binding", "os_clock_policy", "os_sla_threshold", "os_sla_escalation", "os_sla_budget", "os_sla", "os_calendar", "os_saved_report", "os_publication", "os_dependency", "os_operational_event", "os_identity", "os_password_policy", "os_password_corpus")) db.update("DELETE FROM " + table);
             db.update("DELETE FROM os_user WHERE name<>?", "admin");
             db.connection.commit();
         }
