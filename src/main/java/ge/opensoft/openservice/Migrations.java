@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 61;
+    static final int VERSION = 62;
 
     private Migrations() {}
 
@@ -595,6 +595,13 @@ final class Migrations {
         if(version<61){
             db.update("CREATE TABLE IF NOT EXISTS os_customer_resolution(resolution_id VARCHAR(32) PRIMARY KEY,record_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE,ordinal INTEGER NOT NULL,revision INTEGER NOT NULL,status VARCHAR(16) NOT NULL,code VARCHAR(12) NOT NULL,solution TEXT NOT NULL,proposer_name VARCHAR(80) NOT NULL,reason TEXT NOT NULL,created VARCHAR(40) NOT NULL,decided VARCHAR(40) NOT NULL,snapshot VARCHAR(64) NOT NULL,reopened INTEGER NOT NULL DEFAULT 0,UNIQUE(record_id,ordinal))");
             db.update("INSERT INTO os_migration(version,name) VALUES(61,?)","reviewed customer solution decisions and guarded reopening");
+        }
+
+        if(version<62){
+            db.update("CREATE TABLE IF NOT EXISTS os_field_availability(user_id VARCHAR(32) PRIMARY KEY REFERENCES os_user(user_id) ON DELETE CASCADE,calendar_id VARCHAR(80) NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_field_dispatch(task_id VARCHAR(32) PRIMARY KEY REFERENCES os_case_task(task_id) ON DELETE CASCADE,technician_id VARCHAR(32) NOT NULL,starts BIGINT NOT NULL,ends BIGINT NOT NULL,location VARCHAR(240) NOT NULL,status VARCHAR(16) NOT NULL,reason TEXT NOT NULL,revision INTEGER NOT NULL)");
+            db.update("CREATE INDEX IF NOT EXISTS ix_os_field_dispatch_time ON os_field_dispatch(technician_id,status,starts,ends)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(62,?)","calendar-aware field task dispatch and technician decisions");
         }
 
     }

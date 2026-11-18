@@ -307,6 +307,20 @@ public class WebController {
     }
 
     private ModelAndView route(Request c, String path, String method) throws Exception {
+        if(path.equals("/admin/field-availability") || path.equals("/api/openservice/field-availability")){
+            method(method,"GET","POST");c.admin();c.noQuery();boolean api=path.startsWith("/api/");Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");form.put("revision",Service.number(Objects.toString(form.get("revision"),""),0,Integer.MAX_VALUE));TypedFields.require(Set.of("true","false").contains(Objects.toString(form.get("active"),"")),"Choose active or inactive");form.put("active",Boolean.parseBoolean(form.get("active").toString()));input=form;}result=FieldAvailability.save(c.db,input);if(!api)return redirect(path);}else result=FieldAvailability.page(c.db);
+            return api?json(map("result",result),200):view(c,"field-availability",map("table","field-service","page",result));
+        }
+        if(path.equals("/field-service") || path.equals("/api/openservice/field-service")){
+            method(method,"GET");c.uniqueQuery();var result=FieldDispatch.queue(c.db,c.arguments());return path.startsWith("/api/")?json(map("result",result),200):view(c,"field-service",map("table","field-service","queue",result));
+        }
+        Matcher fieldDispatch=Pattern.compile("/(?:record|api/openservice/records)/([a-z][a-z0-9_]{0,79})/([0-9a-f]{32})/field-dispatch/([0-9a-f]{32})").matcher(path);
+        if(fieldDispatch.matches()){
+            method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");String table=fieldDispatch.group(1),id=fieldDispatch.group(2),task=fieldDispatch.group(3);Map<String,Object> result;
+            if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");for(String key:List.of("revision","task_revision","record_revision"))form.put(key,Service.number(Objects.toString(form.get(key),""),0,Integer.MAX_VALUE));input=form;}result=FieldDispatch.command(c.db,table,id,task,input);if(!api)return redirect(path);}else result=FieldDispatch.page(c.db,table,id,task);
+            return api?json(map("result",result),200):view(c,"field-dispatch",map("table",table,"page",result,"dispatchPath","/record/"+table+"/"+id+"/field-dispatch/"+task));
+        }
         if(path.equals("/work-tasks") || path.equals("/api/openservice/work-tasks")){
             method(method,"GET");c.uniqueQuery();var result=WorkTasks.queue(c.db,c.arguments());return path.startsWith("/api/")?json(map("result",result),200):view(c,"work-task-queue",map("table","work","queue",result));
         }

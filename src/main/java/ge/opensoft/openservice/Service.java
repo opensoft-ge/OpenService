@@ -196,6 +196,7 @@ public final class Service {
         MajorIncidents.guard(db,item);
         CustomerResolutions.guard(db,item);
         WorkTasks.guard(db,item);
+        FieldDispatch.parentGuard(db,item);
         CatalogueWorkflows.settle(db,item);
         db.update(
                 "UPDATE os_record SET data="
@@ -299,6 +300,7 @@ public final class Service {
         db.update("DELETE FROM os_problem_analysis WHERE problem_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_plan WHERE change_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_record_scope WHERE record_id=?",item.get("sys_id"));
+        db.update("DELETE FROM os_field_dispatch WHERE task_id IN (SELECT task_id FROM os_case_task WHERE parent_id=?)",item.get("sys_id"));
         db.update("DELETE FROM os_case_task WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_task_plan WHERE parent_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_catalog_workflow_order WHERE request_id=?",item.get("sys_id"));
