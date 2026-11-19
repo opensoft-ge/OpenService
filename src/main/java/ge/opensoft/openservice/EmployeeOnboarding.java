@@ -41,10 +41,10 @@ final class EmployeeOnboarding {
         db.update("INSERT INTO os_hr_onboarding(parent_id,revision,launched,steps) VALUES(?,?,?,?) ON CONFLICT(parent_id) DO UPDATE SET revision=excluded.revision,launched=excluded.launched,steps=excluded.steps",id,((Number)plan.get("revision")).intValue()+1,plan.get("launched"),JSON.writeValueAsString(steps));Service.update(db,"hr_case",parent,map(),actor,db.viewerRole,parent.get("revision").toString());Service.audit(db,parent,actor,"onboarding."+operation,map("plan_revision",((Number)plan.get("revision")).intValue()+1));return page(db,id);
     }
 
-    static boolean ready(Store.Db db,Map<String,Object> work)throws SQLException {return db.count("SELECT COUNT(*) FROM os_hr_onboarding_work WHERE parent_id=? AND ordinal<? AND status NOT IN ('complete','waived')",work.get("parent_id"),work.get("ordinal"))==0;}
+    static boolean ready(Store.Db db,Map<String,Object> work)throws SQLException {return EmploymentChanges.due(db,work) && db.count("SELECT COUNT(*) FROM os_hr_onboarding_work WHERE parent_id=? AND ordinal<? AND status NOT IN ('complete','waived')",work.get("parent_id"),work.get("ordinal"))==0;}
 
     static void taskGuard(Store.Db db,String child,String operation)throws SQLException {
-        var work=binding(db,child);if(work==null)return;if(!Set.of("claim","complete","requeue").contains(operation))throw new Failure(409,"Use the reviewed HR onboarding plan to manage this work");if(Set.of("complete","waived").contains(work.get("status")))throw new Failure(409,"This onboarding step is already settled");if(!ready(db,work))throw new Failure(409,"Complete or explicitly waive earlier onboarding steps first");
+        var work=binding(db,child);if(work==null)return;if(!Set.of("claim","complete","requeue").contains(operation))throw new Failure(409,"Use the reviewed HR onboarding plan to manage this work");if(Set.of("complete","waived").contains(work.get("status")))throw new Failure(409,"This onboarding step is already settled");if(!ready(db,work))throw new Failure(409,"Wait for the scheduled date and complete or explicitly waive earlier steps");
     }
 
     static void advance(Store.Db db,Map<String,Object> child)throws SQLException {

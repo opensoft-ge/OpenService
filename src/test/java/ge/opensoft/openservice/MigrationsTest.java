@@ -17,7 +17,7 @@ class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
     void deliveryArchiveUpgradeAndRecovery(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String job,batch;Map<String,Object> input;
-        try(var db=store.open()){PlatformFoundationTest.bind(db);job=DeliveryArchiveAcceptance.seed(db,"delivered",1);db.update("DROP TABLE os_delivery_archive");db.update("DROP TABLE os_retention_hold");db.update("DROP TABLE os_retention_policy");db.update("DELETE FROM os_migration WHERE version=98");db.connection.commit();Migrations.apply(db);assertEquals(90,((Number)DeliveryArchive.policy(db).get("days")).intValue());db.connection.rollback();assertEquals(97,db.count("SELECT MAX(version) FROM os_migration"));}
+        try(var db=store.open()){PlatformFoundationTest.bind(db);job=DeliveryArchiveAcceptance.seed(db,"delivered",1);db.update("DROP TABLE os_delivery_archive");db.update("DROP TABLE os_retention_hold");db.update("DROP TABLE os_retention_policy");db.update("DELETE FROM os_migration WHERE version>=98");db.connection.commit();Migrations.apply(db);assertEquals(90,((Number)DeliveryArchive.policy(db).get("days")).intValue());db.connection.rollback();assertEquals(97,db.count("SELECT MAX(version) FROM os_migration"));}
         store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var review=Values.object(DeliveryArchive.command(store,db,Values.map("operation","review"),System.currentTimeMillis()).get("review"));batch=Values.id();input=Values.map("operation","archive","cutoff",review.get("cutoff"),"proof",review.get("proof"),"key",batch,"confirm",true);DeliveryArchive.command(store,db,input,System.currentTimeMillis());db.connection.commit();}
         for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);assertEquals(batch,Values.object(DeliveryArchive.command(store,db,input,System.currentTimeMillis()).get("receipt")).get("batch_id"));assertEquals(1,db.count("SELECT COUNT(*) FROM os_delivery_archive"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));db.connection.commit();}}
         try(var db=store.open()){PlatformFoundationTest.bind(db);var review=Values.object(DeliveryArchive.command(store,db,Values.map("operation","review_restore","batch_id",batch),System.currentTimeMillis()).get("review"));DeliveryArchive.command(store,db,Values.map("operation","restore","batch_id",batch,"proof",review.get("proof"),"confirm",true),System.currentTimeMillis());db.connection.commit();}
@@ -750,7 +750,7 @@ class MigrationsTest {
                                     db.one("SELECT password FROM os_user WHERE name='admin'")
                                             .get("password"),
                             "migration-test-password"));
-            db.update("INSERT INTO os_migration(version,name) VALUES(99,'future')");
+            db.update("INSERT INTO os_migration(version,name) VALUES(?,'future')",Migrations.VERSION+1);
             db.connection.commit();
         }
         assertThrows(SQLException.class, () -> new Store(config));
@@ -1254,6 +1254,15 @@ class MigrationsTest {
         try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before journal publication"),"admin").get("sys_id").toString();db.update("DROP TABLE os_imported_journal");db.update("DELETE FROM os_migration WHERE version>=93");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_imported_journal"));db.connection.rollback();assertEquals(92,db.count("SELECT MAX(version) FROM os_migration"));}
         store=new Store(env);try(var db=store.open()){String actor=PlatformFoundationTest.bind(db);String job=TransferJobs.create(db,ImportedJournalsAcceptance.plan(),actor,store.migrationOrigins).get("job_id").toString();db.connection.commit();while(Values.object(TransferJobs.job(db,job).get("detail")).get("status").equals("fetching")){TransferJobs.step(db,job,MigrationSource.TOKEN,store.migrationOrigins);db.connection.commit();}TransferApply.apply(db,job,actor,false);var review=ImportedJournals.inspect(db,"sc_request",record,job,comment);ImportedJournals.command(db,"sc_request",record,ImportedJournalsAcceptance.publish(review));db.connection.commit();}
         for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);var entries=Values.objects(ImportedJournals.page(db,"sc_request",record,Map.of()).get("entries"));assertEquals(1,entries.size());assertEquals(comment,entries.getFirst().get("journal_id"));assertEquals("source.author",entries.getFirst().get("reported_author"));assertEquals("Retained before journal publication",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}MigrationSource.reset();
+    }
+
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void enterpriseUpgradeRetainsRecordsAndRevisionedPlans(boolean postgres)throws Exception {
+        var env=configuration(postgres);var store=new Store(env);String retained,key=Values.id();
+        try(var db=store.open()){PlatformFoundationTest.bind(db);retained=Service.create(db,"incident",Values.map("short_description","Retained before enterprise planning"),"admin").get("sys_id").toString();db.update("DROP TABLE os_enterprise_document");db.update("DELETE FROM os_migration WHERE version>=99");db.connection.commit();Migrations.apply(db);assertEquals(0,db.count("SELECT COUNT(*) FROM os_enterprise_document"));db.connection.rollback();assertEquals(98,db.count("SELECT MAX(version) FROM os_migration"));}
+        store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);AssetPlanning.command(db,EnterpriseAcceptance.order(key));db.connection.commit();}
+        for(int n=0;n<2;n++){store=new Store(env);try(var db=store.open()){PlatformFoundationTest.bind(db);assertEquals("draft",Values.object(EnterpriseData.get(db,"purchase",key).get("definition")).get("state"));assertEquals(1,EnterpriseData.get(db,"purchase",key).get("revision"));assertEquals("Retained before enterprise planning",Values.object(Service.readRecord(db,"incident",retained).get("data")).get("short_description"));assertEquals(Migrations.VERSION,db.count("SELECT MAX(version) FROM os_migration"));}}
     }
 
 }

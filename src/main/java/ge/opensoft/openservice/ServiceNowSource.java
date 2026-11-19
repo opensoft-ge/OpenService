@@ -40,6 +40,10 @@ final class ServiceNowSource {
     }
 
     static byte[] get(String origin, String token, String path, int limit) {
+        return getResponse(origin,token,path,limit).body();
+    }
+
+    static HttpResponse<byte[]> getResponse(String origin,String token,String path,int limit) {
         if (!token.matches("[A-Za-z0-9._~+/=-]{1,4096}"))
             throw new Failure(400, "Supply a source OAuth bearer token");
         var request =
@@ -65,7 +69,7 @@ final class ServiceNowSource {
                         "Source returned HTTP "
                                 + response.statusCode()
                                 + "; no checkpoint advanced");
-            return response.body();
+            return response;
         } catch (IOException e) {
             throw new Failure(502, "Source connection failed; retry the saved checkpoint");
         } catch (InterruptedException e) {

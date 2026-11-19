@@ -128,6 +128,10 @@ final class ProviderAssist {
     }
 
     static String execute(String origin, String token, Object body) {
+        return executeMetered(origin,token,body).get("text").toString();
+    }
+
+    static Map<String,Object> executeMetered(String origin, String token, Object body) {
         var request =
                 HttpRequest.newBuilder(URI.create(origin + "/v1/chat/completions"))
                         .timeout(Duration.ofSeconds(30))
@@ -152,7 +156,7 @@ final class ProviderAssist {
                 var choices = (List<?>) document.get("choices");
                 var message = object(object(choices.getFirst()).get("message"));
                 require(!message.containsKey("tool_calls"), "Tool output is not accepted");
-                return WorkJobs.text(message.get("content"), 16000);
+                return map("text", WorkJobs.text(message.get("content"), 16000), "usage", document.get("usage"));
             } catch (RuntimeException invalid) {
                 throw new Failure(502, "AI provider returned an invalid draft");
             }

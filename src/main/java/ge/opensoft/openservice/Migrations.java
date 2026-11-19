@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 98;
+    static final int VERSION = 99;
 
     private Migrations() {}
 
@@ -823,6 +823,10 @@ final class Migrations {
             db.update("INSERT INTO os_migration(version,name) VALUES(98,?)","reviewed recoverable delivery metadata retention");
         }
 
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=99")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_enterprise_document(area VARCHAR(40) NOT NULL,subject VARCHAR(80) NOT NULL,revision INTEGER NOT NULL,definition TEXT NOT NULL,PRIMARY KEY(area,subject))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(99,?)","enterprise lifecycle planning and delegated execution");
+        }
     }
 
     private static void addColumn(Store.Db db, String table, String column, String definition)

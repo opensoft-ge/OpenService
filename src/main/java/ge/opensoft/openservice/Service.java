@@ -298,6 +298,7 @@ public final class Service {
             throws SQLException {
         RecordPolicy.require(schema(db, item.get("table").toString()), "delete", db.viewerRole);
         AssetCustody.deleting(db,item.get("sys_id").toString());
+        EnterpriseWorkspaces.deleting(db,item.get("sys_id").toString());
         DiscoveryReconciliation.deleting(db,item.get("sys_id").toString());
         TypedRelationships.deleting(db,item.get("sys_id").toString());
         ServiceOutages.deleting(db,item.get("sys_id").toString());

@@ -615,6 +615,35 @@ public class WebController {
         if(Set.of("/account/subscriptions","/api/openservice/me/subscriptions").contains(path)){
             method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");if(method.equals("POST")){Object input;if(api)input=body(c);else{var form=new LinkedHashMap<String,Object>(c.arguments());form.remove("csrf");input=form;}RecordCollaboration.remove(c.db,input);if(!api)return redirect(path);}var result=RecordCollaboration.directory(c.db);return api?json(map("result",result),200):view(c,"subscriptions",map("table","notifications","page",result));
         }
+        if(path.equals("/enterprise")){method(method,"GET");c.noQuery();if(!Set.of("admin","agent").contains(c.role()))throw new Failure(403,"Staff workspace access required");return view(c,"enterprise-hub",map("table","enterprise"));}
+        Matcher enterprise=Pattern.compile("/(?:enterprise|api/openservice/enterprise)/([a-z]+)/([a-z0-9_-]+)").matcher(path);
+        if(enterprise.matches()){
+            method(method,"GET","POST");c.noQuery();String area=enterprise.group(1),subject=enterprise.group(2);boolean api=path.startsWith("/api/");var page=EnterpriseWorkspaces.page(c.db,area,subject);Object outcome=null;
+            if(method.equals("POST")){Object input=api?body(c):EnterpriseWorkspaces.form(page,c.arguments());outcome=EnterpriseWorkspaces.command(store,c.db,area,subject,input);page=EnterpriseWorkspaces.page(c.db,area,subject);}
+            return api?json(map("result",map("workspace",page,"outcome",outcome)),200):view(c,"enterprise",map("table","enterprise","page",page,"offlinePath",area.equals("field") && !subject.equals("technicians")?"/field-worksheet/"+subject:null,"details",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(page.get("data")),"outcome",outcome==null?null:JSON.writerWithDefaultPrettyPrinter().writeValueAsString(outcome)));
+        }
+        Matcher worksheet=Pattern.compile("/field-worksheet/([0-9a-f]{32})").matcher(path);
+        if(worksheet.matches()) {
+            method(method,"GET","POST");
+            c.noQuery();
+            String task=worksheet.group(1);
+            if(method.equals("GET")) {
+                byte[] csv=OfflineWorksheet.download(store,c.db,task);
+                disposition(c,"visit-"+task+".csv");
+                return binary(csv,"text/csv;charset=UTF-8",200);
+            }
+            if(!(c.http instanceof MultipartHttpServletRequest multi)) throw new Failure(415,"Upload the completed CSV worksheet");
+            var file=multi.getFile("worksheet");
+            TypedFields.require(file!=null,"Choose the worksheet file");
+            var photo=multi.getFile("photo");
+            var synced=OfflineWorksheet.sync(store,c.db,task,file.getBytes(),photo==null?"":Objects.toString(photo.getOriginalFilename(),""),photo==null?new byte[0]:photo.getBytes());
+            if ("needs_review".equals(synced.get("status"))) return view(c,"worksheet-conflict",map("table","field"));
+            return redirect("/enterprise/field/"+task);
+        }
+        Matcher employeeDocuments=Pattern.compile("/(?:employee-service|api/openservice/employee-service)/cases/([0-9a-f]{32})/documents(?:/([0-9a-f]{32}))?").matcher(path);
+        if(employeeDocuments.matches()){
+            method(method,"GET");c.noQuery();String id=employeeDocuments.group(1),fileId=employeeDocuments.group(2);if(fileId!=null){var file=HrLifecycle.download(c.db,id,fileId);disposition(c,file.get("name").toString());return binary((byte[])file.get("content"),file.get("content_type").toString(),200);}var documents=HrLifecycle.employee(c.db,id);return path.startsWith("/api/")?json(map("result",documents),200):view(c,"employee-documents",map("table","employee-service","documents",documents));
+        }
         Matcher bulk=Pattern.compile("/(?:bulk|api/openservice/bulk)/([^/]+)(?:/([0-9a-f]{32}))?").matcher(path);
         if(bulk.matches()){
             method(method,"GET","POST");c.noQuery();boolean api=path.startsWith("/api/");String table=bulk.group(1),key=bulk.group(2);var result=BulkChanges.page(c.db,table);String recordsJson="[]",patchJson="{}";

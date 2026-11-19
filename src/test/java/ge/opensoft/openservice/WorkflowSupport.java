@@ -446,7 +446,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
-                            "os_outage_history", "os_ci_outage", "os_relation_history", "os_typed_relation", "os_relation_type", "os_discovery_field", "os_discovery_report", "os_discovery_identity", "os_discovery_source", "os_retention_hold", "os_delivery_archive", "os_bulk_receipt", "os_collaboration_post", "os_record_follow", "os_automation_install", "os_imported_journal", "os_ai_evaluation", "os_source_assessment", "os_ai_resolution", "os_ai_triage", "os_inbound_mail_receipt","os_inbound_mail_thread","os_inbound_mailbox","os_asset_movement","os_asset_identity","os_project_schedule","os_project_origin","os_demand_assessment","os_vulnerability_observation","os_vulnerability","os_vulnerability_scan","os_security_document","os_security_case","os_security_team","os_risk_assessment","os_hr_onboarding_work","os_hr_onboarding","os_hr_reply","os_hr_case","os_hr_service","os_employee","os_field_visit","os_field_dispatch","os_field_availability","os_customer_resolution", "os_customer_reply", "os_customer_delivery", "os_customer_case", "os_customer_entitlement", "os_customer_contact", "os_customer_account", "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
+                            "os_enterprise_document", "os_outage_history", "os_ci_outage", "os_relation_history", "os_typed_relation", "os_relation_type", "os_discovery_field", "os_discovery_report", "os_discovery_identity", "os_discovery_source", "os_retention_hold", "os_delivery_archive", "os_bulk_receipt", "os_collaboration_post", "os_record_follow", "os_automation_install", "os_imported_journal", "os_ai_evaluation", "os_source_assessment", "os_ai_resolution", "os_ai_triage", "os_inbound_mail_receipt","os_inbound_mail_thread","os_inbound_mailbox","os_asset_movement","os_asset_identity","os_project_schedule","os_project_origin","os_demand_assessment","os_vulnerability_observation","os_vulnerability","os_vulnerability_scan","os_security_document","os_security_case","os_security_team","os_risk_assessment","os_hr_onboarding_work","os_hr_onboarding","os_hr_reply","os_hr_case","os_hr_service","os_employee","os_field_visit","os_field_dispatch","os_field_availability","os_customer_resolution", "os_customer_reply", "os_customer_delivery", "os_customer_case", "os_customer_entitlement", "os_customer_contact", "os_customer_account", "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",
                             "os_security_event",
@@ -473,6 +473,51 @@ abstract class WorkflowSupport {
             db.connection.commit();
         }
     }
+
+    @Test void enterpriseOpsOffline() throws Exception { EnterpriseMobileAgentAcceptance.offline(this); }
+    @Test void enterpriseOpsAgents() throws Exception { EnterpriseMobileAgentAcceptance.agents(this); }
+    @Test void enterpriseOpsIssues() throws Exception { ScheduledIssueAcceptance.run(this); }
+    @Test void enterpriseOpsImports() throws Exception { EnterpriseOperationsAcceptance.imports(this); }
+    @Test void enterpriseOpsPurchasing() throws Exception { EnterpriseOperationsAcceptance.purchasing(this); }
+    @Test void enterpriseOpsHr() throws Exception { EnterpriseOperationsAcceptance.hr(this); }
+    @Test void enterpriseOpsPortfolio() throws Exception { EnterpriseOperationsAcceptance.portfolio(this); }
+    @Test void enterpriseDepthInventory() throws Exception { EnterpriseDepthAcceptance.inventory(this); }
+    @Test void enterpriseDepthPurchasing() throws Exception { EnterpriseDepthAcceptance.purchasing(this); }
+    @Test void enterpriseDepthFeed() throws Exception { EnterpriseDepthAcceptance.feed(this); }
+    @Test void enterpriseDepthScenarios() throws Exception { EnterpriseDepthAcceptance.scenarios(this); }
+    @Test void enterpriseDepthIssues() throws Exception { EnterpriseDepthAcceptance.issues(this); }
+    @Test void enterpriseDepthModel() throws Exception { EnterpriseDepthAcceptance.model(this); }
+    @Test void enterpriseAgentFaults() throws Exception { EnterpriseAgentFaults.run(this); }
+    @Test void enterpriseAgentRevocation() throws Exception { EnterpriseAgentFaults.revocation(this); }
+    @Test void enterpriseAssetsFaults() throws Exception { EnterpriseFaults.assets(this); }
+    @Test void enterprisePortfolioFaults() throws Exception { EnterpriseFaults.portfolio(this); }
+    @Test void enterpriseFieldFaults() throws Exception { EnterpriseFaults.field(this); }
+    @Test void enterpriseHrFaults() throws Exception { EnterpriseFaults.hr(this); }
+    @Test void enterpriseSecurityFaults() throws Exception { EnterpriseFaults.security(this); }
+    @Test void enterpriseIntegrationsFaults() throws Exception { EnterpriseFaults.integrations(this); }
+    @Test
+    void enterpriseAssets() throws Exception { EnterpriseAcceptance.assets(this); }
+
+    @Test
+    void enterprisePortfolio() throws Exception { EnterpriseAcceptance.portfolio(this); }
+
+    @Test
+    void enterpriseField() throws Exception { EnterpriseAcceptance.field(this); }
+
+    @Test
+    void enterpriseHr() throws Exception { EnterpriseAcceptance.hr(this); }
+
+    @Test
+    void enterpriseSecurity() throws Exception { EnterpriseAcceptance.security(this); }
+
+    @Test
+    void enterpriseIntegrations() throws Exception { EnterpriseAcceptance.integrations(this); }
+
+    @Test
+    void enterpriseAgents() throws Exception { EnterpriseAcceptance.agents(this); }
+
+    @Test
+    void enterpriseBoundaries() throws Exception { EnterpriseAcceptance.boundaries(this); }
 
     @Test
     void delegatedReviewsPreserveSeparationOfDuties() throws Exception { ApprovalDelegationAcceptance.run(this); }

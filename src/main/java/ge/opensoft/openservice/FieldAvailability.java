@@ -35,6 +35,7 @@ final class FieldAvailability {
     }
 
     static void eligible(Store.Db db,String table,String parent,Map<String,Object> task,String technician,long start,long end) throws SQLException {
+        FieldPlanning.eligible(db,task.get("task_id").toString(),technician);
         var row=db.one("SELECT c.definition AS calendar_definition FROM os_field_availability a JOIN os_user u ON u.user_id=a.user_id JOIN os_calendar c ON c.calendar_id=a.calendar_id JOIN os_group_member m ON m.user_id=a.user_id WHERE a.user_id=? AND a.active=1 AND u.active=1 AND u.role='agent' AND u.password_reset_required=0 AND m.group_id=?",technician,task.get("group_id"));
         if(row==null)throw new Failure(409,"Technician is not currently available for this team");
         var calendar=object(JSON.readValue(row.get("calendar_definition").toString(),Map.class));

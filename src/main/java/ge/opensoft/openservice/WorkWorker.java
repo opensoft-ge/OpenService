@@ -19,6 +19,7 @@ final class WorkWorker {
     void tick() {
         if (!store.environment.getProperty("WORK_ENABLED", Boolean.class, false)) return;
         try {
+            RecurringImports.runOne(store,System.currentTimeMillis());
             runOne(System.currentTimeMillis());
             AttachmentScanning.runOne(store);
             try (var db = store.open()) {
@@ -38,6 +39,7 @@ final class WorkWorker {
     }
 
     boolean runOne(long now) throws Exception {
+        boolean agentWorked=AgentPlans.runOne(store);
         EventWorkflows.dispatch(store);
         ReportSchedules.dispatch(store);
         Map<String, Object> job;
@@ -45,7 +47,7 @@ final class WorkWorker {
             job = WorkJobs.claim(db, now);
             db.connection.commit();
         }
-        if (job == null) return false;
+        if (job == null) return agentWorked;
         return runClaimed(job, now);
     }
 

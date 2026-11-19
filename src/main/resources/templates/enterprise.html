@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}">
+<main>
+  <p><a href="/enterprise">Enterprise workspaces</a></p>
+  <section class="page-heading"><div><span class="eyebrow">PLAN, REVIEW AND EXECUTE</span><h1 th:text="${page.title}"></h1><p th:text="${page.description}"></p></div></section>
+  <section class="panel" th:if="${offlinePath!=null}">
+    <h2>Offline visit</h2><p><a th:href="${offlinePath}">Download this visit worksheet</a>. Open the CSV in your phone’s spreadsheet app. Fill in minutes and an evidence note. For each used part, enter its configuration item ID, quantity and notes in a part row. Save as CSV.</p>
+    <form method="post" enctype="multipart/form-data" th:action="${offlinePath}">
+      <input type="hidden" name="csrf" th:value="${csrf}"><label>Completed worksheet <input type="file" name="worksheet" accept=".csv" required></label>
+      <label>Optional evidence photo <input type="file" name="photo" accept="image/*"></label><button type="submit">Sync worksheet</button>
+    </form></section>
+  <section class="panel" th:if="${outcome!=null}"><div class="panel-heading"><h2>Operation result</h2></div><div class="table-scroll"><pre th:text="${outcome}"></pre></div></section>
+  <section class="panel"><div class="panel-heading"><h2>Current records and review evidence</h2></div><div class="table-scroll"><pre th:text="${details}"></pre></div></section>
+  <section class="panel" th:each="operation, oi:${page.forms}">
+    <div class="panel-heading"><h2 th:text="${operation.title}"></h2></div>
+    <form method="post" class="record-form">
+      <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" th:value="${operation.operation}">
+      <div class="form-field" th:each="field:${operation.fields}">
+        <label th:for="${'f-'+oi.index+'-'+field.name}" th:text="${field.label}"></label>
+        <textarea th:if="${field.type=='json'}" rows="5" th:id="${'f-'+oi.index+'-'+field.name}" th:name="${field.name}" th:text="${field.value}" required></textarea>
+        <select th:if="${field.type=='boolean'}" th:id="${'f-'+oi.index+'-'+field.name}" th:name="${field.name}"><option value="false" th:selected="${field.value==false}">No</option><option value="true" th:selected="${field.value==true}">Yes</option></select>
+        <input th:if="${field.type!='json' and field.type!='boolean'}" th:type="${field.type}" th:id="${'f-'+oi.index+'-'+field.name}" th:name="${field.name}" th:value="${field.value}" required>
+      </div>
+      <button class="button primary" th:text="${operation.title}"></button>
+    </form>
+  </section>
+</main></html>
