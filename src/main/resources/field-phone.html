@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-PHONE_DIGEST'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+<title>Offline visit worksheet</title><style>body{font:1.1rem system-ui;max-width:38rem;margin:auto;padding:1rem;color:#152e32}label{display:block;margin:.8rem 0}input,textarea,button{display:block;padding:.65rem;font:inherit;max-width:90%}button{margin:.8rem 0}fieldset{margin:1rem 0}pre{white-space:pre-wrap}@media(prefers-color-scheme:dark){html{color-scheme:dark;background:#152327}body{color:#eff8f7}}</style></head>
+<body><h1>Offline visit</h1><pre>VISIT_DETAILS</pre><form id="visitForm">
+<label>Minutes worked<input required name="minutes" type="number" min="1" max="1440"></label>
+<label>Evidence note<textarea required name="note" maxlength="2000"></textarea></label>
+<div id="parts"></div><button type="button" id="add">Add a used part</button><button>Save completed worksheet</button>
+</form><p>Keep the saved file on this phone. When connected, upload it with any evidence photo from the visit workspace.</p>
+<template id="part"><fieldset><legend>Used part</legend><label>Configuration item ID<input required name="ci" pattern="[0-9a-f]{32}"></label><label>Quantity<input required type="number" name="qty" min="1" max="10000" value="1"></label><label>Part notes<input required name="comment" maxlength="1000"></label><button type="button">Remove part</button></fieldset></template>
+<textarea hidden id="packet">SIGNED_PACKET</textarea>
+<script>PHONE_SCRIPT</script></body></html>

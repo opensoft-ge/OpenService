@@ -1,5 +1,9 @@
 # OpenService adoption roadmap and build order
 
+## Enterprise workflow expansion — 19 November 2026
+
+The [ten-workflow report](enterprise-workflows-ten.md) documents delivery on the previous seven-area foundation, operator demonstrations, integration scope and outstanding adoption work. One integrated pass allocates one outcome each to workflow tooling, integrations, discovery, operations, assets, employee service, field/customer service, security, portfolio and AI. Highest outstanding qualification priorities are real tenant evidence, broader inventories, recovery at production volumes and representative model evaluations.
+
 ## Completed 50-round parity batch — 18 November 2026
 
 The completed [50-round report](auto50-2026-11-18.md) records one bounded feature and QA/QC cycle per round against fixed base `8794d6a`, across all 16 practical workstreams. Each delivered slice passed its acceptance, exact coverage, full checks and accumulated review. The batch adds working business journeys in every owner-prioritized enterprise area; their broader completion criteria remain open. Current evidence and next acceptance outcomes are in the report, while historical snapshots below retain their original dates.

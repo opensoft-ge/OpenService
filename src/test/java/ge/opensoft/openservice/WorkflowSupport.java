@@ -492,6 +492,19 @@ abstract class WorkflowSupport {
     @Test void enterpriseAssetsFaults() throws Exception { EnterpriseFaults.assets(this); }
     @Test void enterprisePortfolioFaults() throws Exception { EnterpriseFaults.portfolio(this); }
     @Test void enterpriseFieldFaults() throws Exception { EnterpriseFaults.field(this); }
+    @Test void tenPortfolio() throws Exception { TenBusinessAcceptance.portfolio(this); }
+    @Test void tenTransfer() throws Exception { TenBusinessAcceptance.transfer(this); }
+    @Test void tenRepair() throws Exception { TenBusinessAcceptance.repair(this); }
+    @Test void tenAssurance() throws Exception { TenBusinessAcceptance.assurance(this); }
+    @Test void tenTopology() throws Exception { TenJourneysAcceptance.topology(this); }
+    @Test void tenDirectory() throws Exception { TenConnectorAcceptance.directory(this); }
+    @Test void tenDraft() throws Exception { TenPolicyAcceptance.studioDraft(this); }
+    @Test void tenTeams() throws Exception { TenPolicyAcceptance.teams(this); }
+    @Test void tenVariance() throws Exception { TenPolicyAcceptance.variance(this); }
+    @Test void tenSnapshots() throws Exception { TenPolicyAcceptance.snapshots(this); }
+    @Test void tenRecovery() throws Exception { TenRecoveryAcceptance.recovery(this); }
+    @Test void tenFinance() throws Exception { TenJourneysAcceptance.finance(this); }
+    @Test void tenStudio() throws Exception { TenJourneysAcceptance.studio(this); }
     @Test void enterpriseHrFaults() throws Exception { EnterpriseFaults.hr(this); }
     @Test void enterpriseSecurityFaults() throws Exception { EnterpriseFaults.security(this); }
     @Test void enterpriseIntegrationsFaults() throws Exception { EnterpriseFaults.integrations(this); }

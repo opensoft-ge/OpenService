@@ -622,6 +622,21 @@ public class WebController {
             if(method.equals("POST")){Object input=api?body(c):EnterpriseWorkspaces.form(page,c.arguments());outcome=EnterpriseWorkspaces.command(store,c.db,area,subject,input);page=EnterpriseWorkspaces.page(c.db,area,subject);}
             return api?json(map("result",map("workspace",page,"outcome",outcome)),200):view(c,"enterprise",map("table","enterprise","page",page,"offlinePath",area.equals("field") && !subject.equals("technicians")?"/field-worksheet/"+subject:null,"details",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(page.get("data")),"outcome",outcome==null?null:JSON.writerWithDefaultPrettyPrinter().writeValueAsString(outcome)));
         }
+        Matcher financeExport=Pattern.compile("/finance-export/([0-9a-f]{64})/([0-9a-f]{32})").matcher(path);
+        if(financeExport.matches()){
+            method(method,"GET");c.noQuery();
+            var csv=InvoiceSettlement.export(c.db,financeExport.group(1),financeExport.group(2));
+            disposition(c,"payables-"+financeExport.group(2)+".csv");
+            return binary(csv,"text/csv;charset=UTF-8",200);
+        }
+        Matcher phone=Pattern.compile("/field-phone/([0-9a-f]{32})").matcher(path);
+        if(phone.matches()){
+            method(method,"GET");c.noQuery();
+            String task=phone.group(1);
+            byte[] content=OfflineWorksheet.phone(store,c.db,task);
+            disposition(c,"visit-"+task+".html");
+            return binary(content,"text/html;charset=UTF-8",200);
+        }
         Matcher worksheet=Pattern.compile("/field-worksheet/([0-9a-f]{32})").matcher(path);
         if(worksheet.matches()) {
             method(method,"GET","POST");

@@ -1,5 +1,9 @@
 # ServiceNow compatibility ledger
 
+## Enterprise workflow expansion — 19 November 2026
+
+All ten selected workflow increments are implemented and passed local acceptance against SQLite, PostgreSQL and Chromium. The broader ServiceNow product areas remain partially covered. Live Entra, Jira, AWS, Kubernetes and model-provider qualification is still open. The [workflow report](enterprise-workflows-ten.md) records the increase from `c44d554`, demonstrations, exact coverage and remaining work for each area.
+
 ## Active target and portfolio reconciliation — 18 November 2026
 
 The completed [50-round parity batch](auto50-2026-11-18.md) targets latest GA Brazil with explicit hotfix/application-version uncertainty. Native functional workflows, vendor interoperability and actual deployment/provider qualification remain separate evidence dimensions. The existing OS-PORT-01 through OS-PORT-09 inventory remains authoritative. Tested native additions now cover problem/change coordination, customer cases, field dispatch/visits, private HR intake/onboarding, asset custody, security/risk work, demand/project delivery, enterprise integration and governed assistance. All parent areas remain partial or unverified for their documented unmet outcomes; generic schemas, test counts and coverage do not establish full module parity.

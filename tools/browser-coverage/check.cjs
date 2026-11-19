@@ -4,10 +4,10 @@ const convert = require('v8-to-istanbul');
 const {createCoverageMap} = require('istanbul-lib-coverage');
 (async () => {
   const combined = createCoverageMap({});
-  const measured = ['catalogue.js', 'migrations.js', 'theme.js'];
+  const measured = ['catalogue.js', 'field-phone.js', 'migrations.js', 'theme.js'];
   const actual = fs.readdirSync('src/main/resources/static').filter(name => name.endsWith('.js')).sort();
   if (JSON.stringify(actual) !== JSON.stringify(measured)) throw Error('Update the browser coverage scope for all production scripts');
-  for (const [script, evidence] of [['catalogue', 'catalogue'], ['migrations', 'migration'], ['theme', 'theme']]) {
+  for (const [script, evidence] of [['catalogue', 'catalogue'], ['field-phone', 'field-phone'], ['migrations', 'migration'], ['theme', 'theme']]) {
     const filename = path.resolve(`src/main/resources/static/${script}.js`);
     const raw = JSON.parse(fs.readFileSync(`target/${evidence}-browser-v8.json`, 'utf8'));
     const samples = Array.isArray(raw) ? raw : [raw];

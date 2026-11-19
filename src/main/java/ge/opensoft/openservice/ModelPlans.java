@@ -39,18 +39,8 @@ final class ModelPlans {
         require(Boolean.TRUE.equals(body.get("confirm")), "Confirm sending the reviewed planning goal");
         require(store.environment.getProperty("AI_ENABLED", Boolean.class, false), "AI assistance is disabled");
         AiConsent.verify(store, body.get("preview_token"), state);
-        require(!model.isBlank(), "Configure a planning model");
-        var connector = db.one("SELECT * FROM os_connector WHERE alias=?", alias);
-        require(connector != null, "Configure a planning connector");
-        String origin = connector.get("origin").toString();
-        require(Arrays.asList(store.environment.getProperty("CONNECTOR_ALLOWED_ORIGINS","").split(",")).contains(origin),
-                "Planning provider origin is unavailable");
-        String token = Outbox.decrypt(store.secret, connector.get("envelope").toString()).get("token").toString();
         long started=System.nanoTime();
-        var response = ProviderAssist.executeMetered(origin, token, map("model", model, "store", false,
-                "max_completion_tokens", 800, "messages", List.of(
-                map("role","system","content","Propose native record updates for the goal. For a managed sc_request the only allowed patch is state=fulfilling to claim fulfilment. Return only a JSON array of objects with target (integer index) and patch (field values). Use only the listed targets and fields. If the goal cannot be satisfied return []."),
-                map("role","user","content", JSON.writeValueAsString(prompt)))));
+        var response=completion(store,db,prompt,"Propose native record updates for the goal. For a managed sc_request the only allowed patch is state=fulfilling to claim fulfilment. Return only a JSON array of objects with target (integer index) and patch (field values). Use only the listed targets and fields. If the goal cannot be satisfied return [].");
         long latency=(System.nanoTime()-started)/1000000;
         String reply=response.get("text").toString();
         Object proposed;
@@ -71,5 +61,20 @@ final class ModelPlans {
         save(db,"plan-meter",key,0,PlanEvaluations.meter(store,response.get("usage"),latency));
         SecurityEvents.record(db, db.viewerId, db.viewerId, "ai.plan_drafted", map("plan",key,"provider",alias,"model",model));
         return map("plan", key, "state", "reviewed", "step_count", steps.size());
+    }
+    static Map<String,Object> completion(Store store,Store.Db db,Map<String,Object> prompt,String instruction)throws Exception {
+        String model=store.environment.getProperty("AI_MODEL","");
+        String alias=store.environment.getProperty("AI_CONNECTOR_ALIAS","");
+        require(!model.isBlank(), "Configure a planning model");
+        var connector = db.one("SELECT * FROM os_connector WHERE alias=?", alias);
+        require(connector != null, "Configure a planning connector");
+        String origin = connector.get("origin").toString();
+        require(Arrays.asList(store.environment.getProperty("CONNECTOR_ALLOWED_ORIGINS","").split(",")).contains(origin),
+                "Planning provider origin is unavailable");
+        String token = Outbox.decrypt(store.secret, connector.get("envelope").toString()).get("token").toString();
+        return ProviderAssist.executeMetered(origin, token, map("model", model, "store", false,
+                "max_completion_tokens", 800, "messages", List.of(
+                map("role","system","content",instruction),
+                map("role","user","content", JSON.writeValueAsString(prompt)))));
     }
 }

@@ -34,12 +34,13 @@ final class RecurringImports {
         if ("schedule".equals(body.get("operation"))) {
             keys(body,"operation","key","revision","kind","target","alias","path","minutes","enabled");
             String kind = WorkJobs.text(body.get("kind"),16);
-            require(Set.of("inventory","threat","github","gitlab").contains(kind),"Choose inventory, threat, github or gitlab");
+            require(Set.of("inventory","topology","threat","github","gitlab").contains(kind),"Choose inventory, topology, threat, github or gitlab");
             String alias = WorkJobs.text(body.get("alias"),80);
             var connector = db.one("SELECT * FROM os_connector WHERE alias=?",alias);
             require(connector != null,"Choose an existing connector");
             String target = WorkJobs.text(body.get("target"),160);
-            if (!kind.equals("inventory")) target = EnterpriseData.id(target);
+            if(kind.equals("topology")) WorkJobs.text(target,80);
+            else if (!kind.equals("inventory")) target = EnterpriseData.id(target);
             if (IssueAdapters.CATALOG.containsKey(kind)) {
                 IssueAdapters.validatePath(kind,Connectors.path(body.get("path")));
             }
@@ -168,6 +169,14 @@ final class RecurringImports {
     }
 
     static void applySnapshot(Store.Db db,Map<String,Object> job,Object payload) throws Exception {
+        if("topology".equals(job.get("kind"))){
+            var snapshot=object(payload);
+            keys(snapshot,"operation","source","sequence","resources","services");
+            require("inventory".equals(snapshot.get("operation")) && job.get("target").equals(snapshot.get("source")),"Unexpected topology snapshot");
+            var result=object(ServiceTopology.inventory(db,job.get("target").toString(),snapshot));
+            job.put("target_revision",result.get("revision"));
+            return;
+        }
         boolean inventory="inventory".equals(job.get("kind"));
         String area=inventory?"installations":"shared-feed";
         String target=job.get("target").toString();

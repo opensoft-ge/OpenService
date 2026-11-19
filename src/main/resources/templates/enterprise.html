@@ -3,12 +3,21 @@
 <main>
   <p><a href="/enterprise">Enterprise workspaces</a></p>
   <section class="page-heading"><div><span class="eyebrow">PLAN, REVIEW AND EXECUTE</span><h1 th:text="${page.title}"></h1><p th:text="${page.description}"></p></div></section>
+  <section class="panel" th:if="${page.title=='Service topology and incidents' and !#lists.isEmpty(page.data.incidents)}">
+    <h2>Monitoring episodes</h2><ul><li th:each="row : ${page.data.incidents}"><a th:href="${'/record/incident/'+row.definition.incident}" th:text="${row.definition.source+' / '+row.definition.resource}"></a> · <span th:text="${row.definition.state}"></span> · <a th:href="${'/record/cmdb_ci/'+row.definition.ci}">Configuration item</a></li></ul>
+  </section>
+  <section class="panel" th:if="${page.title=='Workflow studio' and !#lists.isEmpty(page.data.runs)}">
+    <h2>My workflow runs</h2><form method="post" th:each="run : ${page.data.runs}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="inspect"><input type="hidden" name="run_id" th:value="${run.run_id}"><button th:text="${run.title+' · '+run.state+' · revision '+run.revision}"></button></form>
+  </section>
   <section class="panel" th:if="${offlinePath!=null}">
-    <h2>Offline visit</h2><p><a th:href="${offlinePath}">Download this visit worksheet</a>. Open the CSV in your phone’s spreadsheet app. Fill in minutes and an evidence note. For each used part, enter its configuration item ID, quantity and notes in a part row. Save as CSV.</p>
+    <h2>Offline visit</h2><p><a th:href="${#strings.replace(offlinePath,'field-worksheet','field-phone')}">Download the offline phone form</a>. Open the saved form, enter the visit details and save the completed worksheet for upload.</p><p><a th:href="${offlinePath}">Download this visit worksheet</a>. Open the CSV in your phone’s spreadsheet app. Fill in minutes and an evidence note. For each used part, enter its configuration item ID, quantity and notes in a part row. Save as CSV.</p>
     <form method="post" enctype="multipart/form-data" th:action="${offlinePath}">
       <input type="hidden" name="csrf" th:value="${csrf}"><label>Completed worksheet <input type="file" name="worksheet" accept=".csv" required></label>
       <label>Optional evidence photo <input type="file" name="photo" accept="image/*"></label><button type="submit">Sync worksheet</button>
     </form></section>
+  <section class="panel" th:if="${page.title=='Purchasing and software entitlements' and !#lists.isEmpty(page.data.settlements)}">
+    <h2>Finance export batches</h2><ul th:each="ledger : ${page.data.settlements}"><li th:each="batch : ${ledger.definition.exports}"><a th:href="${'/finance-export/'+ledger.subject+'/'+batch.export_id}" th:text="${batch.supplier+' · '+batch.invoice+' · '+batch.at}"></a></li></ul>
+  </section>
   <section class="panel" th:if="${outcome!=null}"><div class="panel-heading"><h2>Operation result</h2></div><div class="table-scroll"><pre th:text="${outcome}"></pre></div></section>
   <section class="panel"><div class="panel-heading"><h2>Current records and review evidence</h2></div><div class="table-scroll"><pre th:text="${details}"></pre></div></section>
   <section class="panel" th:each="operation, oi:${page.forms}">

@@ -8,8 +8,9 @@ import java.util.*;
 final class EnterpriseWorkspaces {
     private EnterpriseWorkspaces() {}
     static Map<String,Object> page(Store.Db db,String area,String subject)throws Exception {
+        if(JourneyForms.GLOBAL.contains(area)) return JourneyForms.decorate(db,area,JourneyForms.global(db,area,subject));
         if(!Set.of("admin","agent").contains(db.viewerRole))throw new Failure(403,"Staff workspace access required");
-        return switch(area){
+        return JourneyForms.decorate(db,area,switch(area){
             case "hr" -> HrLifecycle.page(db,EnterpriseData.id(subject));
             case "field" -> FieldPlanning.page(db,subject);
             case "security" -> SecurityPlaybooks.page(db,EnterpriseData.id(subject));
@@ -18,13 +19,15 @@ final class EnterpriseWorkspaces {
             case "integrations" -> ConnectorSynchronization.page(db);
             case "agents" -> AgentPlans.page(db);
             default -> throw new Failure(404,"Enterprise workspace not found");
-        };
+        });
     }
     static Object command(Store store,Store.Db db,String area,String subject,Object input)throws Exception {
         page(db,area,subject);
         var body = object(input);
         Object operation = body.get("operation");
         String op=Objects.toString(operation);
+        for(var descriptor:JourneyForms.ALL) if(descriptor.area().equals(area) && descriptor.name().equals(op)) return JourneyForms.execute(store,db,subject,descriptor,body);
+        if(JourneyForms.GLOBAL.contains(area)) throw new Failure(400,"Unknown workspace operation");
         if(area.equals("integrations") && op.equals("schedule_oauth")) return IssueTokens.configure(store,db,body);
         if(area.equals("integrations") && Set.of("schedule","replay","resolve").contains(op)) return RecurringImports.configure(db,body);
         if(area.equals("assets") && Set.of("alias","invoice").contains(op)) return PurchasingControls.command(db,body);

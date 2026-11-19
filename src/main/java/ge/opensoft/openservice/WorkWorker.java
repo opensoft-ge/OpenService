@@ -39,7 +39,8 @@ final class WorkWorker {
     }
 
     boolean runOne(long now) throws Exception {
-        boolean agentWorked=AgentPlans.runOne(store);
+        boolean workflowWorked=WorkflowStudio.runOne(store);
+        boolean agentWorked=AgentPlans.runOne(store) || workflowWorked;
         EventWorkflows.dispatch(store);
         ReportSchedules.dispatch(store);
         Map<String, Object> job;

@@ -129,6 +129,8 @@ final class EnterpriseOperationsAcceptance {
         send(h,"portfolio",p,cal);
         var scenario=map("operation","save_scenario","key",key,"title","January options","currency","USD","ceiling","400","option_a",List.of(p),"option_b",List.of(),"start_on","2027-01-04","finish_on","2027-01-06");
         var saved=outcome(h,"portfolio",p,scenario);var option=object(object(saved.get("comparison")).get("option_a"));
+        var retire=TenJourneysAcceptance.post(h,"architecture",map("operation","compare_plans","new_id",id(),"project_id",p,"scenario_id",key,"options",List.of(map("retire",List.of(),"transition_cost","0"),map("retire",List.of(),"transition_cost","0")),"months",12));
+        assertEquals(false,object(object(retire.get("definition")).get("option_a")).get("feasible"));
         assertEquals("240.00",option.get("labor"));assertEquals("60.00",option.get("funding_after_labor"));
         assertEquals("2027-01-05",objects(option.get("overbooked")).getFirst().get("day"));
         cal.putAll(map("revision",1,"hourly_rate","100"));send(h,"portfolio",p,cal);
