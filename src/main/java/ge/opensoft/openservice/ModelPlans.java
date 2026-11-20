@@ -40,7 +40,7 @@ final class ModelPlans {
         require(store.environment.getProperty("AI_ENABLED", Boolean.class, false), "AI assistance is disabled");
         AiConsent.verify(store, body.get("preview_token"), state);
         long started=System.nanoTime();
-        var response=completion(store,db,prompt,"Propose native record updates for the goal. For a managed sc_request the only allowed patch is state=fulfilling to claim fulfilment. Return only a JSON array of objects with target (integer index) and patch (field values). Use only the listed targets and fields. If the goal cannot be satisfied return [].");
+        var response=completion(store,db,prompt,"Propose native record updates for the goal. For a managed sc_request use state=fulfilling to claim fulfilment or state=complete for access backed by verified directory evidence. Return only a JSON array of objects with target (integer index) and patch (field values). Use only the listed targets and fields. If the goal cannot be satisfied return [].");
         long latency=(System.nanoTime()-started)/1000000;
         String reply=response.get("text").toString();
         Object proposed;
@@ -63,6 +63,9 @@ final class ModelPlans {
         return map("plan", key, "state", "reviewed", "step_count", steps.size());
     }
     static Map<String,Object> completion(Store store,Store.Db db,Map<String,Object> prompt,String instruction)throws Exception {
+        return completion(store,db,prompt,instruction,Map.of());
+    }
+    static Map<String,Object> completion(Store store,Store.Db db,Map<String,Object> prompt,String instruction,Map<String,Object> format)throws Exception {
         String model=store.environment.getProperty("AI_MODEL","");
         String alias=store.environment.getProperty("AI_CONNECTOR_ALIAS","");
         require(!model.isBlank(), "Configure a planning model");
@@ -72,9 +75,11 @@ final class ModelPlans {
         require(Arrays.asList(store.environment.getProperty("CONNECTOR_ALLOWED_ORIGINS","").split(",")).contains(origin),
                 "Planning provider origin is unavailable");
         String token = Outbox.decrypt(store.secret, connector.get("envelope").toString()).get("token").toString();
-        return ProviderAssist.executeMetered(origin, token, map("model", model, "store", false,
+        var request=map("model", model, "store", false,
                 "max_completion_tokens", 800, "messages", List.of(
                 map("role","system","content",instruction),
-                map("role","user","content", JSON.writeValueAsString(prompt)))));
+                map("role","user","content", JSON.writeValueAsString(prompt))));
+        if(!format.isEmpty())request.put("response_format",format);
+        return ProviderAssist.executeMetered(origin,token,request);
     }
 }

@@ -8,6 +8,7 @@ import java.util.*;
 final class EnterpriseWorkspaces {
     private EnterpriseWorkspaces() {}
     static Map<String,Object> page(Store.Db db,String area,String subject)throws Exception {
+        if(DeliveryWorkspace.AREAS.containsKey(area)) return DeliveryWorkspace.page(db,area,subject);
         if(JourneyForms.GLOBAL.contains(area)) return JourneyForms.decorate(db,area,JourneyForms.global(db,area,subject));
         if(!Set.of("admin","agent").contains(db.viewerRole))throw new Failure(403,"Staff workspace access required");
         return JourneyForms.decorate(db,area,switch(area){
@@ -24,6 +25,7 @@ final class EnterpriseWorkspaces {
     static Object command(Store store,Store.Db db,String area,String subject,Object input)throws Exception {
         page(db,area,subject);
         var body = object(input);
+        if(DeliveryWorkspace.AREAS.containsKey(area)) return DeliveryWorkspace.command(store,db,area,body);
         Object operation = body.get("operation");
         String op=Objects.toString(operation);
         for(var descriptor:JourneyForms.ALL) if(descriptor.area().equals(area) && descriptor.name().equals(op)) return JourneyForms.execute(store,db,subject,descriptor,body);
@@ -56,6 +58,7 @@ final class EnterpriseWorkspaces {
     }
     static Map<String,Object> form(Map<String,Object> page,Map<String,String> arguments){
         var body=new LinkedHashMap<String,Object>(arguments);body.remove("csrf");var chosen=objects(page.get("forms")).stream().filter(f->f.get("operation").equals(body.get("operation"))).findFirst();require(chosen.isPresent(),"Choose a displayed operation");
+        if(body.containsKey("designer_rows")) DesignInputs.read(page, body);
         for(var field:objects(chosen.get().get("fields"))){String name=field.get("name").toString();if(!body.containsKey(name))continue;String value=body.get(name).toString();switch(field.get("type").toString()){
             case "number" -> body.put(name,Service.number(value,0,Integer.MAX_VALUE));
             case "boolean" -> {require(Set.of("true","false").contains(value),"Choose yes or no");body.put(name,Boolean.valueOf(value));}

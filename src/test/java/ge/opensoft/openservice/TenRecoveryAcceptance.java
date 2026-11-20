@@ -106,16 +106,38 @@ final class TenRecoveryAcceptance {
             assertEquals("requires_review",object(doc(h,"workflow-run",run).get("definition")).get("queue_status"));
             store(h,"workflow-run",run,baseline);assertTrue(WorkflowStudio.runOne(h.store));
             assertEquals("preexisting",objects(object(doc(h,"workflow-run",run).get("definition")).get("steps")).getLast().get("effect_origin"));
-            for(String scenario:List.of("observe","replay","unavailable","throttled")){
+            for(String scenario:List.of("observe","replay","unavailable","discrepancy","throttled")){
                 String key=id();var working=copy(baseline);store(h,"workflow-run",key,working);
                 boolean reconcile=scenario.equals("observe");
                 if(scenario.equals("replay")){
                     store(h,"workflow-attempt",ConnectorSynchronization.hash(List.of(key,2,0)),map("run",key,"step",2));
                 }
-                readCode.set(scenario.equals("unavailable")?503:200);present.set(!scenario.equals("throttled"));
+                readCode.set(Set.of("unavailable","discrepancy").contains(scenario)?503:200);present.set(!scenario.equals("throttled"));
                 post(h,"studio",TenConnectorAcceptance.call(reconcile?"recheck":"act",key,2,1));
                 var result=objects(object(doc(h,"workflow-run",key).get("definition")).get("steps")).getLast();
-                assertEquals(switch(scenario){case "unavailable"->"unverified";case "throttled"->"throttled";default->"done";},result.get("state"));
+                assertEquals(switch(scenario){case "unavailable","discrepancy"->"unverified";case "throttled"->"throttled";default->"done";},result.get("state"));
+                if(scenario.equals("discrepancy")){
+                    readCode.set(200);present.set(false);
+                    post(h,"studio",TenConnectorAcceptance.call("recheck",key,2,2));
+                    var ticket=result.get("investigation").toString();
+                    post(h,"studio",TenConnectorAcceptance.call("rearm",key,2,3));
+                    assertEquals("retry_after_discrepancy",object(doc(h,"agent-investigation",ticket).get("definition")).get("authorization"));
+                    assertEquals("pending",objects(object(doc(h,"workflow-run",key).get("definition")).get("steps")).getLast().get("state"));
+                }
+                if(scenario.equals("unavailable")){
+                    readCode.set(200);present.set(true);
+                    EnterpriseAcceptance.bad(h,"studio","global",TenConnectorAcceptance.call("act",key,2,2),400);
+                    post(h,"studio",TenConnectorAcceptance.call("recheck",key,2,2));
+                    var checked=objects(object(doc(h,"workflow-run",key).get("definition")).get("steps")).getLast();
+                    assertEquals("awaiting_acceptance",checked.get("state"));
+                    var ticket=checked.get("investigation").toString();
+                    post(h,"desk",map("operation","handoff_review","investigation_id",ticket,"note","Confirmed group membership with directory owner","revision",1));
+                    post(h,"studio",TenConnectorAcceptance.call("rearm",key,2,3));
+                    var investigated=object(doc(h,"agent-investigation",ticket).get("definition"));
+                    assertEquals("accepted_observed_result",investigated.get("authorization"));
+                    assertEquals("Confirmed group membership with directory owner",investigated.get("note"));
+                    assertEquals("complete",object(doc(h,"workflow-run",key).get("definition")).get("state"));
+                }
             }
         }
     }

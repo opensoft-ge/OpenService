@@ -218,7 +218,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && (path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
+                                && (path.matches("/(?:enterprise|api/openservice/enterprise)/(?:access|studio|sales|apps)/global") || path.matches("/intake/[0-9a-f]{32}") || path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:record/[^/]+/[0-9a-f]{32}/collaboration|api/openservice/collaboration/[^/]+/[0-9a-f]{32})")
                         && !path.matches("/(?:employee-service|api/openservice/employee-service)/(?:services|cases)/[0-9a-f]{32}")
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
@@ -620,7 +620,33 @@ public class WebController {
         if(enterprise.matches()){
             method(method,"GET","POST");c.noQuery();String area=enterprise.group(1),subject=enterprise.group(2);boolean api=path.startsWith("/api/");var page=EnterpriseWorkspaces.page(c.db,area,subject);Object outcome=null;
             if(method.equals("POST")){Object input=api?body(c):EnterpriseWorkspaces.form(page,c.arguments());outcome=EnterpriseWorkspaces.command(store,c.db,area,subject,input);page=EnterpriseWorkspaces.page(c.db,area,subject);}
+            if(!api && area.equals("mining") && outcome!=null){page.put("analysis",outcome);page.put("case_table",c.arguments().get("table"));}
             return api?json(map("result",map("workspace",page,"outcome",outcome)),200):view(c,"enterprise",map("table","enterprise","page",page,"offlinePath",area.equals("field") && !subject.equals("technicians")?"/field-worksheet/"+subject:null,"details",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(page.get("data")),"outcome",outcome==null?null:JSON.writerWithDefaultPrettyPrinter().writeValueAsString(outcome)));
+        }
+        Matcher intake=Pattern.compile("/intake/([0-9a-f]{32})").matcher(path);
+        if(intake.matches()){
+            method(method,"GET","POST");c.noQuery();
+            String app=intake.group(1);
+            var spec=object(IntakeApps.command(c.db,"form",map("app_id",app)));
+            String receipt=null;
+            if(method.equals("POST")){
+                EnterpriseData.lock(c.db);
+                var args=c.arguments();
+                var answers=new ArrayList<>();
+                for(String name:object(spec.get("fields")).keySet())answers.add(map("name",name,"value",args.get("answer_"+name)));
+                var created=object(IntakeApps.command(c.db,"submit",map("app_id",app,"new_id",args.get("case_id"),
+                    "revision",Service.number(args.get("revision"),0,Integer.MAX_VALUE),"amount",args.get("amount"),"risk",args.get("risk"),
+                    "location",args.get("location"),"entries",answers)));
+                receipt=created.get("case_id").toString();
+            }
+            return view(c,"intake-form",map("table","enterprise","app",spec,"caseId",Values.id(),"receipt",receipt));
+        }
+        Matcher auditPackage=Pattern.compile("/audit-evidence/([0-9a-f]{32})[.]json").matcher(path);
+        if(auditPackage.matches()){
+            method(method,"GET");c.noQuery();Service.requireAccountAdministrator(c.db,c.db.viewerId);
+            var archive=object(AuditEngagements.run(store,c.db,"package",map("engagement_id",auditPackage.group(1))));
+            disposition(c,archive.get("filename").toString());
+            return binary(archive.get("content").toString().getBytes(java.nio.charset.StandardCharsets.UTF_8),"application/json",200);
         }
         Matcher financeExport=Pattern.compile("/finance-export/([0-9a-f]{64})/([0-9a-f]{32})").matcher(path);
         if(financeExport.matches()){

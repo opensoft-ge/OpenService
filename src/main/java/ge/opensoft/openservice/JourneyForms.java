@@ -15,9 +15,10 @@ final class JourneyForms {
             for(String field:names()){
                 String type="text";
                 Object initial="";
-                if(Set.of("revision","sequence","usage_revision","employee_revision","movement_revision","draft_revision","stage","days","step","quantity","minutes","months").contains(field)){type="number";initial=0;}
-                if(Set.of("steps","resources","services","alerts","applications","options","crew","observations","cases").contains(field)){type="json";initial="[]";}
-                if(Set.of("confirm").contains(field)){type="boolean";initial=false;}
+                if(Set.of("revision","sequence","usage_revision","employee_revision","movement_revision","draft_revision","stage","days","step","quantity","minutes","months","discount","limit","hours","release_revision","package_revision","rto_minutes","rpo_minutes","impact_score","likelihood").contains(field)){type="number";initial=0;}
+                if(Set.of("steps","resources","services","alerts","applications","options","crew","observations","cases","people","crews","jobs","entries","travel","controls","samples","fields").contains(field)){type="json";initial="[]";}
+                if(field.equals("manifest")){type="json";initial="{}";}
+                if(Set.of("confirm","active").contains(field)){type="boolean";initial=false;}
                 if(field.equals("new_id")) initial=Values.id();
                 controls.add(EnterpriseData.field(field,field.replace('_',' '),type,initial));
             }
@@ -37,7 +38,7 @@ final class JourneyForms {
         new Operation("studio","publish","Publish a workflow version","template_id title days steps revision"),
         new Operation("studio","request","Start a published workflow","template_id new_id revision"),
         new Operation("studio","inspect","Open a workflow run","run_id"),
-        new Operation("studio","advance","Approve or finish one stage task","run_id step revision note"),
+        new Operation("studio","advance","Respond, approve or finish one stage task","run_id step revision note"),
         new Operation("studio","stop_run","Stop remaining workflow steps","run_id revision note"),
         new Operation("studio","preview_actions","Review the payload for model planning","run_id revision goal"),
         new Operation("studio","draft_actions","Draft a multi-system action plan","run_id revision goal preview_token confirm"),
@@ -45,7 +46,7 @@ final class JourneyForms {
         new Operation("studio","queue_run","Queue the approved external actions for execution","run_id revision confirm"),
         new Operation("studio","act","Execute a reviewed connector step","run_id step revision confirm"),
         new Operation("studio","recheck","Verify an uncertain destination outcome","run_id step revision"),
-        new Operation("studio","rearm","Authorize a retry after destination verification","run_id step revision confirm"),
+        new Operation("studio","rearm","Accept a verified result or authorize a retry","run_id step revision confirm"),
         new Operation("studio","evaluate_run","Evaluate plan authority, stop and expected effects","run_id"),
         new Operation("topology","inventory","Reconcile a complete inventory snapshot","source sequence resources services"),
         new Operation("topology","overlay","Set a manual resource label","source resource_id title revision"),

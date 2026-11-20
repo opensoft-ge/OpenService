@@ -62,9 +62,10 @@ final class SmtpDelivery implements DeliveryWorker.Sender {
         helper.setFrom(from);
         helper.setTo(payload.get("email").toString());
         boolean reply="customer_reply".equals(payload.get("type"));
-        helper.setSubject(reply?"OpenService customer support reply":"OpenService account access");
+        boolean duty="duty".equals(payload.get("type"));
+        helper.setSubject(duty?"OpenService on-call incident":reply?"OpenService customer support reply":"OpenService account access");
         helper.setText(
-                reply?"Your support team published this reply:\n\n"+payload.get("body")+"\n\nView the case and respond in OpenService:\n"+base+payload.get("path"):
+                duty?"A critical incident needs acknowledgment. Open the on-call workspace: "+base+payload.get("path")+" Incident "+payload.get("incident"):reply?"Your support team published this reply:\n\n"+payload.get("body")+"\n\nView the case and respond in OpenService:\n"+base+payload.get("path"):
                 "Use this single-use link to complete your OpenService account request:\n\n"
                         + base
                         + payload.get("path")

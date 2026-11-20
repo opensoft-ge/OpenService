@@ -180,6 +180,8 @@ class OutboxTest {
             String message = sink.receive();
             assertTrue(message.contains("Message-ID: <stable@openservice.invalid>"));
             assertTrue(message.contains("https://example.invalid/join/test"));
+            sender.send("on-call",map("type","duty","email","recipient@example.invalid","path","/enterprise/duty/global","incident","INC-7"));
+            assertTrue(sink.receive().contains("INC-7"));
             env.withProperty("MAIL_STARTTLS", "true")
                     .withProperty("MAIL_USERNAME", "test")
                     .withProperty("MAIL_PASSWORD", "test");

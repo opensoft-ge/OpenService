@@ -52,9 +52,11 @@ final class ServiceTopology {
                 mapping.put("ci_id",ci.get("sys_id"));
                 save(db,"discovered-ci",key,0,mapping);
             }
+            if(mapping.remove("retirement")!=null)save(db,"discovered-ci",key,registration.get("revision"),mapping);
             Service.readRecord(db,"cmdb_ci",mapping.get("ci_id").toString());
             resource.put("ci_id",mapping.get("ci_id"));
         }
+        InventoryEvidence.snapshot(db,source,last,resources,generation);
         save(db,"service-map",source,row.get("revision"),map("source",source,"sequence",generation,"digest",digest,"resources",resources,"services",services,"observed",now()));
         return get(db,"service-map",source);
     }

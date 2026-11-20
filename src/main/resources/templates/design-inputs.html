@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"><body>
+<fieldset th:fragment="steps">
+  <legend>Workflow steps</legend>
+  <p>Use the same stage number for steps that run in parallel. Start at stage 1.</p>
+  <input type="hidden" name="designer_rows" value="steps">
+  <details th:each="i : ${#numbers.sequence(1,24)}" th:open="${i==1}">
+    <summary th:text="${'Step '+i}"></summary>
+    <label>Step type <select th:name="${'kind_'+i}"><option value="procedure_id">Reusable procedure</option><option value="response">Requester response</option></select></label>
+    <label>Procedure ID or question <input th:name="${'item_'+i}" maxlength="300"></label>
+    <label>Stage <input type="number" min="1" max="24" th:name="${'stage_'+i}"></label>
+  </details>
+</fieldset>
+<fieldset th:fragment="fields">
+  <legend>Intake form fields</legend>
+  <p>Give each field a stable name and the label the requester will see.</p>
+  <input type="hidden" name="designer_rows" value="fields">
+  <details th:each="i : ${#numbers.sequence(1,32)}" th:open="${i==1}">
+    <summary th:text="${'Field '+i}"></summary>
+    <label>Field name <input th:name="${'name_'+i}"></label>
+    <label>Field label <input th:name="${'label_'+i}"></label>
+    <label>Visibility <select th:name="${'visibility_'+i}"><option value="requester">Requester and fulfillment team</option><option value="confidential">Confidential after submission</option></select></label>
+  </details>
+</fieldset>
+</body></html>

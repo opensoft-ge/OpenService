@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main>
+<p><a href="/enterprise/apps/global">Intake applications</a></p>
+<h1 th:text="${app.title}"></h1>
+<section class="panel" th:if="${receipt!=null}"><h2>Request submitted</h2><p>Your case number is <strong th:text="${receipt}"></strong>.</p></section>
+<form class="panel record-form" method="post" th:if="${receipt==null}">
+<input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="case_id" th:value="${caseId}"><input type="hidden" name="revision" th:value="${app.revision}">
+<label th:each="entry : ${app.fields}"><span th:text="${entry.value.label}"></span><small th:if="${entry.value.visibility=='confidential'}">Visible to the fulfillment team after submission</small><textarea th:name="${'answer_'+entry.key}" maxlength="2000" required></textarea></label>
+<label>Amount <input name="amount" type="number" min="0" step="0.01" value="0" required></label>
+<label>Risk <select name="risk"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+<label>Location <input name="location" maxlength="100" required></label>
+<button class="button primary">Submit request</button>
+</form></main></html>

@@ -1,5 +1,9 @@
 # ServiceNow compatibility ledger
 
+## Service delivery expansion, 19 November 2026
+
+The [service delivery expansion](service-delivery-expansion.md) extends the preceding enterprise workflows from `0cc7a42`. It covers access policies, reusable connector actions, incident duty, service impact, sales, crew routing, project spend, workplace, audits and service-desk decisions. These belong to OS-PORT-01 through OS-PORT-07 and OS-PORT-09. The report distinguishes native behavior, fixture verification and configured-model results. Live Entra and Jira action qualification remains open.
+
 ## Enterprise workflow expansion — 19 November 2026
 
 All ten selected workflow increments are implemented and passed local acceptance against SQLite, PostgreSQL and Chromium. The broader ServiceNow product areas remain partially covered. Live Entra, Jira, AWS, Kubernetes and model-provider qualification is still open. The [workflow report](enterprise-workflows-ten.md) records the increase from `c44d554`, demonstrations, exact coverage and remaining work for each area.
@@ -1087,3 +1091,7 @@ All seven parent areas remain partial. Validation status and exact evidence belo
 ## November 19 enterprise workflows
 
 The seven enterprise areas now include scheduled linked issues, offline visit worksheets, employee transfers and leave, invoice and software matching, shared indicator refresh, staffed investment scenarios and evaluated request claims. The implementation covers the specific workflows in the [operations guide](enterprise-operations-2026-11-19.md). The broader ServiceNow products remain partially covered.
+
+## OS-N19-P01 through OS-N19-P10
+
+The [decision and delivery workflows](decision-and-delivery-workflows.md) give the implementation, operator contract and remaining boundary for each requested increment in rank order. All ten parent capabilities are partial. P01/P03 extend workflow automation and application configuration, P02 integration and portability, P04 service mapping, P05 change management, P06 supplier finance, P07 customer and field fulfillment, P08 process measurement, P09 operational resilience, and P10 governed agent execution. The source review on November 19 used the existing Brazil catalog baseline. The publicly accessible decision-authoring article identified itself as Australia. Application-scoped rule and result editing remains an open authorization capability. [Decision tables in subflows](https://www.servicenow.com/docs/r/build-workflows/workflow-studio/create-decision-table-subflow.html)

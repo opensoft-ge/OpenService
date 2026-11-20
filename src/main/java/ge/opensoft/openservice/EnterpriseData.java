@@ -15,7 +15,8 @@ final class EnterpriseData {
     }
     static void save(Store.Db db,String area,String subject,Object revision,Object definition)throws SQLException {
         var current=get(db,area,subject);ProblemInvestigations.revision(revision,current.get("revision"));
-        require(((Number)current.get("revision")).intValue()>0 || db.count("SELECT COUNT(*) FROM os_enterprise_document WHERE area=?",area)<1000,"Workspace document capacity reached");
+        // Revocation must persist its audit handoff even when a workspace has filled its normal allocation.
+        require("agent-investigation".equals(area) || ((Number)current.get("revision")).intValue()>0 || db.count("SELECT COUNT(*) FROM os_enterprise_document WHERE area=?",area)<1000,"Workspace document capacity reached");
         String text=JSON.writeValueAsString(definition);require(text.length()<=64000,"Workspace document exceeds 64000 characters");
         db.update("INSERT INTO os_enterprise_document(area,subject,revision,definition) VALUES(?,?,1,?) ON CONFLICT(area,subject) DO UPDATE SET revision=os_enterprise_document.revision+1,definition=excluded.definition",area,subject,text);
         SecurityEvents.record(db,db.viewerId,db.viewerId,"enterprise."+area,map("subject",subject));

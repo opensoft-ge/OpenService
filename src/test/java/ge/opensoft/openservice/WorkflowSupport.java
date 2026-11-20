@@ -492,6 +492,27 @@ abstract class WorkflowSupport {
     @Test void enterpriseAssetsFaults() throws Exception { EnterpriseFaults.assets(this); }
     @Test void enterprisePortfolioFaults() throws Exception { EnterpriseFaults.portfolio(this); }
     @Test void enterpriseFieldFaults() throws Exception { EnterpriseFaults.field(this); }
+    @Test void expansionDesignValidation() throws Exception { ExpansionBoundaryAcceptance.designer(this); }
+    @Test void expansionIntakePermissions() throws Exception { ExpansionBoundaryAcceptance.apps(this); }
+    @Test void expansionRecoveryControls() throws Exception { ExpansionBoundaryAcceptance.continuity(this); }
+    @Test void expansionResilience() throws Exception { ExpansionOperations.resilience(this); }
+    @Test void expansionScheduledInventory() throws Exception { ExpansionOperations.inventorySchedule(this); }
+    @Test void expansionPackages() throws Exception { ExpansionOperations.packages(this); }
+    @Test void expansionHandoff() throws Exception { ExpansionOperations.handoff(this); }
+    @Test void expansionMining() throws Exception { ExpansionOperations.mining(this); }
+    @Test void expansionIntake() throws Exception { ExpansionJourneys.intake(this); }
+    @Test void expansionPurchasing() throws Exception { ExpansionJourneys.purchasing(this); }
+    @Test void expansionPipeline() throws Exception { ExpansionJourneys.pipeline(this); }
+    @Test void expansionTelecom() throws Exception { ExpansionJourneys.telecom(this); }
+    @Test void deliveryAudits() throws Exception { DeliveryBusinessAcceptance.audits(this); }
+    @Test void deliveryWorkplace() throws Exception { DeliveryBusinessAcceptance.workplace(this); }
+    @Test void deliveryFinance() throws Exception { DeliveryBusinessAcceptance.finance(this); }
+    @Test void deliverySales() throws Exception { DeliveryBusinessAcceptance.sales(this); }
+    @Test void deliveryMapping() throws Exception { ServiceExpansionAcceptance.mapping(this); }
+    @Test void deliveryDuty() throws Exception { ServiceExpansionAcceptance.duty(this); }
+    @Test void deliveryRoutes() throws Exception { ServiceExpansionAcceptance.routes(this); }
+    @Test void deliveryAccess() throws Exception { ServiceExpansionAcceptance.access(this); }
+    @Test void deliveryDeskOutcomes() throws Exception { ServiceDeskOutcomeAcceptance.run(this); }
     @Test void tenPortfolio() throws Exception { TenBusinessAcceptance.portfolio(this); }
     @Test void tenTransfer() throws Exception { TenBusinessAcceptance.transfer(this); }
     @Test void tenRepair() throws Exception { TenBusinessAcceptance.repair(this); }

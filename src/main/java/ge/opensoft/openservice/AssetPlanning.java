@@ -34,6 +34,10 @@ final class AssetPlanning {
                 "salvage",residual.toPlainString());
     }
     static String book(Map<String,Object> cost,LocalDate date){long elapsed=Math.max(0,ChronoUnit.MONTHS.between(LocalDate.parse(cost.get("received_on").toString()),date));int months=((Number)cost.get("months")).intValue();BigDecimal initial=money(cost.get("unit_cost")),salvage=money(cost.get("salvage"));return initial.subtract(initial.subtract(salvage).multiply(BigDecimal.valueOf(Math.min(elapsed,months))).divide(BigDecimal.valueOf(months),2,RoundingMode.HALF_UP)).toPlainString();}
+    static void approveDraft(Store.Db db,Map<String,Object> data){
+        require(data.get("state").equals("draft"),"Approve a draft purchase");
+        data.put("state","approved");data.put("approved_by",db.viewerId);
+    }
     static void command(Store.Db db,Object input)throws Exception {
         Service.requireAccountAdministrator(db,db.viewerId);lock(db);var body=object(input);String op=WorkJobs.text(body.get("operation"),12);
         if (op.equals("inventory")) {
@@ -65,7 +69,7 @@ final class AssetPlanning {
         }
         if(Set.of("approve","receive").contains(op)){
             keys(body,op.equals("approve")?new String[]{"operation","order_id","revision"}:new String[]{"operation","order_id","revision","asset_id","stockroom_id","received_on"});String key=EnterpriseData.id(body.get("order_id"));var row=get(db,"purchase",key);var data=object(row.get("definition"));require(!data.isEmpty(),"Purchase order not found");ProblemInvestigations.revision(body.get("revision"),row.get("revision"));
-            if(op.equals("approve")){require(data.get("state").equals("draft"),"Approve a draft purchase");data.put("state","approved");data.put("approved_by",db.viewerId);}else{
+            if(op.equals("approve")){require(get(db,"managed-supplier",SupplierGovernance.identity(data.get("supplier"))).get("revision").equals(0),"Release this managed supplier purchase through its finance owner");approveDraft(db,data);}else{
                 require(data.get("state").equals("approved"),"Receive against an approved purchase");String asset=EnterpriseData.id(body.get("asset_id"));var record=AssetCustody.record(db,asset);String model = object(record.get("data")).get("model").toString();
                 var line = data;
                 if (data.containsKey("lines")) {

@@ -9,12 +9,13 @@ import java.time.*;
 
 final class WorkflowStudio {
     private WorkflowStudio() {}
-    static final Set<String> REMOTE=Set.of("entra_add","entra_remove","jira_label");
-    static final Set<String> TYPES=Set.of("approval","team_approval","work","entra_add","entra_remove","jira_label");
+    static final Set<String> REMOTE=Set.of("entra_add","entra_remove","jira_label","jira_transition");
+    static final Set<String> TYPES=Set.of("approval","team_approval","work","entra_add","entra_remove","jira_label","jira_transition");
 
     static Object directory(Store.Db db)throws Exception {
         var templates=new ArrayList<Map<String,Object>>();
         for(var row:list(db,"workflow-template")){
+            if(!get(db,"action-lease",row.get("subject").toString()).get("revision").equals(0))continue;
             var spec=object(row.get("definition"));
             templates.add(map("template_id",row.get("subject"),"title",spec.get("title"),"version",row.get("revision")));
         }
@@ -86,11 +87,15 @@ final class WorkflowStudio {
                 require(Objects.equals(step.get("stage"),stage(run)),"Complete earlier stages first");
                 if(op.equals("advance")) {
                     require("pending".equals(step.get("state")),"This step is already settled");
-                    if("approval".equals(step.get("kind"))){
+                    if("response".equals(step.get("kind"))) {
+                        require(db.viewerId.equals(run.get("employee")),"Only the requester can answer this step");
+                    } else if("approval".equals(step.get("kind"))){
                         var identity=definition(db,"workflow-identity",run.get("employee").toString());
                         require(db.viewerId.equals(identity.get("manager")) && db.viewerId.equals(run.get("manager")),"Current assigned manager approval required");
                     } else {
                         require(Set.of("work","team_approval").contains(step.get("kind")) && Fulfilment.member(db,step.get("group").toString()),"Assigned team member required");
+                        if("team_approval".equals(step.get("kind")) && !get(db,"action-lease",Objects.toString(run.get("template"))).get("revision").equals(0))
+                            require(!db.viewerId.equals(run.get("manager")),"Privileged access needs an independent second approver");
                         if("team_approval".equals(step.get("kind"))) require(!db.viewerId.equals(run.get("employee")) && steps.stream().noneMatch(s->"team_approval".equals(s.get("kind")) && db.viewerId.equals(s.get("by")) && step.get("stage").equals(s.get("stage"))),"Each parallel team approval requires an independent signer");
                     }
                     step.putAll(map("state","done","by",db.viewerId,"signer_revision",AgentPlans.account(db,db.viewerId).get("auth_revision"),"note",text(b,"note",1000),"at",now()));
@@ -177,15 +182,24 @@ final class WorkflowStudio {
         return get(db,"workflow-template",key);
     }
     static Map<String,Object> start(Store.Db db,Map<String,Object> b,String employee)throws Exception {
+        require(get(db,"action-lease",id(b,"template_id")).get("revision").equals(0),"Start access workflows through their published policy");
+        return startAccess(db,b,employee);
+    }
+    static Map<String,Object> startAccess(Store.Db db,Map<String,Object> b,String employee)throws Exception{
         String template=id(b,"template_id"),key=id(b,"new_id");
         var row=get(db,"workflow-template",template);
         ProblemInvestigations.revision(b.get("revision"),row.get("revision"));
         var spec=definition(db,"workflow-template",template);
+        return startVersion(db,template,key,employee,row.get("revision"),spec);
+    }
+    static Map<String,Object> startVersion(Store.Db db,String template,String key,String employee,Object version,Map<String,Object> spec)throws Exception {
         var identity=get(db,"workflow-identity",employee);
-        var subject=definition(db,"workflow-identity",employee);
+        var subject=object(identity.get("definition"));
+        if(spec.containsKey("decision")) AgentPlans.account(db,employee);
+        else require(!subject.isEmpty(),"Record is unavailable");
         var run=new LinkedHashMap<>(spec);
-        run.putAll(map("template",template,"version",row.get("revision"),"state","running","employee",employee,"manager",subject.get("manager"),
-                "directory_id",subject.get("directory_id"),"identity_revision",identity.get("revision"),"requested_by",db.viewerId,
+        run.putAll(map("template",template,"version",version,"state","running","employee",employee,"manager",subject.getOrDefault("manager",""),
+                "directory_id",subject.getOrDefault("directory_id",""),"identity_revision",identity.get("revision"),"requested_by",db.viewerId,
                 "deadline",Instant.now().plus(Duration.ofDays(((Number)spec.get("days")).longValue())).toEpochMilli()));
         save(db,"workflow-run",key,0,run);
         return map("run_id",key,"version",run.get("version"),"state",run.get("state"));

@@ -1,5 +1,9 @@
 # OpenService adoption roadmap and build order
 
+## Service delivery expansion, 19 November 2026
+
+The [service delivery report](service-delivery-expansion.md) describes one implementation in each of the ten requested workstreams. It includes the operator walkthrough, the configured-model outcomes and outstanding qualification. The next adoption dependencies are live enterprise tenant evidence, more discovery sources, real workforce datasets, ERP transport and representative service-desk cases.
+
 ## Enterprise workflow expansion — 19 November 2026
 
 The [ten-workflow report](enterprise-workflows-ten.md) documents delivery on the previous seven-area foundation, operator demonstrations, integration scope and outstanding adoption work. One integrated pass allocates one outcome each to workflow tooling, integrations, discovery, operations, assets, employee service, field/customer service, security, portfolio and AI. Highest outstanding qualification priorities are real tenant evidence, broader inventories, recovery at production volumes and representative model evaluations.
@@ -1050,3 +1054,7 @@ The follow-up adds multi-line purchasing, installation-to-seat reconciliation, i
 ## November 19 enterprise operations
 
 The seven selected workflows now have operator entry points and acceptance tests. Remaining work includes vendor qualification, broader offline mobile support, payroll and benefits integrations, vendor invoice settlement, additional indicator types, portfolio optimization and independent model-quality evaluation. See the [workflow contracts](enterprise-operations-2026-11-19.md).
+
+## Decision and delivery workflows
+
+The ten requested increments extend reusable routing, connector installations, application promotion, discovery, change delivery, supplier purchasing, site orders, process measurement, recovery exercises and supervised agents. Track each parent as partial under OS-N19-P01 through OS-N19-P10 in the [operator guide](decision-and-delivery-workflows.md). Next priorities include vendor test-tenant qualification, delegated rule and result authoring, cross-instance app promotion, additional inventory providers, recurring billing and independent agent evaluations. The browser designer currently grants authoring to administrators. The vendor distinguishes rule authors and result-only editors. [ServiceNow decision tables](https://www.servicenow.com/docs/r/build-workflows/workflow-studio/decision-designer-overview.html)

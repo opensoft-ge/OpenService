@@ -19,11 +19,14 @@ final class WorkWorker {
     void tick() {
         if (!store.environment.getProperty("WORK_ENABLED", Boolean.class, false)) return;
         try {
+            InventorySchedules.refresh(store,System.currentTimeMillis());
             RecurringImports.runOne(store,System.currentTimeMillis());
             runOne(System.currentTimeMillis());
             AttachmentScanning.runOne(store);
             try (var db = store.open()) {
                 ServiceClocks.tick(db, System.currentTimeMillis());
+                DutyRosters.tick(store,db,System.currentTimeMillis());
+                DecisionFlows.expire(db,System.currentTimeMillis());
                 db.update(
                         "DELETE FROM os_notice WHERE acknowledged=1 AND created_at<?",
                         System.currentTimeMillis() - 30L * 86400000);

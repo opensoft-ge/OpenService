@@ -59,3 +59,5 @@ Administrators can now preview a goal and its allowed target slots, authorize a 
 ## Managed request fulfillment and evaluation
 
 Reviewed plans can also claim a routed service request for the delegated agent. The executor checks current fulfillment membership and revisions. A plan evaluation exercises completion, revocation and stop against the native executor under database rollback. Provider usage and configured rates determine whether a cost estimate is available. Live model quality across a representative service-desk corpus remains open. See the [enterprise operations guide](enterprise-operations-2026-11-19.md).
+
+The native supervisor now records assigned human investigations for uncertain or revoked authority and requires renewed grants and approval for replacement native plans. A separate held-out run retained both raw model proposals and supervised outcomes, including two incorrect raw responses. [Scenario and execution evidence](decision-and-delivery-workflows.md#service-desk-evaluation)
