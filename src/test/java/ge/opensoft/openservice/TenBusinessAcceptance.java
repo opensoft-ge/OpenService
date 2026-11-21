@@ -288,20 +288,47 @@ final class TenBusinessAcceptance {
         }
         var note=map("operation","handoff","note","Installation tested on site","revision",1);
         bad(h,"field",task,note,400);
+        String replacement=AssetCustodyAcceptance.create(h,"VISIT-PART"),secondDepot=h.add("stockroom").get("sys_id").toString();
+        AssetCustodyAcceptance.receive(h,new String[]{assets[0],secondDepot,""});
+        var priorCustody=AssetCustodyAcceptance.body(h,assets[0],"issue");priorCustody.put("username","CustomerOne");AssetCustodyAcceptance.save(h,assets[0],priorCustody);
+        AssetCustodyAcceptance.receive(h,new String[]{replacement,assets[1],assets[2]});
+        var reserve=map("task_id",task,"asset_id",replacement,"stockroom_id",assets[1],"revision",0);
+        var suggestions=EnterpriseExpansionAcceptance.cmd(h,"admin","routing","source_parts","task_id",task,"model","Field laptop","entries",List.of(assets[1],secondDepot),"start",java.time.Instant.now().plusSeconds(86400).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString(),"minutes",60,"days",2);
+        assertEquals(1,((List<?>)suggestions.get("stock")).size());
+        EnterpriseExpansionAcceptance.cmd(h,"admin","routing","reserve_serial","task_id",task,"asset_id",replacement,"stockroom_id",assets[1],"revision",0);
+        try(var db=h.store.open()){
+            PlatformFoundationTest.bind(db);
+            assertThrows(Failure.class,()->DepotTransfers.source(db,map("task_id",task,"model","Field laptop","entries",List.of())));
+            var shortage=object(DepotTransfers.source(db,map("task_id",task,"model","Field laptop","entries",List.of(assets[1],secondDepot),"start",java.time.Instant.now().plusSeconds(86400).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString(),"minutes",60,"days",2)));
+            assertEquals(true,shortage.get("shortage"));assertEquals(parent,shortage.get("case_id"));assertTrue(object(shortage.get("alternatives")).containsKey("appointments"));
+            assertThrows(Failure.class,()->DepotTransfers.command(db,"reserve_serial",reserve));
+            DepotTransfers.command(db,"release_serial",map("task_id",task,"asset_id",replacement,"revision",1));
+            reserve.put("revision",2);
+            DepotTransfers.command(db,"reserve_serial",reserve);
+            DepotTransfers.command(db,"pickup_serial",map("task_id",task,"asset_id",replacement,"revision",3));
+            assertEquals(user,AssetCustody.latest(db,replacement).get("assignee_id"));
+            db.connection.commit();
+        }
         var phone=h.get("/field-phone/"+task,auth("CustomerAgent"));assertEquals(200,phone.statusCode(),html(phone));
         String markup=html(phone);
         assertTrue(markup.contains("Save completed worksheet"));
         String ticket=markup.split("id=\"packet\">")[1].split("</textarea>")[0];
-        byte[] report=(ticket+"\r\nminutes,45\r\nevidence_note,Repaired assembly\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] report=(ticket+"\r\nminutes,45\r\ninstalled_serial,\r\ninstalled_serial,"+replacement+"\r\nevidence_note,Repaired assembly\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try(var db=h.store.open()){
             db.viewerId=user;db.viewerRole="agent";
             var synced=OfflineWorksheet.sync(h.store,db,task,report,"",new byte[0]);
             assertEquals(synced,OfflineWorksheet.sync(h.store,db,task,report,"",new byte[0]));
+            assertEquals(4,((Number)AssetCustody.latest(db,replacement).get("revision")).intValue());
+            assertEquals(customers[0],JourneyForms.definition(db,"installation-account",replacement).get("account"));
             OfflineWorksheet.action(db,"customer_case",parent,task,"complete",map("notes","Tested on site","answers",List.of(1),"parts_reviewed",true,"evidence",List.of()));
             db.connection.commit();
         }
         try(var db=h.store.open()){
             db.viewerId=user;db.viewerRole="agent";assertEquals(45,OfflineWorksheet.sync(h.store,db,task,report,"",new byte[0]).get("minutes"));
+            DepotTransfers.command(db,"return_serial",map("task_id",task,"asset_id",assets[0],"stockroom_id",secondDepot));
+            assertEquals("in_stock",AssetCustody.latest(db,assets[0]).get("state"));
+            assertEquals(RecordAccess.owner(db,"CustomerOne"),AssetCustody.latest(db,replacement).get("assignee_id"));
+            db.connection.commit();
             db.update("UPDATE os_field_dispatch SET technician_id=?,revision=revision+1 WHERE task_id=?",RecordAccess.owner(db,"CustomerOutsider"),task);
             assertEquals("needs_review",OfflineWorksheet.sync(h.store,db,task,report,"",new byte[0]).get("status"));
         }
@@ -318,7 +345,7 @@ final class TenBusinessAcceptance {
             db.update("UPDATE os_field_dispatch SET revision=revision+2 WHERE task_id=?",task);
             assertThrows(Failure.class,()->CustomerRepairs.command(db,task,"handoff",note));
         }
-        send(h,"field",task,note);
+        assertEquals(replacement,object(object(send(h,"field",task,note).get("outcome")).get("definition")).get("replacement_asset"));
         bad(h,"field",task,note,400);
         var accepted=CustomerResolutionsAcceptance.command(h,parent,"accept","CustomerOne");
         assertEquals("closed",object(accepted.get("record")).get("state"));

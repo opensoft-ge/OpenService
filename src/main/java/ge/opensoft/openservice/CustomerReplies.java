@@ -13,7 +13,17 @@ final class CustomerReplies {
  }
  static Map<String,Object> preference(Store.Db db,Object input)throws SQLException{if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");var current=preference(db);var body=object(input);require(body.keySet().equals(Set.of("revision","enabled")),"Provide notification revision and enabled");ProblemInvestigations.revision(body.get("revision"),current.get("revision"));require(body.get("enabled") instanceof Boolean,"Choose enabled or disabled");db.update("INSERT INTO os_customer_delivery(user_id,enabled,revision) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET enabled=excluded.enabled,revision=excluded.revision",db.viewerId,(Boolean)body.get("enabled")?1:0,((Number)current.get("revision")).intValue()+1);SecurityEvents.record(db,db.viewerId,db.viewerId,"customer.email_preference",map("enabled",body.get("enabled")));return preference(db);}
  static Map<String,Object> recipient(Store.Db db,String id)throws SQLException{
-  var user=db.one("SELECT u.user_id,u.email FROM os_customer_case c JOIN os_user u ON u.user_id=c.user_id JOIN os_customer_delivery p ON p.user_id=u.user_id WHERE c.record_id=? AND u.active=1 AND u.role='requester' AND u.password_reset_required=0 AND u.email_verified=1 AND p.enabled=1",id);if(user==null)return null;String viewer=db.viewerId,role=db.viewerRole;try{db.viewerId=user.get("user_id").toString();db.viewerRole="requester";record(db,id);return user;}catch(Failure hidden){return null;}finally{db.viewerId=viewer;db.viewerRole=role;}
+  var user=db.one("SELECT u.user_id,u.email FROM os_customer_case c JOIN os_user u ON u.user_id=c.user_id JOIN os_customer_delivery p ON p.user_id=u.user_id WHERE c.record_id=? AND u.active=1 AND u.role='requester' AND u.password_reset_required=0 AND u.email_verified=1 AND p.enabled=1",id);return user!=null && canReadAsCustomer(db,user.get("user_id").toString(),id)?user:null;
+ }
+
+ static boolean canReadAsCustomer(Store.Db db,String user,String recordId)throws SQLException{
+  String viewer=db.viewerId,role=db.viewerRole;
+  try {
+   db.viewerId=user;db.viewerRole="requester";
+   record(db,recordId);
+   return true;
+  }catch(Failure hidden){return false;}
+  finally{db.viewerId=viewer;db.viewerRole=role;}
  }
  static boolean writable(Store.Db db)throws SQLException{var rule=object(TypedFields.rules(Service.schema(db,"customer_case")).getOrDefault("description",map()));return !rule.containsKey("write_roles") || ((List<?>)rule.get("write_roles")).contains(db.viewerRole);}
  static Map<String,Object> page(Store store,Store.Db db,String id)throws SQLException{

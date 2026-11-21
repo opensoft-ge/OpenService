@@ -218,7 +218,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && (path.matches("/(?:enterprise|api/openservice/enterprise)/(?:access|studio|sales|apps)/global") || path.matches("/intake/[0-9a-f]{32}") || path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
+                                && (path.matches("/(?:enterprise|api/openservice/enterprise)/(?:access|studio|sales|apps|guides|impact|licenses|assistant|workplace|walkup|suppliers)/global") || path.matches("/intake/[0-9a-f]{32}") || path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:record/[^/]+/[0-9a-f]{32}/collaboration|api/openservice/collaboration/[^/]+/[0-9a-f]{32})")
                         && !path.matches("/(?:employee-service|api/openservice/employee-service)/(?:services|cases)/[0-9a-f]{32}")
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
@@ -620,7 +620,29 @@ public class WebController {
         if(enterprise.matches()){
             method(method,"GET","POST");c.noQuery();String area=enterprise.group(1),subject=enterprise.group(2);boolean api=path.startsWith("/api/");var page=EnterpriseWorkspaces.page(c.db,area,subject);Object outcome=null;
             if(method.equals("POST")){Object input=api?body(c):EnterpriseWorkspaces.form(page,c.arguments());outcome=EnterpriseWorkspaces.command(store,c.db,area,subject,input);page=EnterpriseWorkspaces.page(c.db,area,subject);}
-            if(!api && area.equals("mining") && outcome!=null){page.put("analysis",outcome);page.put("case_table",c.arguments().get("table"));}
+            if (!api && outcome != null) {
+                String operation = c.arguments().get("operation");
+                if (area.equals("mining") && "compare".equals(operation)) {
+                    page.put("analysis", outcome);
+                    page.put("case_table", c.arguments().get("table"));
+                }
+                if(area.equals("apps") && "guide_case".equals(operation)){page.put("guided_view",outcome);page.put("guided_case",c.arguments().get("case_id"));}
+                if(area.equals("apps") && "guided_queue".equals(operation))page.put("guided_queue",outcome);
+                if(area.equals("sales") && "my_claims".equals(operation))page.put("dealer_claims",outcome);
+                if(area.equals("routing") && "contract_queue".equals(operation))page.put("contract_queue",outcome);
+                if(area.equals("workplace") && "my_agreement".equals(operation))page.put("agreement_view",outcome);
+                if (area.equals("designer") && "review_list".equals(operation)) page.put("approval_review",outcome);
+                if (area.equals("assistant") && "search_services".equals(operation)) page.put("search",outcome);
+                if ((area.equals("guides") && Set.of("preview", "preview_for").contains(operation))
+                        || (area.equals("assistant") && Set.of("ask","choose_service").contains(operation))) {
+                    var checkout = new LinkedHashMap<>(object(outcome));
+                    checkout.put("key", area.equals("guides") ? Values.id() : c.arguments().get("new_id"));
+                    if (area.equals("guides"))
+                        for (String key : List.of("guide_id","job_role","location","employee_id"))
+                            checkout.put(key,c.arguments().get(key));
+                    page.put("checkout",checkout);
+                }
+            }
             return api?json(map("result",map("workspace",page,"outcome",outcome)),200):view(c,"enterprise",map("table","enterprise","page",page,"offlinePath",area.equals("field") && !subject.equals("technicians")?"/field-worksheet/"+subject:null,"details",JSON.writerWithDefaultPrettyPrinter().writeValueAsString(page.get("data")),"outcome",outcome==null?null:JSON.writerWithDefaultPrettyPrinter().writeValueAsString(outcome)));
         }
         Matcher intake=Pattern.compile("/intake/([0-9a-f]{32})").matcher(path);

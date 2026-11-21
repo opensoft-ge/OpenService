@@ -21,7 +21,7 @@ final class InvoiceSettlement {
             var lines=object(invoice.get("lines"));
             require(lines.containsKey(model),"Choose an invoiced model");
             var line=object(lines.get(model));
-            require(new BigDecimal(line.get("price_variance").toString()).signum()!=0 && money(b.get("unit_cost")).equals(money(line.get("unit_cost"))),"Review the invoiced price difference");
+            require(new BigDecimal(line.getOrDefault("contract_unit_variance",line.get("price_variance")).toString()).signum()!=0 && money(b.get("unit_cost")).equals(money(line.get("unit_cost"))),"Review the invoiced price difference");
             String key=ConnectorSynchronization.hash(List.of(invoiceId,model));
             save(db,"finance-price",key,0,map("invoice",invoiceId,"model",model,"unit_cost",line.get("unit_cost"),"approved_by",db.viewerId,"reason",text(b,"note",500)));
             return get(db,"finance-price",key);
@@ -64,6 +64,7 @@ final class InvoiceSettlement {
         if(op.equals("reclaim")) return map("usage",usage,"candidates",candidates);
         ProblemInvestigations.revision(b.get("usage_revision"),usage.get("revision"));
         require(Boolean.TRUE.equals(b.get("confirm")) && candidates.stream().anyMatch(c->c.get("license_id").equals(b.get("license_id")) && c.get("user_id").equals(b.get("user_id"))),"Select a confirmed inactive seat");
+        SeatRecovery.allowed(db,id(b,"license_id"),id(b,"user_id"));
         AssetPlanning.command(db,map("operation","release","license_id",id(b,"license_id"),"revision",b.get("revision"),"user_id",id(b,"user_id")));
         return get(db,"entitlement",id(b,"license_id"));
     }
@@ -87,7 +88,7 @@ final class InvoiceSettlement {
             int prior=(int)billed.get("cumulative_invoiced")-quantity;
             int received=((List<?>)ordered.getOrDefault("received",List.of())).size();
             int eligible=Math.min(quantity,Math.max(0,received-prior));
-            boolean price=money(ordered.get("unit_cost")).compareTo(money(billed.get("unit_cost")))==0;
+            boolean price=money(billed.getOrDefault("contract_unit_cost",ordered.get("unit_cost"))).compareTo(money(billed.get("unit_cost")))==0;
             if(!price){
                 var approval=object(get(db,"finance-price",ConnectorSynchronization.hash(List.of(key,model))).get("definition"));
                 price=billed.get("unit_cost").equals(approval.get("unit_cost"));

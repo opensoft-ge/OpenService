@@ -25,7 +25,9 @@ final class PurchasingControls {
             save(db,"product-alias",ConnectorSynchronization.hash(name),body.get("revision"),map("alias",name,"product",product));
             return map("product",product);
         }
-        keys(body,"operation","order","invoice","currency","lines");
+        boolean dated="dated_invoice".equals(body.get("operation"));
+        if(dated) keys(body,"operation","order","invoice","currency","lines","pricing_date");
+        else keys(body,"operation","order","invoice","currency","lines");
         String orderId=EnterpriseData.id(body.get("order"));
         var order=object(get(db,"purchase",orderId).get("definition"));
         require("approved".equals(order.get("state")),"Select an approved purchase order");
@@ -61,6 +63,7 @@ final class PurchasingControls {
         require(!lines.isEmpty(),"Provide invoice lines");
         var receipt=map("invoice",number,"supplier",order.get("supplier"),"currency",order.get("currency"),
                 "order",orderId,"lines",lines,"matched_at",now(),"actor",db.viewerId);
+        SupplierContracts.match(db,receipt,dated?ProjectDelivery.date(body.get("pricing_date")):java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString());
         save(db,"invoice",key,0,receipt);
         return receipt;
     }

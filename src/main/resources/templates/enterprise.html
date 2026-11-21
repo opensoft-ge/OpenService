@@ -12,6 +12,36 @@
   <section class="panel" th:if="${page.title=='Intake applications'}"><h2>Published forms</h2>
     <ul><li th:each="app : ${page.data.getOrDefault('apps',{})}"><a th:href="${'/intake/'+app.app_id}" th:text="${app.title}"></a></li>
     <li th:each="app : ${page.data.getOrDefault('intake-release',{})}"><a th:href="${'/intake/'+app.id}" th:text="${app.title}"></a></li></ul></section>
+  <section class="panel" th:if="${page.containsKey('guided_view')}">
+    <h2>Case review</h2><p th:text="${page.guided_view.state}"></p>
+    <div th:if="${!page.guided_view.stage.isEmpty()}"><h3 th:text="${page.guided_view.stage.title}"></h3>
+    <p th:text="${page.guided_view.stage.instruction}"></p><p>Assigned group <span th:text="${page.guided_view.stage.group}"></span></p></div>
+    <dl><th:block th:each="field : ${page.guided_view.fields}"><dt th:text="${field.key}"></dt><dd th:text="${field.value}"></dd></th:block></dl>
+    <ol th:if="${!page.guided_view.history.isEmpty()}">
+      <li th:each="event : ${page.guided_view.history}"><time th:text="${event.at}"></time> · <strong th:text="${event.action}"></strong> · <span th:text="${event.note}"></span></li>
+    </ol>
+    <form th:if="${page.guided_view.can_advance}" method="post" aria-label="Update case review">
+      <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="advance_stage">
+      <input type="hidden" name="case_id" th:value="${page.guided_case}"><input type="hidden" name="revision" th:value="${page.guided_view.revision}">
+      <label>Decision note<textarea name="note" required maxlength="1200"></textarea></label>
+      <button th:if="${page.guided_view.state == 'waiting'}" name="decision" value="resume">Resume review</button>
+      <th:block th:unless="${page.guided_view.state == 'waiting'}"><button name="decision" value="wait">Pause for a response</button>
+      <button name="decision" value="complete">Complete this stage</button></th:block>
+    </form>
+    <ul><li th:each="order : ${page.guided_view.orders}" th:text="${'Purchase order '+order}"></li></ul>
+  </section>
+  <section class="panel" th:if="${page.containsKey('guided_queue')}"><h2>Reviews assigned to my team</h2>
+    <form method="post" th:each="item : ${page.guided_queue}"><input type="hidden" name="csrf" th:value="${csrf}">
+    <input type="hidden" name="operation" value="guide_case"><input type="hidden" name="case_id" th:value="${item.case_id}">
+    <button th:text="${item.stage.title+' · '+item.status}"></button></form></section>
+  <section class="panel" th:if="${page.containsKey('dealer_claims')}"><h2>My warranty claims</h2>
+    <ul><li th:each="claim : ${page.dealer_claims}"><span th:text="${claim.serial+' · '+claim.failure+' · '+claim.state}"></span>
+      <form method="post" th:if="${claim.asset_id != null}"><input type="hidden" name="csrf" th:value="${csrf}">
+        <input type="hidden" name="operation" value="claim_status"><input type="hidden" name="asset_id" th:value="${claim.asset_id}">
+        <input type="hidden" name="reference" th:value="${claim.reference}"><button th:text="${claim.reference}"></button></form></li></ul>
+  </section>
+  <section class="panel" th:if="${page.containsKey('contract_queue')}"><h2>My company’s repair queue</h2><ul>
+    <li th:each="job : ${page.contract_queue}" th:text="${job.task+' · '+job.state+' · revision '+job.revision}"></li></ul></section>
   <section class="panel" th:if="${offlinePath!=null}">
     <h2>Offline visit</h2><p><a th:href="${#strings.replace(offlinePath,'field-worksheet','field-phone')}">Download the offline phone form</a>. Open the saved form, enter the visit details and save the completed worksheet for upload.</p><p><a th:href="${offlinePath}">Download this visit worksheet</a>. Open the CSV in your phone’s spreadsheet app. Fill in minutes and an evidence note. For each used part, enter its configuration item ID, quantity and notes in a part row. Save as CSV.</p>
     <form method="post" enctype="multipart/form-data" th:action="${offlinePath}">
@@ -30,17 +60,45 @@
     <tbody><tr th:each="name : ${ {'before','after'} }" th:with="cohort=${page.analysis.get(name)}"><th scope="row" th:text="${name}"></th><td th:text="${cohort.cases.size()}"></td><td th:text="${cohort.completed}"></td><td th:text="${cohort.reopened}"></td><td th:text="${cohort.mean_seconds_to_first_completion ?: '—'}"></td></tr></tbody></table></div>
     <details th:each="name : ${ {'before','after'} }"><summary th:text="${name+' case histories'}"></summary><ul><li th:each="example : ${page.analysis.get(name).cases}"><a th:href="${'/record/'+page.case_table+'/'+example.record_id}" th:text="${example.record_id}"></a> <span th:text="${#strings.listJoin(example.path,' → ')}"></span></li></ul></details>
   </section>
-  <section class="panel" th:if="${outcome!=null}"><div class="panel-heading"><h2>Operation result</h2></div><div class="table-scroll"><pre th:text="${outcome}"></pre></div></section>
+  <section class="panel" th:if="${page.containsKey('agreement_view')}"><h2>Your employee agreement</h2>
+    <p th:unless="${page.agreement_view.containsKey('agreement')}">There is no current agreement for this case.</p>
+    <div th:if="${page.agreement_view.containsKey('agreement')}" th:with="doc=${page.agreement_view.agreement.definition}">
+      <p th:text="${doc.location+' · Effective '+doc.effective}"></p><pre th:text="${doc.getOrDefault('body','The retention period has ended.')}"></pre>
+      <p th:if="${doc.state=='signed'}" th:text="${'Signed '+doc.signed_at}"></p>
+      <form method="post" th:if="${doc.state=='pending'}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="sign_agreement"><input type="hidden" name="case_id" th:value="${doc.case_id}"><input type="hidden" name="document_id" th:value="${page.agreement_view.document_id}"><input type="hidden" name="digest" th:value="${doc.digest}"><input type="hidden" name="revision" th:value="${page.agreement_view.agreement.revision}"><button class="button primary">Sign this agreement</button></form>
+    </div></section>
+  <section class="panel" th:if="${page.title=='Decision workflows' and !#lists.isEmpty(page.data.pending_lists)}"><h2>My item approvals</h2>
+    <form method="post" th:each="item:${page.data.pending_lists}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="review_list"><input type="hidden" name="new_id" th:value="${item.run}"><button class="button" th:text="${'Review '+item.source+' '+item.run}"></button></form>
+  </section>
+  <section class="panel" th:if="${page.containsKey('approval_review')}"><h2>Assigned items</h2>
+    <ul><li th:each="item:${page.approval_review.items}"><strong th:text="${item.key}"></strong> <span th:text="${item.value}"></span></li></ul>
+    <form method="post" th:if="${page.approval_review.decision=='pending'}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="list_decision"><input type="hidden" name="new_id" th:value="${page.approval_review.run}"><input type="hidden" name="revision" th:value="${page.approval_review.revision}"><button class="button" name="decision" value="approved">Approve my items</button><button class="button" name="decision" value="rejected">Reject my items</button></form>
+  </section>
+  <section class="panel" th:if="${page.containsKey('search')}"><h2>Choose a service</h2>
+    <form method="post" th:each="s:${page.search.suggestions}">
+      <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="choose_service">
+      <input type="hidden" name="new_id" th:value="${page.search.conversation}"><input type="hidden" name="intent_id" th:value="${s.intent_id}">
+      <a th:href="${'/knowledge/'+s.citation.article_id}" th:text="${s.citation.policy_title}"></a>
+      <button class="button" th:text="${s.citation.catalog_name}"></button>
+    </form>
+    <form method="post"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="handoff"><input type="hidden" name="new_id" th:value="${page.search.conversation}"><label>Details for the service desk<textarea name="details" required maxlength="1200"></textarea></label><button class="button">Ask the service desk</button></form>
+  </section>
+  <th:block th:if="${page.containsKey('checkout') and page.title=='Catalog order guides'}"><th:block th:replace="~{request-checkout :: guide}"></th:block></th:block>
+  <th:block th:if="${page.containsKey('checkout') and page.title=='Employee request assistant'}"><th:block th:replace="~{request-checkout :: conversation}"></th:block></th:block>
+  <section class="panel" th:if="${outcome!=null and !page.containsKey('checkout') and !page.containsKey('search') and !page.containsKey('approval_review') and !page.containsKey('agreement_view')}"><div class="panel-heading"><h2>Operation result</h2></div><div class="table-scroll"><pre th:text="${outcome}"></pre></div></section>
   <section class="panel"><div class="panel-heading"><h2>Current records and review evidence</h2></div><div class="table-scroll"><pre th:text="${details}"></pre></div></section>
   <section class="panel" th:each="operation, oi:${page.forms}">
     <div class="panel-heading"><h2 th:text="${operation.title}"></h2></div>
     <form method="post" class="record-form">
       <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" th:value="${operation.operation}">
-      <div class="form-field" th:each="field:${operation.fields}" th:with="steps=${page.title=='Decision workflows' and operation.operation=='path' and field.name=='steps'},fields=${page.title=='Intake applications' and operation.operation=='build' and field.name=='fields'}">
+      <div class="form-field" th:each="field:${operation.fields}" th:with="routes=${operation.operation=='exception_design' and field.name=='bindings'},purchase=${operation.operation=='purchase_action' and field.name=='bindings'},steps=${page.title=='Decision workflows' and operation.operation=='path' and field.name=='steps'},approval=${page.title=='Decision workflows' and operation.operation=='list_policy' and field.name=='entries'},fields=${page.title=='Intake applications' and operation.operation=='build' and field.name=='fields'}">
+        <th:block th:if="${routes}" th:insert="~{design-inputs :: riskRoutes}"></th:block>
+        <th:block th:if="${purchase}" th:insert="~{design-inputs :: purchase}"></th:block>
         <th:block th:if="${steps}" th:insert="~{design-inputs :: steps}"></th:block>
+        <th:block th:if="${approval}" th:insert="~{design-inputs :: approval}"></th:block>
         <th:block th:if="${fields}" th:insert="~{design-inputs :: fields}"></th:block>
-        <label th:unless="${steps or fields}" th:for="${'f-'+oi.index+'-'+field.name}" th:text="${field.label}"></label>
-        <textarea th:if="${field.type=='json' and !steps and !fields}" rows="5" th:id="${'f-'+oi.index+'-'+field.name}" th:name="${field.name}" th:text="${field.value}" required></textarea>
+        <label th:unless="${steps or fields or approval or purchase or routes}" th:for="${'f-'+oi.index+'-'+field.name}" th:text="${field.label}"></label>
+        <textarea th:if="${field.type=='json' and !steps and !fields and !approval and !purchase and !routes}" rows="5" th:id="${'f-'+oi.index+'-'+field.name}" th:name="${field.name}" th:text="${field.value}" required></textarea>
         <select th:if="${field.type=='boolean'}" th:id="${'f-'+oi.index+'-'+field.name}" th:name="${field.name}"><option value="false" th:selected="${field.value==false}">No</option><option value="true" th:selected="${field.value==true}">Yes</option></select>
         <input th:if="${field.type!='json' and field.type!='boolean'}" th:type="${field.type}" th:id="${'f-'+oi.index+'-'+field.name}" th:name="${field.name}" th:value="${field.value}" required>
       </div>

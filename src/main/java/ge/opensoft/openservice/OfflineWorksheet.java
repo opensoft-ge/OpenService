@@ -100,6 +100,9 @@ final class OfflineWorksheet {
                 case "visit","location","check" -> { /* Downloaded reference information. */ }
                 case "minutes" -> minutes=Service.number(row.get(1),1,1440);
                 case "evidence_note" -> note=WorkJobs.text(row.get(1),2000);
+                case "installed_serial" -> {
+                    if(!row.get(1).isBlank()) DepotTransfers.install(db,id,EnterpriseData.id(row.get(1)));
+                }
                 case "part" -> {
                     if(row.get(1).isBlank()) continue;
                     require(row.size()==4,"Part rows need item ID, quantity and notes");

@@ -24,6 +24,12 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void composeSupplierException() throws Exception { SupplierDesignerBrowser.run(this); }
+    @org.junit.jupiter.api.Test void composeGuidedWorkspaces() throws Exception { IndustryWorkspaceBrowser.run(this); }
+    @org.junit.jupiter.api.Test void walkupAndActionAuthoring() throws Exception { ServiceExpansionBrowser.run(this); }
+    @org.junit.jupiter.api.Test void enterpriseListWorkflow() throws Exception { ServiceDeliveryBrowser.listWorkflow(this); }
+    @org.junit.jupiter.api.Test void serviceDeliveryCheckout() throws Exception { ServiceDeliveryBrowser.run(this); }
+
     @Test void enterpriseWorkspaceJourneys() throws Exception { EnterpriseBrowserAcceptance.run(this); }
     @Test void reviewedInformationResolutionJourney() throws Exception { RequestResolutionBrowserAcceptance.run(this); }
     @Test void conditionalCatalogueQuestionsJourney() throws Exception { CatalogueConditionsBrowserAcceptance.run(this); }

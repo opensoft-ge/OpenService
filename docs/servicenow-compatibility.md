@@ -1,5 +1,37 @@
 # ServiceNow compatibility ledger
 
+## Service assurance, 21 November 2026
+
+SA-01 through SA-10 are partial. The implemented operations and qualification limits cover connector recovery (OS-PARITY-03), composed approvals and permanent fixes (02/09), Intune and metric monitoring (05/10), employee search (04/06), publisher reconciliation (05/07), delivery metrics (07), business tolerance (10), and circuit restoration (02/05). The comparison maps bounded local contracts to the requested journeys. Live Entra, Jira, Intune, Windows and Confluence evidence remains outstanding. [Workflow guide](service-assurance-workflows.md) · [Search scores and misses](department-search-results.json)
+
+
+## Industry operations and qualification, 20 November 2026
+
+Ten workflows now cover recoverable connector writes, guided workspaces, Git releases, endpoint inventory, Confluence policies, transaction monitoring, contractor repairs, telecom circuits, dealer warranties and regulatory notices. The local search comparison completed 21 of 30 eligible requests against eight for the native matcher. Provider-tenant qualification remains open. [Workflow guide and qualification conditions](industry-operations.md) · [Search evaluation](department-search-results.json)
+
+The workflow guide uses the following IDs in rank order. Native coverage is partial in each parent portfolio. Manufacturing warranty adjudication and serialized returns now have a tested implementation under OS-PORT-08. Telecom capacity reservation, site activation and outage tracing extend the existing telecom ordering workflow.
+
+| Portfolio | New workflow IDs |
+| --- | --- |
+| OS-PORT-09 Integration and operations | OS-IND-01 provider history recovery |
+| OS-PORT-07 Platform and applications | OS-IND-02 guided workspaces, OS-IND-03 Git release promotion, OS-IND-05 delegated policy search |
+| OS-PORT-02 Assets and operations | OS-IND-04 endpoint discovery, OS-IND-06 transaction reliability |
+| OS-PORT-03 Customer and field service | OS-IND-07 contractor repairs |
+| OS-PORT-08 Industry applications | OS-IND-08 telecom circuit inventory, OS-IND-09 dealer warranty credits |
+| OS-PORT-05 Risk and governance | OS-IND-10 regulatory impact and retest |
+
+## Service operations implementation, 20 November 2026
+
+[Ten service operations workflows](service-operations-expansion.md) connect high-volume imports, approved purchasing, service objectives, external search, supplier contracts, agile delivery, privacy assessments, certificate renewal, maintenance scheduling and walk-up desks. These are bounded native implementations. Live Entra and Jira qualification requires provider-side evidence from designated test tenants. The [employee search comparison](external-policy-search-results.json) records measured outcomes and missed cases.
+
+## Enterprise platform workflows, 20 November 2026
+
+Checkpointed connector imports, record-list approvals, release tests, CAB windows, AWS billing attribution, conversational retrieval, field inventory, HR agreements, quarterly reforecasting and continuous access controls each have an executable OpenService workflow. The parent product areas remain partial. Live tenant qualification and production-volume tests are open. [Acceptance scenarios and qualification evidence](enterprise-platform-workflows.md)
+
+## Service operations workflows, 20 November 2026
+
+OS-N20-S01 through OS-N20-S10 track the ten service operations workflows in the order listed in the guide. Each parent area remains partial. Local acceptance covers record-triggered decisions, multi-item orders, authored REST actions, desk assignment, cross-installation promotion, CMDB remediation, customer outages, license reclamation, employee request assistance and measured improvement. Live Entra and Jira write qualification remains open. The QA follow-up records seven fixes, 1,885 passing application tests and full measured Java and browser coverage. [Service operations workflows and QA results](service-operations-workflows.md#qa-follow-up-on-20-november-2026)
+
 ## Service delivery expansion, 19 November 2026
 
 The [service delivery expansion](service-delivery-expansion.md) extends the preceding enterprise workflows from `0cc7a42`. It covers access policies, reusable connector actions, incident duty, service impact, sales, crew routing, project spend, workplace, audits and service-desk decisions. These belong to OS-PORT-01 through OS-PORT-07 and OS-PORT-09. The report distinguishes native behavior, fixture verification and configured-model results. Live Entra and Jira action qualification remains open.

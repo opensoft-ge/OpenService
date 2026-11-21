@@ -154,6 +154,7 @@ final class WorkplaceEvents {
             }
         }
         save(db, "workplace-event", hr, b.get("revision"), event);
+        if (manager) EmployeeAgreements.refresh(db,hr,event);
         if (!manager) return map("saved", true);
         return get(db, "workplace-event", hr);
     }

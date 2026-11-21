@@ -113,6 +113,7 @@ final class SupplierGovernance {
                         data.containsKey("exception")
                                 && valid(object(data.get("exception")).get("expiry")),
                         "Assessment expired; a current dated exception is required");
+            SupplierContracts.validateOrder(db,terms,LocalDate.now(ZoneOffset.UTC).toString());
             AssetPlanning.approveDraft(db, terms);
             save(db, "purchase", order, purchase.get("revision"), terms);
             ProjectSpend.run(
@@ -139,7 +140,7 @@ final class SupplierGovernance {
                             "assessment",
                             assessment,
                             "contract",
-                            data.get("contract"),
+                            terms.getOrDefault("signed_terms",data.get("contract")),
                             "exception",
                             excepted ? data.get("exception") : map(),
                             "finance",
@@ -170,6 +171,8 @@ final class SupplierGovernance {
             }
         }
         save(db, "managed-supplier", id, row.get("revision"), data);
+        if (op.equals("assess")) SupplierFlows.changed(db,id,data);
+        if (op.equals("contract")) SupplierFlows.signed(db,id,data);
         return map("revision", get(db, "managed-supplier", id).get("revision"), "saved", op);
     }
 }

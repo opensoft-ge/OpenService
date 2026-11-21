@@ -3,16 +3,22 @@
 <section class="panel"><div class="panel-heading"><h2>Business workflows</h2></div><p><a href="/enterprise/studio/global">Workflow studio</a></p><p><a href="/employee-service">Employee services</a> · <a href="/field-service">Field service</a> · <a href="/security">Security operations</a> · <a href="/workspace/project">Projects</a></p><p>Open an HR case, security incident or project record to reach its enterprise planning workspace. Field appointments are available from each task's dispatch page.</p></section>
 <section class="panel" th:if="${user.role=='admin'}"><div class="panel-heading"><h2>Shared administration</h2></div><p><a href="/enterprise/topology/global">Service topology and incidents</a></p><p><a href="/enterprise/architecture/global">Application investments</a></p><p><a href="/enterprise/assets/global">Purchasing and software entitlements</a></p><p><a href="/enterprise/field/technicians">Technician skills</a></p><p><a href="/enterprise/integrations/global">Enterprise connection lifecycle</a></p><p><a href="/enterprise/agents/global">Delegated agent plans</a></p></section>
 <section class="panel"><h2>Service delivery</h2><ul>
+<li><a href="/enterprise/walkup/global">Walk-up service desks</a></li>
 <li><a href="/enterprise/access/global">Access policies</a></li>
 <li><a href="/enterprise/duty/global">On-call scheduling</a></li>
 <li th:if="${user.role=='admin'}"><a href="/enterprise/mapping/global">Federated service maps</a></li>
 <li><a href="/enterprise/sales/global">Sales and installation</a></li>
-<li th:if="${user.role=='admin'}"><a href="/enterprise/routing/global">Territory dispatch</a></li>
+<li><a href="/enterprise/routing/global">Territory dispatch and contractor repairs</a></li>
 <li th:if="${user.role=='admin'}"><a href="/enterprise/finance/global">Project spend</a></li>
 <li><a href="/enterprise/workplace/global">Employee lifecycle</a></li>
 <li><a href="/enterprise/audits/global">Audit engagements</a></li>
 <li th:if="${user.role=='admin'}"><a href="/enterprise/desk/global">Service desk evaluations</a></li>
 <li th:if="${user.role=='admin'}"><a href="/enterprise/designer/global">Decision workflows</a></li>
+<li><a href="/enterprise/guides/global">Catalog order guides</a></li>
+<li th:if="${user.role!='requester'}"><a href="/enterprise/assignment/global">Desk assignment</a></li>
+<li><a href="/enterprise/impact/global">Customer service impact</a></li>
+<li><a href="/enterprise/licenses/global">Software seat recovery</a></li>
+<li><a href="/enterprise/assistant/global">Employee request assistant</a></li>
 <li th:if="${user.role!='requester'}"><a href="/enterprise/packages/global">Connector packages</a></li>
 <li><a href="/enterprise/apps/global">Intake applications</a></li>
 <li th:if="${user.role!='requester'}"><a href="/enterprise/suppliers/global">Supplier governance</a></li>

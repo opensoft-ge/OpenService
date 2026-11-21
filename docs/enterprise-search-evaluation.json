@@ -1,0 +1,273 @@
+{
+  "method": "Local lexical matching with employee clarification and confirmation. Latency covers policy matching and request processing. No model calls.",
+  "runs": {
+    "sqlite": {
+      "cases": [
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "My network needs VPN"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Where is parental paperwork?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Can procurement arrange a purchase?"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Salary details please"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "I need help tomorrow"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "How would I arrange access for my VPN client?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "What is our parental leave policy?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Purchase equipment for the new office"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Does everyone see salary adjustment paperwork?"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "I am deciding between a purchase and leave"
+        },
+        {
+          "expected": "submitted",
+          "actual": "handed_off",
+          "verified": false,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Can someone set up a tunnel into the company network?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Help me start a purchase order for displays"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "I need leave after my baby is born"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "VPN setup for my first business trip"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Something went wrong yesterday"
+        }
+      ],
+      "verified_successes": 14,
+      "total": 15,
+      "grounded": 9,
+      "grounding_trials": 10,
+      "correct_handoff_owner": 5,
+      "handoff_trials": 5,
+      "unauthorized_citations": 0,
+      "p95_processing_ms": 2,
+      "model_cost_usd": 0,
+      "mode": "local intent matching"
+    },
+    "postgres": {
+      "cases": [
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "My network needs VPN"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Where is parental paperwork?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Can procurement arrange a purchase?"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Salary details please"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "I need help tomorrow"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "How would I arrange access for my VPN client?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "What is our parental leave policy?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Purchase equipment for the new office"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Does everyone see salary adjustment paperwork?"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "I am deciding between a purchase and leave"
+        },
+        {
+          "expected": "submitted",
+          "actual": "handed_off",
+          "verified": false,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Can someone set up a tunnel into the company network?"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "Help me start a purchase order for displays"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "I need leave after my baby is born"
+        },
+        {
+          "expected": "submitted",
+          "actual": "submitted",
+          "verified": true,
+          "grounded": true,
+          "forbidden_citation": false,
+          "question": "VPN setup for my first business trip"
+        },
+        {
+          "expected": "handed_off",
+          "actual": "handed_off",
+          "verified": true,
+          "grounded": false,
+          "forbidden_citation": false,
+          "question": "Something went wrong yesterday"
+        }
+      ],
+      "verified_successes": 14,
+      "total": 15,
+      "grounded": 9,
+      "grounding_trials": 10,
+      "correct_handoff_owner": 5,
+      "handoff_trials": 5,
+      "unauthorized_citations": 0,
+      "p95_processing_ms": 25,
+      "model_cost_usd": 0,
+      "mode": "local intent matching"
+    }
+  }
+}

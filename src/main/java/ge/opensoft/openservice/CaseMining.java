@@ -51,6 +51,7 @@ final class CaseMining {
                 String goal) {
             var path = new ArrayList<String>();
             long entered = start;
+            Long completedAfter=null;var transitions=new ArrayList<Long>();
             String state = null;
             boolean finished = false, reopen = false;
             for (var event : events) {
@@ -66,10 +67,11 @@ final class CaseMining {
                 }
                 state = next;
                 entered = at;
-                path.add(next);
+                path.add(next);transitions.add(at);
                 if (goal.equals(next) && !finished) {
                     finished = true;
-                    fulfillment += at - start;
+                    completedAfter=at-start;
+                    fulfillment += completedAfter;
                     complete++;
                 }
             }
@@ -77,7 +79,7 @@ final class CaseMining {
             if (reopen) reopened++;
             if (new HashSet<>(path).size() < path.size()) loops++;
             variants.merge(String.join(" → ", path), 1, Integer::sum);
-            cases.add(map("record_id", id, "path", path));
+            cases.add(map("record_id", id, "path", path,"transition_epoch_seconds",transitions,"observed_until",horizon,"seconds_to_first_completion",completedAfter,"reopened",reopen));
         }
 
         void dwell(String state, long seconds) {
@@ -91,6 +93,10 @@ final class CaseMining {
     }
 
     static Object compare(Store.Db db, Map<String, Object> b) throws Exception {
+        return compare(db,b,false);
+    }
+
+    static Object compare(Store.Db db, Map<String,Object> b,boolean baselineOnly) throws Exception {
         String table = text(b, "table", 80), goal = text(b, "completed_state", 80);
         var schema = Service.schema(db, table);
         RecordPolicy.read(db, schema);
@@ -104,14 +110,14 @@ final class CaseMining {
                 LocalDate.parse(ProjectDelivery.date(b.get("before_start")))
                         .atStartOfDay()
                         .toEpochSecond(ZoneOffset.UTC);
-        long z =
+        long z = baselineOnly ? Long.MAX_VALUE / 2 :
                 LocalDate.parse(ProjectDelivery.date(b.get("after_start")))
                         .atStartOfDay()
                         .toEpochSecond(ZoneOffset.UTC);
         long span = integer(b.get("days"), 1, 90) * 86400L,
                 horizon = integer(b.get("hours"), 1, 2160) * 3600L;
         require(
-                a + span <= z && z + span + horizon <= Instant.now().getEpochSecond(),
+                a + span <= z && (baselineOnly ? a : z) + span + horizon <= Instant.now().getEpochSecond(),
                 "Choose non-overlapping mature UTC cohorts");
         var rows =
                 db.all(

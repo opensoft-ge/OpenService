@@ -158,6 +158,7 @@ public final class Service {
         audit(db, item, actor, "created", map("after", serialize(item)));
         ConditionalClocks.changed(db,item,System.currentTimeMillis());
         EventWorkflows.changed(db,item,Map.of(),true,System.currentTimeMillis());
+        DeskAssignment.created(db,item);
         return item;
     }
 
@@ -207,6 +208,11 @@ public final class Service {
         MajorIncidents.guard(db,item);
         CustomerResolutions.guard(db,item);
         WorkTasks.guard(db,item);
+        if("problem".equals(item.get("table")) && "closed".equals(object(item.get("data")).get("state"))){
+            var fix=object(EnterpriseData.get(db,"problem-fix-current",item.get("sys_id").toString()).get("definition"));
+            if(!fix.isEmpty() && !PermanentFixes.canClose(db,item.get("sys_id").toString(),fix))
+                throw new Failure(409,"Verify the permanent fix before closing the problem");
+        }
         EmployeeOnboarding.guard(db,item);
         RiskAssessments.guard(db,item);
         DemandPlanning.guard(db,item);
@@ -253,6 +259,9 @@ public final class Service {
         RecordPolicy.read(db,definition);
         RecordPolicy.require(definition, "update", role);
         var payload = object(body);
+        if ("sc_request".equals(table) && payload.containsKey("state")
+                && db.count("SELECT COUNT(*) FROM os_enterprise_document WHERE area='cancelled-guide-item' AND subject=?",item.get("sys_id"))>0)
+            throw new Failure(409,"This guide item was cancelled");
         FieldAccess.writing(db, definition, payload);
         validate(definition, payload);
         var data = object(item.get("data"));
@@ -262,6 +271,11 @@ public final class Service {
                 && ((String) payload.get("short_description")).isBlank())
             throw new Failure(400, "Summary is required");
         if (payload.containsKey("state") && !payload.get("state").equals(data.get("state"))) {
+            if (table.equals("sc_request") && Set.of("fulfilling","complete").contains(payload.get("state"))) {
+                var review = object(EnterpriseData.get(db,"guide-review",item.get("sys_id").toString()).get("definition"));
+                if (!review.isEmpty() && !"approved".equals(review.get("state")))
+                    throw new Failure(409,"This item requires the assigned guide reviewer's approval");
+            }
             if (!((List<?>)
                             object(definition.get("flow"))
                                     .getOrDefault(data.get("state"), List.of()))

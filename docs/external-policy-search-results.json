@@ -1,0 +1,438 @@
+{
+  "questions": 100,
+  "eligible_requests": 75,
+  "handoff_questions": 25,
+  "cohort": "Authored synthetic questions. One eligible employee, three available offerings, one restricted policy. Top result confirmed only when its score is unique.",
+  "latency": "Application processing milliseconds, p95. Excludes browser and client time.",
+  "runs": {
+    "sqlite": {
+      "native": {
+        "verified_successes": 44,
+        "total": 100,
+        "grounded": 19,
+        "grounding_trials": 75,
+        "correct_handoff_owner": 25,
+        "handoff_trials": 25,
+        "unauthorized_citations": 0,
+        "p95_processing_ms": 0,
+        "model_cost_usd": 0
+      },
+      "external": {
+        "verified_successes": 81,
+        "total": 100,
+        "grounded": 56,
+        "grounding_trials": 75,
+        "correct_handoff_owner": 25,
+        "handoff_trials": 25,
+        "unauthorized_citations": 0,
+        "p95_processing_ms": 3,
+        "model_cost_usd": 0
+      }
+    },
+    "postgres": {
+      "native": {
+        "verified_successes": 44,
+        "total": 100,
+        "grounded": 19,
+        "grounding_trials": 75,
+        "correct_handoff_owner": 25,
+        "handoff_trials": 25,
+        "unauthorized_citations": 0,
+        "p95_processing_ms": 10,
+        "model_cost_usd": 0
+      },
+      "external": {
+        "verified_successes": 81,
+        "total": 100,
+        "grounded": 56,
+        "grounding_trials": 75,
+        "correct_handoff_owner": 25,
+        "handoff_trials": 25,
+        "unauthorized_citations": 0,
+        "p95_processing_ms": 20,
+        "model_cost_usd": 0
+      }
+    }
+  },
+  "missed_questions": {
+    "native": [
+      {
+        "question": "Connect my laptop to the internal network",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Working remotely tomorrow how do I sign in",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can I reach the intranet from home",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Set up a secure tunnel please",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "My remote connection expired",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "I am offsite and need a connection",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "How do I work from the hotel",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Request an encrypted connection",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "How do I connect from an airport",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "I cannot see internal systems at home",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can my company laptop reach the office network",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "I need the remote client",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Help me reach work resources while traveling",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Who authorizes the secure connection",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Please enable the company tunnel",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "How does offsite authentication work",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Which remote client is approved",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can I work away from headquarters",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Where is the intranet connection form",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "We adopted a child yesterday",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "How do I request maternity time",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Where can a new father apply",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "I am expecting a baby soon",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "What happens to my benefits after childbirth",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Is adoption time paid",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "We are welcoming twins",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "I need time off to bond with my infant",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Who approves paternity absence",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Our family is growing",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "What paperwork accompanies adoption",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Where do expectant parents apply",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "I am returning after maternity absence",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Find the new parent policy",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Does bonding time cover foster placement",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "What are my options as a co-parent",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "I want to care for my newborn",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Start the adoption paperwork",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "My partner is pregnant",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Which form covers paternity",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can purchasing buy new screens",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "How do I buy a printer",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "We need a vendor quotation",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Approve a supplier requisition",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "How do we procure a display",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Where does a vendor quote go",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "I want to buy monitors",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can someone issue a PO",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "We need desks from our supplier",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Which form authorizes equipment spending",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Get a quotation for boxes",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "I have a vendor estimate",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Need supplies for the new site",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "How does procurement approve this spend",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Create a requisition for project equipment",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can we buy an extra keyboard",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Which buyer handles my requisition",
+        "expected": "purchase",
+        "actual": "handoff"
+      }
+    ],
+    "external": [
+      {
+        "question": "How do I work from the hotel",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "How do I connect from an airport",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Help me reach work resources while traveling",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Who authorizes the secure connection",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can I work away from headquarters",
+        "expected": "vpn",
+        "actual": "handoff"
+      },
+      {
+        "question": "We adopted a child yesterday",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Where can a new father apply",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "I am expecting a baby soon",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "What happens to my benefits after childbirth",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "We are welcoming twins",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Our family is growing",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Where do expectant parents apply",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "Find the new parent policy",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "What are my options as a co-parent",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "My partner is pregnant",
+        "expected": "leave",
+        "actual": "handoff"
+      },
+      {
+        "question": "How do we procure a display",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Where does a vendor quote go",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "Can someone issue a PO",
+        "expected": "purchase",
+        "actual": "handoff"
+      },
+      {
+        "question": "I have a vendor estimate",
+        "expected": "purchase",
+        "actual": "handoff"
+      }
+    ]
+  }
+}

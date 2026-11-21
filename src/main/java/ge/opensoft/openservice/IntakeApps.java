@@ -35,6 +35,16 @@ final class IntakeApps {
                 data.remove("notes");
                 data.remove("private_answers");
             }
+            for(var bucket:List.of("answers","private_answers")){
+                var answers=object(data.getOrDefault(bucket,map()));
+                for(var name:new ArrayList<>(answers.keySet())){
+                    var field=object(object(data.getOrDefault("fields",map())).getOrDefault(name,map()));
+                    if(field.containsKey("reference_table")){
+                        try{Service.readRecord(db,field.get("reference_table").toString(),answers.get(name).toString());}
+                        catch(Failure hidden){if(hidden.status!=403 && hidden.status!=404)throw hidden;answers.remove(name);}
+                    }
+                }
+            }
             return map("revision", row.get("revision"), "case", data);
         }
         String app = id(b, "app_id");
@@ -61,7 +71,8 @@ final class IntakeApps {
         if (op.equals("build")) {
             var fields = new LinkedHashMap<String, Object>();
             for (Object item : batch(b.get("fields"), 32)) {
-                var field = object(item);
+                var field = new LinkedHashMap<>(object(item));
+                Object reference=field.remove("reference_table");
                 keys(field, "name", "label", "visibility");
                 String name = text(field, "name", 64);
                 require(
@@ -74,6 +85,10 @@ final class IntakeApps {
                                 text(field, "label", 100),
                                 "visibility",
                                 choice(field, "visibility", "requester", "confidential")));
+                if(reference!=null){
+                    require(Set.of("cmdb_ci","project","sys_user_group").contains(reference),"Choose a supported reference table");
+                    object(fields.get(name)).put("reference_table",reference);
+                }
             }
             require(!fields.isEmpty(), "Define at least one field");
             String group = id(b, "group_id"), design = id(b, "design_id");
@@ -98,8 +113,8 @@ final class IntakeApps {
                             "workflow",
                             flow,
                             "base",
-                            object(draft.get("definition"))
-                                    .getOrDefault("base", release.get("revision")),
+                            b.getOrDefault("reviewed_base", object(draft.get("definition"))
+                                    .getOrDefault("base", release.get("revision"))),
                             "author",
                             db.viewerId));
         }
@@ -118,6 +133,10 @@ final class IntakeApps {
                     !db.viewerId.equals(data.get("author")),
                     "A second administrator must promote the draft");
             ProblemInvestigations.revision(data.get("base"), release.get("revision"));
+            AppReleaseTests.verify(db,app,data);
+            var view=get(db,"guided-workspace",app);
+            if(!active.isEmpty())active.put("workspace",view.get("definition"));
+            if(data.containsKey("workspace"))save(db,"guided-workspace",app,view.get("revision"),data.get("workspace"));
             data.put("promoted_by", db.viewerId);
             if (!active.isEmpty())
                 save(db, "intake-history", key(app, release.get("revision")), 0, active);
@@ -127,6 +146,10 @@ final class IntakeApps {
             int version = ((Number) release.get("revision")).intValue();
             require(version > 1, "Choose an app with a previous test release");
             var prior = definition(db, "intake-history", key(app, version - 1));
+            AppReleaseTests.verify(db,app,prior);
+            var view=get(db,"guided-workspace",app);
+            active.put("workspace",view.get("definition"));
+            if(!view.get("revision").equals(0) || prior.containsKey("workspace"))save(db,"guided-workspace",app,view.get("revision"),prior.getOrDefault("workspace",map()));
             save(db, "intake-history", key(app, version), 0, active);
             return put(db, "intake-release", app, b.get("revision"), prior);
         }
@@ -156,7 +179,10 @@ final class IntakeApps {
                     "confidential".equals(object(fields.get(name)).get("visibility"))
                             ? confidential
                             : visible;
-            target.put(name, text(entry, "value", 2000));
+            String answer=text(entry,"value",2000);
+            var spec=object(fields.get(name));
+            if(spec.containsKey("reference_table")) Service.readRecord(db,spec.get("reference_table").toString(),EnterpriseData.id(answer));
+            target.put(name, answer);
         }
         require(seen.equals(fields.keySet()), "Complete every intake field");
         String id = id(b, "new_id");
@@ -196,6 +222,8 @@ final class IntakeApps {
                         List.of(),
                         "run_id",
                         id));
+        var view=object(get(db,"guided-workspace",app).get("definition"));
+        if(!view.isEmpty())save(db,"guided-case",id,0,map("app",app,"steps",view.get("steps"),"fields",view.get("fields"),"position",0,"state","review","history",List.of()));
         return map("case_id", id, "version", release.get("revision"));
     }
 }

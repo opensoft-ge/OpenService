@@ -18,6 +18,7 @@ final class ConnectorWrites {
     }
     static Map<String,Object> execute(Store store,Store.Db db,Map<String,Object> job,Object input) throws Exception {
         if(((Number)job.get("attempts")).intValue()!=1)throw new Failure(503,"Prior write attempt requires reconciliation");
+        SeatRecovery.guardWrite(db,job.get("job_id").toString());
         var proposal=ConnectorActions.validate(store,db,input,false);var action=object(proposal.get("action"));var row=db.one("SELECT envelope FROM os_connector WHERE alias=?",action.get("alias"));String token=Outbox.decrypt(store.secret,row.get("envelope").toString()).get("token").toString();
         var request=HttpRequest.newBuilder(URI.create(proposal.get("destination").toString())).version(HttpClient.Version.HTTP_1_1).timeout(Duration.ofSeconds(30)).header("Authorization","Bearer "+token).header("Content-Type","application/json").header("Idempotency-Key",job.get("job_id").toString()).method(action.get("method").toString(),body(proposal.get("content").toString())).build();
         try(var client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).followRedirects(HttpClient.Redirect.NEVER).build()){

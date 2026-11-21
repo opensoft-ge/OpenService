@@ -38,6 +38,6 @@ final class ConnectorActions {
         var body=object(input);require(body.keySet().equals(Set.of("action_id","values","key","state","preview_token","confirm")),"Provide the exact reviewed connector action");String id=WorkJobs.text(body.get("action_id"),32);var current=proposal(store,db,id,map("values",body.get("values"),"key",body.get("key")));require(Boolean.TRUE.equals(body.get("confirm")),"Confirm sending the reviewed request");if(!current.get("state").equals(body.get("state")))throw new Failure(409,"Action, connection or authority changed; review again");if(consent)AiConsent.verify(store,body.get("preview_token"),current.get("state").toString());return current;
     }
     static Map<String,Object> queue(Store store,Store.Db db,String id,Object input) throws Exception {
-        var body=new LinkedHashMap<>(object(input));require(!body.containsKey("action_id"),"Action is identified by its route");body.put("action_id",id);return WorkJobs.enqueue(store,db,db.viewerId,map("kind","connector.write","key",body.get("key"),"payload",body));
+        var body=new LinkedHashMap<>(object(input));require(!body.containsKey("action_id"),"Action is identified by its route");body.put("action_id",id);var job=WorkJobs.enqueue(store,db,db.viewerId,map("kind","connector.write","key",body.get("key"),"payload",body));ProviderHistory.pin(db,id,job.get("job_id").toString());return job;
     }
 }

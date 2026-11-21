@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 99;
+    static final int VERSION = 102;
 
     private Migrations() {}
 
@@ -826,6 +826,21 @@ final class Migrations {
         if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=99")==0) {
             db.update("CREATE TABLE IF NOT EXISTS os_enterprise_document(area VARCHAR(40) NOT NULL,subject VARCHAR(80) NOT NULL,revision INTEGER NOT NULL,definition TEXT NOT NULL,PRIMARY KEY(area,subject))");
             db.update("INSERT INTO os_migration(version,name) VALUES(99,?)","enterprise lifecycle planning and delegated execution");
+        }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=100")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_import_receipt(receipt VARCHAR(80) PRIMARY KEY,binding VARCHAR(80) NOT NULL,cursor_value VARCHAR(200) NOT NULL,state VARCHAR(12) NOT NULL,payload TEXT NOT NULL,source_payload TEXT NOT NULL,error TEXT NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_synthetic_sample(objective VARCHAR(32) NOT NULL,bucket BIGINT NOT NULL,location VARCHAR(80) NOT NULL,result VARCHAR(12) NOT NULL,PRIMARY KEY(objective,bucket,location))");
+            db.update("CREATE INDEX IF NOT EXISTS os_import_review ON os_import_receipt(binding,state,cursor_value)");
+            db.update("INSERT INTO os_import_receipt(receipt,binding,cursor_value,state,payload,source_payload,error) SELECT subject,'','','accepted',definition,definition,'' FROM os_enterprise_document WHERE area='import-change' ON CONFLICT(receipt) DO NOTHING");
+            db.update("INSERT INTO os_migration(version,name) VALUES(100,?)","indexed provider change receipts");
+        }
+        if(db.count("SELECT COUNT(*) FROM os_migration WHERE version=101")==0) {
+            db.update("CREATE TABLE IF NOT EXISTS os_transaction_sample(objective VARCHAR(32) NOT NULL,location VARCHAR(80) NOT NULL,bucket BIGINT NOT NULL,detail TEXT NOT NULL,PRIMARY KEY(objective,location,bucket))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(101,?)","transaction latency and content evidence");
+        }
+        if(version<102){
+            db.update("CREATE TABLE IF NOT EXISTS os_connector_worker(job_id VARCHAR(32) PRIMARY KEY,executor VARCHAR(120) NOT NULL,recovered_by VARCHAR(120) NOT NULL DEFAULT '',retry_at BIGINT NOT NULL DEFAULT 0)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(102,?)","connector worker recovery journal");
         }
     }
 

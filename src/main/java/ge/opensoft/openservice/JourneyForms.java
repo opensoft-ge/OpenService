@@ -9,17 +9,23 @@ import java.util.*;
 final class JourneyForms {
     private JourneyForms() {}
     record Operation(String area,String name,String title,String fields) {
-        List<String> names(){return List.of(fields.split(" "));}
+        List<String> names(){return fields.isEmpty()?List.of():List.of(fields.split(" "));}
         Map<String,Object> form(){
             var controls=new ArrayList<Map<String,Object>>();
             for(String field:names()){
                 String type="text";
                 Object initial="";
-                if(Set.of("revision","sequence","usage_revision","employee_revision","movement_revision","draft_revision","stage","days","step","quantity","minutes","months","discount","limit","hours","release_revision","package_revision","rto_minutes","rpo_minutes","impact_score","likelihood").contains(field)){type="number";initial=0;}
-                if(Set.of("steps","resources","services","alerts","applications","options","crew","observations","cases","people","crews","jobs","entries","travel","controls","samples","fields").contains(field)){type="json";initial="[]";}
-                if(field.equals("manifest")){type="json";initial="{}";}
+                if(Set.of("target_bps","revision","sequence","usage_revision","employee_revision","movement_revision","draft_revision","stage","days","step","quantity","minutes","months","discount","limit","hours","release_revision","package_revision","capacity","rto_minutes","rpo_minutes","impact_score","likelihood").contains(field)){type="number";initial=0;}
+                if(Set.of("skills","steps","resources","services","alerts","applications","options","crew","observations","cases","people","crews","jobs","entries","travel","controls","samples","fields").contains(field)){type="json";initial="[]";}
+                if(Set.of("manifest","bindings").contains(field)){type="json";initial="{}";}
                 if(Set.of("confirm","active").contains(field)){type="boolean";initial=false;}
-                if(field.equals("new_id")) initial=Values.id();
+                if(field.equals("new_id") || name.equals("join_desk") && field.equals("visit_id")) initial=Values.id();
+                if(name.equals("join_desk") && field.equals("start")) initial="now";
+                if(name.equals("join_desk") && field.equals("mode")) initial="walk_in";
+                if(name.equals("exception_design")&&field.equals("bindings"))initial="{\"low\":\"\",\"medium\":\"\",\"high\":\"\"}";
+                if(name.equals("exception_requisition")&&field.equals("manifest"))initial="{\"Laptop\":{\"quantity\":1,\"unit_cost\":\"900.00\",\"months\":36,\"salvage\":\"0.00\"}}";
+                if(name.equals("business_tolerance")&&field.equals("manifest"))initial="{\"applications\":[],\"suppliers\":[],\"people\":[],\"sites\":[],\"fallback\":\"\",\"maximum_minutes\":60,\"maximum_backlog\":10}";
+                if(name.equals("license_fact")&&field.equals("manifest"))initial="{\"kind\":\"rights\",\"contract\":\"\",\"covers\":[],\"quantity\":1}";
                 controls.add(EnterpriseData.field(field,field.replace('_',' '),type,initial));
             }
             return map("operation",name,"title",title,"fields",controls);
@@ -110,7 +116,7 @@ final class JourneyForms {
         require(fields.equals(body.keySet()),"Provide exactly the fields shown for this operation");
         return switch(op.area){
             case "studio" -> WorkflowStudio.command(store,db,op.name,body);
-            case "topology" -> ServiceTopology.command(db,op.name,body);
+            case "topology" -> CustomerImpact.topology(store,db,op.name,body);
             case "assets" -> InvoiceSettlement.command(db,op.name,body);
             case "hr" -> Set.of("propose_transfer","apply_transfer","undo_transfer").contains(op.name)?TransferFulfillment.apply(db,subject,op.name,body):WorkflowStudio.employment(db,subject,op.name,body);
             case "field" -> CustomerRepairs.command(db,subject,op.name,body);

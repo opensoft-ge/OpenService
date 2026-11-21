@@ -30,6 +30,18 @@ final class EnterpriseBrowserAcceptance {
    page.navigate(h.base()+"/record/hr_case/"+hr);page.locator("a[href='/enterprise/hr/"+hr+"']").press("Enter");submit(form(page,"documents"));assertThat(page.locator("main")).containsText("documents");try(var employeeContext=browser.newContext()){var employee=employeeContext.newPage();h.login(employee,"EnterpriseBrowserEmployee");employee.navigate(h.base()+"/employee-service/cases/"+hr+"/documents");assertThat(employee.locator("main")).containsText("No current documents");ReleaseBrowserAcceptance.accessible(employee);}
    page.navigate(h.base()+"/enterprise/security/"+security);form(page,"plan").getByLabel("Ordered steps: summary, details, group_id").fill(JSON.writeValueAsString(List.of(map("summary","Review browser evidence","details","Review manually","group_id",group))));submit(form(page,"plan"));form(page,"launch").getByLabel("Confirm these response steps").selectOption("true");submit(form(page,"launch"));assertThat(page.locator("main")).containsText("running");form(page,"stop").getByLabel("Stop reason").fill("Operator review changed");submit(form(page,"stop"));assertThat(page.locator("main")).containsText("stopped");
    page.navigate(h.base()+"/enterprise/field/"+task);form(page,"requirements").getByLabel("Required skills").fill("[\"network\"]");submit(form(page,"requirements"));assertThat(page.locator("main")).containsText("network");
+   try(var db=h.store.open()){
+       PlatformFoundationTest.bind(db);
+       EmployeeAgreements.template(db,map("location","Browser office","body","{employee} transfers to {location}","days",30,"revision",0));
+       EmployeeAgreements.refresh(db,hr,map("space","Browser office","effective",java.time.LocalDate.now().plusDays(3).toString(),"state","scheduled"));db.connection.commit();
+   }
+   try(var employeeContext=browser.newContext()){
+       var employee=employeeContext.newPage();h.login(employee,"EnterpriseBrowserEmployee");employee.navigate(h.base()+"/employee-service/cases/"+hr);
+       employee.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Review my employee agreement")).click();
+       assertThat(employee.locator("main")).containsText("EnterpriseBrowserEmployee transfers to Browser office");
+       employee.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("Sign this agreement")).click();
+       assertThat(employee.locator("main pre").first()).containsText("signed_by");
+   }
    try(var provider=new RecordQuestionsAcceptance.Provider(h.store,h.store.environment)){
     String action=id(),policy=id();page.navigate(h.base()+"/enterprise/access/global");
     fill(form(page,"action"),map("action_id",action,"environment","test","kind","entra_add","alias",provider.alias,"oauth","alias","target",UUID.randomUUID().toString(),"argument",UUID.randomUUID().toString(),"expected","membership","expires","2099-02-01T00:00:00Z","revision",0));

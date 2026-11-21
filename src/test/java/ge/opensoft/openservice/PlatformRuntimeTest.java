@@ -311,6 +311,7 @@ class PlatformRuntimeTest {
         var store = new Store(env);
         var worker = new WorkWorker(store);
         long now = System.currentTimeMillis();
+        long restartAt;
         String actor, broken;
         try (var db = store.open()) {
             actor = bind(db);
@@ -361,13 +362,14 @@ class PlatformRuntimeTest {
                             "restart",
                             "payload",
                             map("username", "admin", "message", "Exactly one inbox insertion")));
-            var old = WorkJobs.claim(db, now + 1000);
+            restartAt=System.currentTimeMillis();
+            var old = WorkJobs.claim(db, restartAt + 1000);
             assertNotNull(old);
             db.connection.commit();
         }
-        assertTrue(worker.runClaimed(map("job_id", "absent", "lease", "absent"), now));
+        assertTrue(worker.runClaimed(map("job_id", "absent", "lease", "absent"), restartAt));
         // The first lease is abandoned. A new worker reclaims it after the durable deadline.
-        assertTrue(new WorkWorker(new Store(env)).runOne(now + 300000));
+        assertTrue(new WorkWorker(new Store(env)).runOne(restartAt + 300000));
         try (var db = store.open()) {
             bind(db);
             assertEquals(1, db.count("SELECT COUNT(*) FROM os_notice WHERE message='Exactly one inbox insertion'"));
@@ -381,7 +383,7 @@ class PlatformRuntimeTest {
             db.update("UPDATE os_work SET kind='unknown' WHERE dedupe='unknown-kind'");
             db.connection.commit();
         }
-        assertTrue(worker.runOne(now + 400000));
+        assertTrue(worker.runOne(restartAt + 400000));
         for (String mutation : List.of("active=0", "role='reader'")) {
             try (var db = store.open()) {
                 bind(db);
@@ -393,7 +395,7 @@ class PlatformRuntimeTest {
                 db.update("UPDATE os_user SET " + mutation + " WHERE user_id=?", actor);
                 db.connection.commit();
             }
-            assertTrue(worker.runOne(now + 500000));
+            assertTrue(worker.runOne(restartAt + 500000));
             try (var db = store.open()) {
                 db.update("UPDATE os_user SET active=1,role='admin' WHERE user_id=?", actor);
                 db.connection.commit();
@@ -409,7 +411,7 @@ class PlatformRuntimeTest {
             db.update("UPDATE os_work SET owner_id='removed' WHERE dedupe='removed-owner'");
             db.connection.commit();
         }
-        assertTrue(worker.runOne(now + 600000));
+        assertTrue(worker.runOne(restartAt + 600000));
         env.setProperty("WORK_ENABLED", "true");
         worker.tick();
         try (var db = store.open()) {
@@ -421,7 +423,7 @@ class PlatformRuntimeTest {
         }
         assertThrows(
                 java.sql.SQLException.class,
-                () -> worker.runClaimed(map("job_id", "absent", "lease", "absent"), now));
+                () -> worker.runClaimed(map("job_id", "absent", "lease", "absent"), restartAt));
         worker.tick(); // Failure stays contained and does not expose transport/credential details.
     }
 }

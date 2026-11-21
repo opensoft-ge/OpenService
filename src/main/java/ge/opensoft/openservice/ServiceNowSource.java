@@ -39,6 +39,14 @@ final class ServiceNowSource {
         return canonical;
     }
 
+    static final class SourceResponseFailure extends Failure {
+        final int sourceStatus;
+        SourceResponseFailure(int sourceStatus) {
+            super(502, "Source returned HTTP " + sourceStatus + "; no checkpoint advanced");
+            this.sourceStatus = sourceStatus;
+        }
+    }
+
     static byte[] get(String origin, String token, String path, int limit) {
         return getResponse(origin,token,path,limit).body();
     }
@@ -64,11 +72,7 @@ final class ServiceNowSource {
                             HttpResponse.BodyHandlers.limiting(
                                     HttpResponse.BodyHandlers.ofByteArray(), limit));
             if (response.statusCode() != 200)
-                throw new Failure(
-                        502,
-                        "Source returned HTTP "
-                                + response.statusCode()
-                                + "; no checkpoint advanced");
+                throw new SourceResponseFailure(response.statusCode());
             return response;
         } catch (IOException e) {
             throw new Failure(502, "Source connection failed; retry the saved checkpoint");

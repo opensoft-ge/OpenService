@@ -1,0 +1,29 @@
+<!doctype html><html xmlns:th="http://www.thymeleaf.org"><body>
+<section class="panel" th:fragment="guide" th:if="${!page.checkout.items.isEmpty()}">
+<h2>Review your order</h2><form method="post" class="record-form">
+<input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="order"><input type="hidden" name="checkout" value="guide">
+<input type="hidden" name="new_id" th:value="${page.checkout.key}"><input type="hidden" name="guide_id" th:value="${page.checkout.guide_id}">
+<input type="hidden" name="job_role" th:value="${page.checkout.job_role}"><input type="hidden" name="location" th:value="${page.checkout.location}"><input type="hidden" name="revision" th:value="${page.checkout.revision}">
+<fieldset th:each="entry:${page.checkout.items}"><legend th:text="${entry.value.name}"></legend><p th:text="${entry.value.description}"></p>
+<input type="hidden" th:name="${'version.'+entry.key}" th:value="${entry.value.revision}">
+<th:block th:each="q:${entry.value.questions}"><th:block th:replace="~{request-checkout :: question(${q},${'answer.'+entry.key+'.'+q.key})}"></th:block></th:block></fieldset>
+<label th:if="${page.checkout.employee_id != null}">Requested for employee<input name="employee_id" th:value="${page.checkout.employee_id}" readonly></label>
+<label>Order details<textarea name="details" maxlength="2000" required></textarea></label><button class="button primary">Submit order</button>
+</form></section>
+<section class="panel" th:fragment="conversation">
+<h2 th:text="${page.checkout.state=='confirmation_required'?'Review access request':'Contact the service desk'}"></h2>
+<form method="post" class="record-form"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="new_id" th:value="${page.checkout.key}">
+<th:block th:if="${page.checkout.state=='confirmation_required'}" th:with="c=${page.checkout.citation}">
+<p><a th:href="${'/knowledge/'+c.article_id}" th:text="${c.policy_title+' · version '+c.policy_version}"></a></p>
+<p><a th:href="${'/catalogue/'+c.offering_id}" th:text="${c.catalog_name}"></a></p>
+<input type="hidden" name="operation" value="confirm_order"><input type="hidden" name="checkout" value="conversation"><input type="hidden" name="confirm" value="true">
+<th:block th:each="q:${c.questions}"><th:block th:replace="~{request-checkout :: question(${q},${'answer.'+q.key})}"></th:block></th:block>
+</th:block>
+<input th:if="${page.checkout.state=='handoff_required'}" type="hidden" name="operation" value="handoff">
+<label>Request details<textarea name="details" maxlength="1200" required></textarea></label>
+<button class="button primary" th:text="${page.checkout.state=='confirmation_required'?'Confirm and submit request':'Send to the service desk'}"></button></form></section>
+<label th:fragment="question(q,name)"><span th:text="${q.label}"></span>
+<span th:if="${q.containsKey('when')}" th:text="${' (when '+q.when.key+' is '+q.when.value+')'}"></span>
+<select th:if="${q.type=='choice' or q.type=='boolean'}" th:name="${name}" th:required="${q.required and !q.containsKey('when')}"><option value=""></option><option th:each="v:${q.type=='boolean'?{'true','false'}:q.choices}" th:value="${v}" th:text="${v}"></option></select>
+<input th:unless="${q.type=='choice' or q.type=='boolean'}" th:name="${name}" th:type="${q.type=='date'?'date':(q.type=='integer'?'number':'text')}" th:required="${q.required and !q.containsKey('when')}" maxlength="2000"></label>
+</body></html>

@@ -35,6 +35,7 @@ final class InventoryEvidence {
                             "at",
                             now()));
             save(db, "discovered-ci", ref, row.get("revision"), registration);
+            EndpointCollectors.sourceRetired(db,source,entry.getKey(),last);
         }
     }
 

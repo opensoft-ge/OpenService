@@ -32,12 +32,9 @@ final class RecoveryExercises {
                                 "pending"));
             }
             require(!steps.isEmpty(), "Assign at least one recovery task");
-            return put(
-                    db,
-                    "continuity-plan",
-                    id(b, "plan_id"),
-                    b.get("revision"),
-                    map(
+            var planId=id(b,"plan_id");
+            var previous=object(get(db,"continuity-plan",planId).get("definition"));
+            var updated=map(
                             "title",
                             text(b, "title", 160),
                             "component",
@@ -51,7 +48,9 @@ final class RecoveryExercises {
                             "rpo",
                             integer(b.get("rpo_minutes"), 0, 43200),
                             "steps",
-                            steps));
+                            steps);
+            if(previous.containsKey("business"))updated.put("business",previous.get("business"));
+            return put(db,"continuity-plan",planId,b.get("revision"),updated);
         }
         if (op.equals("exercise")) {
             String plan = id(b, "plan_id");
@@ -124,7 +123,7 @@ final class RecoveryExercises {
             data.putAll(
                     map(
                             "state",
-                            within(spec, elapsed, loss) ? "passed" : "needs_correction",
+                            BusinessTolerance.acceptable(spec,data) && within(spec, elapsed, loss) ? "passed" : "needs_correction",
                             "actual_recovery_ms",
                             elapsed,
                             "actual_data_loss_ms",

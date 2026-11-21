@@ -19,7 +19,34 @@
     <summary th:text="${'Field '+i}"></summary>
     <label>Field name <input th:name="${'name_'+i}"></label>
     <label>Field label <input th:name="${'label_'+i}"></label>
+    <label>Reference table <select th:name="${'reference_'+i}"><option value="">Text field</option><option>cmdb_ci</option><option>project</option><option>sys_user_group</option></select></label>
     <label>Visibility <select th:name="${'visibility_'+i}"><option value="requester">Requester and fulfillment team</option><option value="confidential">Confidential after submission</option></select></label>
   </details>
+</fieldset>
+<fieldset th:fragment="approval"><legend>Approval and fulfillment by item</legend>
+  <input type="hidden" name="designer_rows" value="entries">
+  <details th:each="i : ${#numbers.sequence(1,32)}" th:open="${i==1}"><summary th:text="${'Item '+i}"></summary>
+    <label>Purchase line or HR item <input th:name="${'item_'+i}"></label>
+    <label>Budget owner account ID <input th:name="${'owner_'+i}"></label>
+    <label>Purchase order action ID (optional) <input th:name="${'action_'+i}"></label>
+    <label>Fulfillment catalog item ID (for catalog fulfillment) <input th:name="${'offering_'+i}"></label>
+    <label>Source record field <input th:name="${'input_'+i}"></label>
+    <label>Destination catalog question <input th:name="${'answer_'+i}"></label>
+  </details>
+</fieldset>
+<fieldset th:fragment="purchase"><legend>Fields of the approved input record</legend>
+<input type="hidden" name="designer_rows" value="bindings">
+<label>Model (text) <input name="bind_model" value="model" required></label>
+<label>Quantity (integer) <input name="bind_quantity" value="quantity" required></label>
+<label>Unit cost (decimal) <input name="bind_unit_cost" value="unit_cost" required></label>
+<label>Useful life (months) <input name="bind_months" value="months" required></label>
+<label>Residual value (decimal) <input name="bind_salvage" value="salvage" required></label>
+<p>Each approved row returns its purchase order ID. A failed row can be retried from its saved input.</p>
+</fieldset>
+<fieldset th:fragment="riskRoutes"><legend>Review workflow by supplier risk</legend>
+<input type="hidden" name="designer_rows" value="risk_routes">
+<label th:each="risk : ${#strings.arraySplit('low,medium,high', ',')}"><span th:text="${risk+' risk'}"></span>
+<select th:name="${'route_'+risk}" required><option value="">Choose a published workflow</option>
+<option th:each="flow : ${page.data['decision-release']}" th:value="${flow.id}" th:text="${flow.title+' · v'+flow.revision+' · '+flow.id}"></option></select></label>
 </fieldset>
 </body></html>

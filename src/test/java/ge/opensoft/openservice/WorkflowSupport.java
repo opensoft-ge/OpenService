@@ -16,6 +16,51 @@ import java.util.*;
 import java.util.regex.*;
 
 abstract class WorkflowSupport {
+    @Test void operationalGovernance() throws Exception { OperationalJourneys.governance(this); }
+    @Test void operationalPortfolio() throws Exception { OperationalJourneys.portfolio(this); }
+    @Test void operationalDesk() throws Exception { OperationalJourneys.desk(this); }
+    @Test void serviceCertificate() throws Exception { AssetServiceJourneys.certificate(this); }
+    @Test void serviceObjective() throws Exception { AssetServiceJourneys.objective(this); }
+    @Test void siteMaintenance() throws Exception { AssetServiceJourneys.maintenance(this); }
+    @Test void serviceOrders() throws Exception { AssetServiceJourneys.orders(this); }
+    @Test void volumeImports() throws Exception { VolumeImportAcceptance.run(this); }
+    @Test void operatorReconcilesBeforeFailover() throws Exception { WorkerLeaseAcceptance.manual(this,true); }
+    @Test void operatorRecordsProviderDecisionBeforeFailover() throws Exception { WorkerLeaseAcceptance.manual(this,false); }
+    @Test void abandonedConnectorWriteLease() throws Exception { WorkerLeaseAcceptance.run(this); }
+    @Test void thirdPartyRecoveryContract() throws Exception { ProviderRecoveryAcceptance.run(this); }
+    @Test void departmentSearchHoldout() throws Exception { SearchComparison.run(this,true); }
+    @Test void externalPolicyHoldout() throws Exception { SearchComparison.run(this); }
+    @Test void expansionDelta() throws Exception { EnterpriseExpansionAcceptance.delta(this); }
+    @Test void expansionApprovals() throws Exception { EnterpriseExpansionAcceptance.approvals(this); }
+    @Test void expansionApps() throws Exception { EnterpriseExpansionAcceptance.apps(this); }
+    @Test void expansionCab() throws Exception { EnterpriseExpansionAcceptance.cab(this); }
+    @Test void expansionCloud() throws Exception { EnterpriseExpansionAcceptance.cloud(this); }
+    @Test void expansionSearch() throws Exception { EnterpriseExpansionAcceptance.search(this); }
+    @Test void expansionAgreements() throws Exception { EnterpriseExpansionAcceptance.agreements(this); }
+    @Test void expansionFunding() throws Exception { EnterpriseExpansionAcceptance.funding(this); }
+    @Test void expansionControls() throws Exception { EnterpriseExpansionAcceptance.controls(this); }
+    @Test void serviceDeliveryCancelledWork() throws Exception { ServiceOperationsEdges.cancelledWork(this); }
+    @Test void serviceDeliveryInvalidDefinitions() throws Exception { ServiceOperationsEdges.definitions(this); }
+    @Test void serviceDeliveryCrossDesk() throws Exception { ServiceOperationsEdges.desks(this); }
+    @Test void serviceDeliveryStreams() throws Exception { ServiceOperationsEdges.streams(this); }
+    @Test void serviceDeliveryCorrections() throws Exception { ServiceOperationsEdges.corrections(this); }
+    @Test void serviceDeliverySamples() throws Exception { ServiceOperationsEdges.samples(this); }
+
+    @Test void serviceDeliveryEvents() throws Exception { ServiceDeliveryAcceptance.events(this); }
+
+    @Test void serviceDeliveryPromotion() throws Exception { ServiceDeliveryAcceptance.promotion(this); }
+
+    @Test void serviceDeliveryConnectors() throws Exception { ServiceDeliveryAcceptance.connectors(this); }
+    @Test void serviceDeliverySeats() throws Exception { ServiceDeliveryAcceptance.seats(this); }
+    @Test void serviceDeliveryImpact() throws Exception { ServiceDeliveryAcceptance.impact(this); }
+    @Test void serviceDeliveryImprovements() throws Exception { ServiceDeliveryAcceptance.improvements(this); }
+
+    @Test void serviceDeliveryGuides() throws Exception { ServiceDeliveryAcceptance.guides(this); }
+    @Test void serviceDeliveryAssistant() throws Exception { ServiceDeliveryAcceptance.assistant(this); }
+    @Test void serviceDeliveryFlows() throws Exception { ServiceDeliveryAcceptance.flows(this); }
+    @Test void serviceDeliveryMaps() throws Exception { ServiceDeliveryAcceptance.maps(this); }
+    @Test void serviceDeliveryAssignment() throws Exception { ServiceDeliveryAcceptance.assignment(this); }
+
     @Test void deliveryArchiveJourney()throws Exception{DeliveryArchiveAcceptance.journey(this);}
     @Test void deliveryArchiveBoundaries()throws Exception{DeliveryArchiveAcceptance.boundaries(this);}
     @Test void deliveryArchiveStaleAndHolds()throws Exception{DeliveryArchiveAcceptance.staleAndHolds(this);}
@@ -446,6 +491,7 @@ abstract class WorkflowSupport {
         try (var db = store.open()) {
             for (String table :
                     List.of(
+                            "os_connector_worker", "os_transaction_sample", "os_synthetic_sample", "os_import_receipt",
                             "os_enterprise_document", "os_outage_history", "os_ci_outage", "os_relation_history", "os_typed_relation", "os_relation_type", "os_discovery_field", "os_discovery_report", "os_discovery_identity", "os_discovery_source", "os_retention_hold", "os_delivery_archive", "os_bulk_receipt", "os_collaboration_post", "os_record_follow", "os_automation_install", "os_imported_journal", "os_ai_evaluation", "os_source_assessment", "os_ai_resolution", "os_ai_triage", "os_inbound_mail_receipt","os_inbound_mail_thread","os_inbound_mailbox","os_asset_movement","os_asset_identity","os_project_schedule","os_project_origin","os_demand_assessment","os_vulnerability_observation","os_vulnerability","os_vulnerability_scan","os_security_document","os_security_case","os_security_team","os_risk_assessment","os_hr_onboarding_work","os_hr_onboarding","os_hr_reply","os_hr_case","os_hr_service","os_employee","os_field_visit","os_field_dispatch","os_field_availability","os_customer_resolution", "os_customer_reply", "os_customer_delivery", "os_customer_case", "os_customer_entitlement", "os_customer_contact", "os_customer_account", "os_major_link", "os_major_update", "os_major_incident", "os_change_schedule", "os_change_window", "os_catalog_workflow_order", "os_catalog_workflow", "os_case_task","os_task_plan","os_record_scope","os_change_plan","os_problem_link", "os_problem_analysis", "os_report_measurement", "os_support_conversation", "os_attachment_scan", "os_attachment",
                             "os_event",
                             "os_record",

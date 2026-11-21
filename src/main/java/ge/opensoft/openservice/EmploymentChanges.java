@@ -68,6 +68,8 @@ final class EmploymentChanges {
         }
         data.putAll(map("effective",effective,"return_on",back));
         save(db,"employment-change",id,body.get("revision"),data);
+        var location=object(get(db,"transfer-location",id).get("definition")).get("location");
+        if(location!=null)EmployeeAgreements.refresh(db,id,map("space",location,"effective",effective,"state","scheduled"));
         return data;
     }
 

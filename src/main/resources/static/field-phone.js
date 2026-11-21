@@ -9,7 +9,7 @@ document.querySelector('#add').onclick = () => {
 form.onsubmit = event => {
   event.preventDefault();
   const fields = new FormData(form);
-  const rows = [['minutes', fields.get('minutes')], ['evidence_note', fields.get('note')]];
+  const rows = [['minutes', fields.get('minutes')], ['evidence_note', fields.get('note')], ['installed_serial', fields.get('serial')]];
   for (const fieldset of parts.children) {
     rows.push(['part', ...Array.from(fieldset.querySelectorAll('input'), input => input.value)]);
   }

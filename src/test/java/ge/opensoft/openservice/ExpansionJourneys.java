@@ -819,6 +819,18 @@ final class ExpansionJourneys {
                         "reference",
                         "pipeline/rolled-out");
         bad(h, "releases", "global", success, 400);
+        String roster=id();var gate=map("operation","deployment_gate","release_id",submit.get("new_id"),"artifact","build-42");
+        as(h,"Pipeline","releases",gate,400);
+        try(var db=h.store.open()){
+            String admin=PlatformFoundationTest.bind(db);
+            EnterpriseData.save(db,"duty-roster",roster,0,map("anchor",0,"zone","UTC","hours",8,"people",List.of(admin,RecordAccess.owner(db,"Pipeline")),"overrides",List.of()));
+            db.connection.commit();
+        }
+        var at=java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+        post(h,"releases",map("operation","cab_schedule","release_id",submit.get("new_id"),"roster_id",roster,"start",at.minusSeconds(60).toString(),"end",at.plusSeconds(600).toString(),"note","Reviewed production window","revision",0));
+        post(h,"releases",map("operation","cab_approve","release_id",submit.get("new_id"),"note","Approved for deployment","revision",1));
+        as(h,"Pipeline","releases",gate,200);
+        success.put("operation","checked_outcome");success.put("artifact","build-42");
         as(h, "Pipeline", "releases", success, 200);
         Map<String, Object> schema;
         try (var db = h.store.open()) {

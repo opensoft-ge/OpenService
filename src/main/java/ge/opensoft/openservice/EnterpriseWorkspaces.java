@@ -32,7 +32,7 @@ final class EnterpriseWorkspaces {
         if(JourneyForms.GLOBAL.contains(area)) throw new Failure(400,"Unknown workspace operation");
         if(area.equals("integrations") && op.equals("schedule_oauth")) return IssueTokens.configure(store,db,body);
         if(area.equals("integrations") && Set.of("schedule","replay","resolve").contains(op)) return RecurringImports.configure(db,body);
-        if(area.equals("assets") && Set.of("alias","invoice").contains(op)) return PurchasingControls.command(db,body);
+        if(area.equals("assets") && Set.of("alias","invoice","dated_invoice").contains(op)) return PurchasingControls.command(db,body);
         if(area.equals("security") && Set.of("link_feed","observe","shared_matches").contains(op)) return SharedIntelligence.command(db,subject,body);
         if(area.equals("portfolio") && Set.of("calendar","save_scenario","open_scenario").contains(op)) return StaffingScenarios.command(db,subject,body);
         if(area.equals("hr") && Set.of("schedule_change","move_change").contains(op)) return EmploymentChanges.command(db,subject,body);
@@ -58,6 +58,20 @@ final class EnterpriseWorkspaces {
     }
     static Map<String,Object> form(Map<String,Object> page,Map<String,String> arguments){
         var body=new LinkedHashMap<String,Object>(arguments);body.remove("csrf");var chosen=objects(page.get("forms")).stream().filter(f->f.get("operation").equals(body.get("operation"))).findFirst();require(chosen.isPresent(),"Choose a displayed operation");
+        if(body.containsKey("checkout")){
+            String checkout=Objects.toString(body.remove("checkout"));var answers=map();
+            if(checkout.equals("guide") && "order".equals(body.get("operation"))){
+                for(String name:new ArrayList<>(body.keySet()))if(name.startsWith("version.")){
+                    String item=EnterpriseData.id(name.substring(8));String prefix="answer."+item+".";var values=map();
+                    for(String key:new ArrayList<>(body.keySet()))if(key.startsWith(prefix))values.put(key.substring(prefix.length()),body.remove(key));
+                    answers.put(item,map("revision",Service.number(body.remove(name).toString(),1,Integer.MAX_VALUE),"answers",values));
+                }
+                if(Objects.toString(body.get("employee_id"),"").isBlank())body.remove("employee_id");else body.put("operation","order_for");
+            }else if(checkout.equals("conversation") && "confirm_order".equals(body.get("operation"))){
+                for(String key:new ArrayList<>(body.keySet()))if(key.startsWith("answer."))answers.put(key.substring(7),body.remove(key));
+            }else throw new Failure(400,"Choose a reviewed checkout");
+            body.put("manifest",JSON.writeValueAsString(answers));
+        }
         if(body.containsKey("designer_rows")) DesignInputs.read(page, body);
         for(var field:objects(chosen.get().get("fields"))){String name=field.get("name").toString();if(!body.containsKey(name))continue;String value=body.get(name).toString();switch(field.get("type").toString()){
             case "number" -> body.put(name,Service.number(value,0,Integer.MAX_VALUE));

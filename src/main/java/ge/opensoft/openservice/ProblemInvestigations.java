@@ -41,7 +41,10 @@ final class ProblemInvestigations {
             for(var row:db.all("SELECT l.incident_id FROM os_problem_link l JOIN os_record r ON r.sys_id=l.incident_id WHERE "+filter+" AND l.problem_id=? ORDER BY l.incident_id LIMIT 100",parameters.toArray()))
                 incidents.add(FieldAccess.serialize(db,Service.readRecord(db,"incident",row.get("incident_id").toString())));
         }
-        return map("problem",FieldAccess.serialize(db,source),"analysis",analysis(db,id),"incidents",incidents);
+        var view=map("problem",FieldAccess.serialize(db,source),"analysis",analysis(db,id),"incidents",incidents);
+        var fix=object(EnterpriseData.get(db,"problem-fix-current",id).get("definition"));
+        if(!fix.isEmpty() && "admin".equals(db.viewerRole)){view.put("permanent_fix",fix);view.put("verification",EnterpriseData.get(db,"fix-verification",fix.get("attempt").toString()));}
+        return view;
     }
 
     static void revision(Object expected,Object current) {

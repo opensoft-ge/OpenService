@@ -32,6 +32,10 @@ final class EnterpriseData {
     static int integer(Object value,int min,int max){require(value instanceof Integer n && n>=min && n<=max,"Use an integer within the allowed bounds");return (Integer)value;}
     static BigDecimal money(Object value){String text=WorkJobs.text(value,24);require(text.matches("[0-9]{1,12}(\\.[0-9]{1,2})?"),"Use a nonnegative amount with at most two decimal places");return new BigDecimal(text).setScale(2);}
     static String actor(Store.Db db)throws SQLException{return Service.account(db,db.viewerId).get("name").toString();}
+    static boolean currentAdmin(Store.Db db, Object user, Object revision) throws SQLException {
+        return db.count("SELECT COUNT(*) FROM os_user WHERE user_id=? AND auth_revision=?"
+                + " AND active=1 AND password_reset_required=0 AND role='admin'", user, revision) == 1;
+    }
     static void lock(Store.Db db)throws SQLException{if(db.postgres)db.all("SELECT pg_advisory_xact_lock(18439,4)");}
     static List<Map<String,Object>> list(Store.Db db,String area)throws SQLException{return db.all("SELECT subject,revision,definition FROM os_enterprise_document WHERE area=? ORDER BY subject",area);}
     static Map<String,Object> field(String name,String label,String type,Object value){return map("name",name,"label",label,"type",type,"value",value);}

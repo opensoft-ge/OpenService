@@ -194,6 +194,8 @@ final class PipelineReleases {
             ProblemInvestigations.revision(
                     data.get("policy_revision"),
                     get(db, "release-policy", data.get("policy_id").toString()).get("revision"));
+            if(op.equals("deployment_gate"))return ChangeBoard.clear(db,id,b.get("artifact"),System.currentTimeMillis());
+            ChangeBoard.outcome(db,id,b.get("artifact"),op.equals("checked_outcome"),System.currentTimeMillis());
             transition(db, change, "implement");
             String outcome = choice(b, "result", "deployed", "failed");
             String ref = text(b, "reference", 160);

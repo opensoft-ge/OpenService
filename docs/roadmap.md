@@ -1,5 +1,28 @@
 # OpenService adoption roadmap and build order
 
+## Service assurance, 21 November 2026
+
+The requested batch covers ten bounded journeys. SA-01 and SA-04 cover worker failover and managed-device import in reusable integrations. SA-02 and SA-03 cover composed procurement reviews and problem-to-fix verification in workflow and approvals. SA-05 and SA-08 cover employee retrieval and delivery metrics in reporting and search. SA-06, SA-07 and SA-10 cover metric anomalies, publisher rights and telecom assurance in assets and operations. SA-09 extends the existing continuity exercises in production engineering. Identity, permissions, notifications, SLAs, knowledge and audit evidence are dependencies of these journeys. Independent expansion of those areas, deployment qualification, password lifecycle, migration, model/API breadth and governed AI are deferred in this pass. [Implementation and acceptance guide](service-assurance-workflows.md)
+
+The next external qualification needs an enrolled Windows device, rotatable Entra and Jira test bindings, provider history, employee-delegated Confluence access and staff-authored questions. A separate production engineering gap is health-based selection of a private-network worker by reachable capabilities. The implemented two-worker journal covers takeover of an uncertain write. ServiceNow documents cluster selection and workload distribution based on measured worker load. [MID Server cluster configuration](https://www.servicenow.com/docs/r/servicenow-platform/mid-server/t_ConfigureAMIDServerCluster.html)
+
+
+## Industry operations and qualification, 20 November 2026
+
+Ten workflows now cover recoverable connector writes, guided workspaces, Git releases, endpoint inventory, Confluence policies, transaction monitoring, contractor repairs, telecom circuits, dealer warranties and regulatory notices. The local search comparison completed 21 of 30 eligible requests against eight for the native matcher. Provider-tenant qualification remains open. [Workflow guide and qualification conditions](industry-operations.md) · [Search evaluation](department-search-results.json)
+
+## Service operations implementation, 20 November 2026
+
+[Ten service operations workflows](service-operations-expansion.md) connect high-volume imports, approved purchasing, service objectives, external search, supplier contracts, agile delivery, privacy assessments, certificate renewal, maintenance scheduling and walk-up desks. These are bounded native implementations. Live Entra and Jira qualification requires provider-side evidence from designated test tenants. The [employee search comparison](external-policy-search-results.json) records measured outcomes and missed cases.
+
+## Enterprise platform workflows, 20 November 2026
+
+The implementation guide covers checkpointed imports, reusable list approvals, release access tests, CAB scheduling, cloud charges, employee search, field inventory, agreements, quarterly funding and recurring access controls. It includes the pipeline configuration, evaluation results and outstanding provider qualification. [Enterprise platform workflows](enterprise-platform-workflows.md)
+
+## Service operations workflows, 20 November 2026
+
+Record-driven decisions, order guides, authored REST actions, desk routing, intake-app transfer, map remediation, customer outage cases, seat recovery, employee request assistance and improvement measurement now have shared workspace entry points. The implementation guide describes supported inputs, provider dependencies and acceptance scenarios. Live Entra and Jira qualification remains open. [Service operations workflows](service-operations-workflows.md)
+
 ## Service delivery expansion, 19 November 2026
 
 The [service delivery report](service-delivery-expansion.md) describes one implementation in each of the ten requested workstreams. It includes the operator walkthrough, the configured-model outcomes and outstanding qualification. The next adoption dependencies are live enterprise tenant evidence, more discovery sources, real workforce datasets, ERP transport and representative service-desk cases.

@@ -26,7 +26,7 @@ final class DeliveryWorkspace {
 
     static final Map<String, String> AREAS =
             Map.ofEntries(
-                    Map.entry("access", "Access policies"),
+                    Map.entry("walkup","Walk-up service desks"),Map.entry("guides","Catalog order guides"),Map.entry("assignment","Desk assignment"),Map.entry("impact","Customer service impact"),Map.entry("licenses","Software seat recovery"),Map.entry("assistant","Employee request assistant"),Map.entry("access", "Access policies"),
                     Map.entry("duty", "On-call scheduling"),
                     Map.entry("mapping", "Federated service maps"),
                     Map.entry("sales", "Sales and installation"),
@@ -763,7 +763,7 @@ final class DeliveryWorkspace {
     static Map<String, Object> page(Store.Db db, String area, String subject) throws Exception {
         require("global".equals(subject), "Choose the shared workspace");
         var forms =
-                COMMANDS.stream()
+                java.util.stream.Stream.of(COMMANDS, ServiceDelivery.COMMANDS, EnterpriseOperations.COMMANDS, ServiceExpansion.COMMANDS, IndustryWorkspaces.COMMANDS, ServiceAssurance.COMMANDS).flatMap(List::stream)
                         .filter(entry -> entry.area.equals(area) && entry.available(db))
                         .map(entry -> entry.descriptor().form())
                         .toList();
@@ -785,12 +785,17 @@ final class DeliveryWorkspace {
             for (String section :
                     switch (area) {
                         case "designer" ->
-                                List.of("decision-draft", "decision-release", "access-procedure");
+                                List.of("decision-draft", "decision-release", "access-procedure","record-continuation","supplier-flow","exception-design","exception-run");
                         case "packages" -> List.of("action-package", "package-install");
                         case "apps" -> List.of("intake-draft", "intake-release");
                         case "suppliers" -> List.of("managed-supplier", "supplier-purchase");
-                        case "releases" -> List.of("release-policy", "pipeline-release");
-                        case "mining" -> List.<String>of();
+                        case "releases" -> List.of("release-policy", "pipeline-release","problem-fix","delivery-team");
+                        case "mining" -> List.of("improvement");
+                        case "guides" -> List.of("order-guide","guide-order");
+                        case "assignment" -> List.of("desk-capacity","desk-offer");
+                        case "impact" -> List.of("site-monitor","site-outage");
+                        case "licenses" -> List.of("seat-notice","publisher-position");
+                        case "assistant" -> List.of("employee-intent");
                         case "continuity" -> List.of("continuity-plan", "recovery-exercise");
                         case "access" ->
                                 List.of(
@@ -800,8 +805,8 @@ final class DeliveryWorkspace {
                                         "action-evidence");
                         case "duty" ->
                                 List.of("duty-roster", "duty-watch", "duty-team", "incident-page");
-                        case "mapping" -> List.of("component-alias", "component-link");
-                        case "sales" -> List.of("sale-product", "opportunity");
+                        case "mapping" -> List.of("component-alias", "component-link","intune-run","metric-baseline");
+                        case "sales" -> List.of("sale-product", "opportunity","circuit-interruption");
                         case "routing" -> List.of("territory-plan");
                         case "finance" ->
                                 List.of(
@@ -810,6 +815,7 @@ final class DeliveryWorkspace {
                                         "posted-expense");
                         case "workplace" -> List.of("workplace-event");
                         case "audits" -> List.of("audit-control", "audit-engagement");
+                        case "walkup" -> List.of("walkup-location");
                         default -> List.of("desk-suite", "desk-report", "desk-resolution");
                     }) {
                 var rows = new ArrayList<Map<String, Object>>();
@@ -831,6 +837,29 @@ final class DeliveryWorkspace {
                 }
                 data.put(section, rows);
             }
+        } else if(area.equals("guides")) {
+            var guides=new ArrayList<Object>();
+            for(var row:list(db,"order-guide"))guides.add(map("guide_id",row.get("subject"),"title",object(row.get("definition")).get("title"),"revision",row.get("revision")));
+            data.put("guides",guides);
+            var orders=new ArrayList<Object>();
+            for(var row:list(db,"guide-order")){
+                var order=object(row.get("definition"));
+                if(db.viewerId.equals(order.get("owner")) || db.viewerId.equals(order.get("employee")))orders.add(map("order_id",row.get("subject"),"title",order.get("title"),"state",order.get("state")));
+            }
+            data.put("my_orders",orders);
+        } else if (area.equals("walkup")) {
+            data.put("locations",list(db,"walkup-location"));
+            var mine=new ArrayList<>();
+            for(var row:list(db,"walkup-visit")) if(db.viewerId.equals(object(row.get("definition")).get("employee"))) mine.add(row);
+            data.put("my_visits",mine);
+        } else if(area.equals("suppliers")) {
+            var assigned=new ArrayList<>();
+            for(var row:list(db,"supplier-agreement")) {
+                var item=object(object(row.get("definition")).get("proposal"));
+                if(db.viewerId.equals(item.get("contact"))) assigned.add(map("supplier",definition(db,"managed-supplier",row.get("subject").toString()).get("title"),"revision",row.get("revision"),"state",item.get("state")));
+            }
+            for(var row:list(db,"privacy-assessment")) if(db.viewerId.equals(object(row.get("definition")).get("contact"))) assigned.add(map("assessment_id",row.get("subject"),"revision",row.get("revision")));
+            data.put("my_supplier_work",assigned);
         } else if (area.equals("apps")) {
             var published = new ArrayList<Object>();
             for (var row : list(db, "intake-release"))
@@ -843,7 +872,7 @@ final class DeliveryWorkspace {
                                 "revision",
                                 row.get("revision")));
             data.put("apps", published);
-        } else if (Set.of("releases", "continuity", "mining", "suppliers", "packages")
+        } else if (Set.of("mapping","designer","guides","assignment","impact","licenses","assistant","releases", "continuity", "mining", "suppliers", "packages")
                 .contains(area)) {
             // Record access is evaluated by the selected operation.
         } else if (area.equals("sales")) {
@@ -901,13 +930,14 @@ final class DeliveryWorkspace {
             }
             data.put("my_assignments", mine);
         }
+        if(area.equals("designer"))data.put("pending_lists",ListApprovals.pending(db));
         return data;
     }
 
     static Object command(Store store, Store.Db db, String area, Map<String, Object> b)
             throws Exception {
         var entry =
-                COMMANDS.stream()
+                java.util.stream.Stream.of(COMMANDS, ServiceDelivery.COMMANDS, EnterpriseOperations.COMMANDS, ServiceExpansion.COMMANDS, IndustryWorkspaces.COMMANDS, ServiceAssurance.COMMANDS).flatMap(List::stream)
                         .filter(
                                 e ->
                                         e.area.equals(area)
@@ -919,6 +949,11 @@ final class DeliveryWorkspace {
         fields.add("operation");
         require(fields.equals(b.keySet()), "Provide the displayed operation fields");
         lock(db);
+        if (ServiceAssurance.COMMANDS.contains(entry)) return ServiceAssurance.run(store,db,entry.operation(),b);
+        if (IndustryWorkspaces.COMMANDS.contains(entry)) return IndustryWorkspaces.command(store,db,entry.operation(),b);
+        if (ServiceExpansion.COMMANDS.contains(entry)) return ServiceExpansion.command(store,db,entry.operation(),b);
+        if (EnterpriseOperations.COMMANDS.contains(entry)) return EnterpriseOperations.command(store,db,entry.operation(),b);
+        if (ServiceDelivery.COMMANDS.contains(entry)) return ServiceDelivery.command(store,db,entry,b);
         return switch (area) {
             case "designer" -> DecisionFlows.command(db, entry.operation, b);
             case "packages" -> ActionPackages.command(store, db, entry.operation, b);

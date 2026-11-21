@@ -19,9 +19,11 @@ final class WorkWorker {
     void tick() {
         if (!store.environment.getProperty("WORK_ENABLED", Boolean.class, false)) return;
         try {
+            IncrementalImports.poll(store,System.currentTimeMillis());
             InventorySchedules.refresh(store,System.currentTimeMillis());
             RecurringImports.runOne(store,System.currentTimeMillis());
             runOne(System.currentTimeMillis());
+            ConnectorFailover.recover(store,System.currentTimeMillis());
             AttachmentScanning.runOne(store);
             try (var db = store.open()) {
                 ServiceClocks.tick(db, System.currentTimeMillis());
@@ -31,6 +33,11 @@ final class WorkWorker {
                         "DELETE FROM os_notice WHERE acknowledged=1 AND created_at<?",
                         System.currentTimeMillis() - 30L * 86400000);
                 NoticeTargets.cleanup(db);
+                EnterpriseData.lock(db);
+                SupplierExceptions.resumeReady(store,db);
+                EmployeeAgreements.expire(db,java.time.LocalDate.now(java.time.ZoneOffset.UTC));
+                GrantIndicators.tick(db,System.currentTimeMillis());
+                PreventiveMaintenance.tick(db,System.currentTimeMillis());
                 SupportConversations.cleanup(db);
                 ReportMeasurements.cleanup(db);
                 db.connection.commit();
@@ -49,6 +56,7 @@ final class WorkWorker {
         Map<String, Object> job;
         try (var db = store.open()) {
             job = WorkJobs.claim(db, now);
+            ConnectorFailover.claim(store,db,job);
             db.connection.commit();
         }
         if (job == null) return agentWorked;

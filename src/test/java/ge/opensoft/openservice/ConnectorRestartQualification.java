@@ -23,6 +23,10 @@ final class ConnectorRestartQualification implements AutoCloseable {
     private final URI origin;
 
     ConnectorRestartQualification(WorkflowSupport h, String fixture) throws Exception {
+        this(h,fixture,"");
+    }
+
+    ConnectorRestartQualification(WorkflowSupport h,String fixture,String worker) throws Exception {
         int port;
         try (var socket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             port = socket.getLocalPort();
@@ -45,6 +49,7 @@ final class ConnectorRestartQualification implements AutoCloseable {
         env.put("COOKIE_SECURE", "false");
         env.put("CONNECTOR_WRITES_ENABLED", "true");
         env.put("CONNECTOR_ALLOWED_ORIGINS", fixture);
+        if(!worker.isEmpty()){env.put("CONNECTOR_WORKER_ID",worker);env.put("WORK_ENABLED","true");env.put("WORK_POLL_MS","250");}
         var log = Files.createTempFile(Path.of("target"), "restart-app-", ".log");
         process = builder.redirectErrorStream(true).redirectOutput(log.toFile()).start();
         try {

@@ -52,7 +52,8 @@ final class CustomerRepairs {
         }else{
             var repair=definition(db,"customer-repair",taskId);
             require(!repair.containsKey("handed_off"),"Customer handoff already completed");
-            require(repair.get("account").equals(definition(db,"installation-account",repair.get("asset").toString()).get("account")),"Customer asset assignment changed");
+            var installation=definition(db,"installation-account",repair.get("asset").toString());
+            if(!repair.get("account").equals(installation.get("account")))repair.put("replacement_asset",DepotTransfers.replacement(db,taskId,repair.get("account"),installation));
             var receipt=definition(db,"offline-task",taskId);
             require("complete".equals(FieldVisits.current(db,taskId).get("phase")),"Complete the field checklist and evidence review before handoff");
             require(sameAppointment(repair,dispatch) && repair.get("lead").equals(receipt.get("technician")),"Review the crew and appointment after reassignment");

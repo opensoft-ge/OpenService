@@ -108,6 +108,7 @@ final class WorkflowStudio {
             }
         }
         save(db,"workflow-run",key,row.get("revision"),run);
+        if("complete".equals(run.get("state"))) RecordSubflows.ready(db,key);
         return map("workflow_state",run.get("state"),"revision",get(db,"workflow-run",key).get("revision"));
     }
     static void current(Store.Db db,String key,Map<String,Object> run)throws Exception{
