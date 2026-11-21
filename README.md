@@ -62,6 +62,8 @@ For a first review with colleagues, follow the [evaluation walkthrough](docs/eva
 
 ## What works
 
+The [current parity assessment](docs/parity-remediation.md) includes the 151-product scorecard, new insurance, store and safety workflows, software license metrics, unattended permit workers, and the measured search and monitoring results.
+
 The [industry and qualification guide](docs/qualification-and-service-quality.md) covers bank disputes, equipment readiness, public permits, attended case entry, governed data products, user-based licensing and provider audit evidence. It includes the [measured search and monitoring results](docs/qualification-quality-results.json).
 
 - Incident, problem, change, request, configuration-item, knowledge and group workspaces.

@@ -12,6 +12,16 @@ import java.time.Duration;
 /** Fixed vendor operations. A committed attempt precedes transmission and a readback precedes success. */
 final class VerifiedActions {
     private VerifiedActions(){}
+    private static final String PROCESS_ID=UUID.randomUUID().toString();
+    static Map<String,Object> identity(Store store,String attempt,String token,Object revision,Object source,Object alias) throws Exception {
+        var mac=javax.crypto.Mac.getInstance("HmacSHA256");
+        var utf8=java.nio.charset.StandardCharsets.UTF_8;
+        mac.init(new javax.crypto.spec.SecretKeySpec(store.secret.getBytes(utf8),"HmacSHA256"));
+        mac.update(("OpenService qualification/"+attempt+"/").getBytes(utf8));
+        return map("process_id",PROCESS_ID,"worker",store.environment.getProperty("CONNECTOR_WORKER_ID",""),
+            "credential_tag",HexFormat.of().formatHex(mac.doFinal(token.getBytes(utf8))),
+            "token_revision",revision,"credential_source",source,"write_alias",alias);
+    }
     private static final HttpClient CLIENT=HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(8)).followRedirects(HttpClient.Redirect.NEVER).build();
 
@@ -163,26 +173,42 @@ final class VerifiedActions {
         step.put("provider_correlation_id",correlation);
         boolean fresh=get(db,"workflow-attempt",attempt).get("revision").equals(0);
         if(execute && fresh){
-            save(db,"workflow-attempt",attempt,0,map("actor",db.viewerId,"run",b.get("run_id"),"step",b.get("step"),"correlation_id",correlation,"write_alias",step.get("alias"),"origin",origin,"credential_revision",connector.get("revision"),"credential_source",step.get("oauth"),"token_revision",tokenRevision,"at",now()));
+            var journal=identity(store,attempt,token,tokenRevision,step.get("oauth"),step.get("alias"));
+            journal.putAll(map("actor",db.viewerId,"run",b.get("run_id"),"step",b.get("step"),"correlation_id",correlation,
+                "origin",origin,"credential_revision",connector.get("revision"),"at",now(),"recorded_at",java.time.Instant.now().toString(),
+                "kind",step.get("kind"),"group",step.get("target"),"member",member,"issue",step.get("issue"),"to_status",step.get("status_id")));
+            save(db,"workflow-attempt",attempt,0,journal);
             db.connection.commit();
             lock(db);
             ProblemInvestigations.revision(b.get("revision"),get(db,"workflow-run",b.get("run_id").toString()).get("revision"));
             WorkflowStudio.current(db,b.get("run_id").toString(),run);
             authority(store,db,run,step);
         }
+        boolean sending=false;
         try{
             var seen=request(origin,token,step,member,false,correlation);
             if(seen.satisfied && !step.containsKey("effect_origin"))step.put("effect_origin",execute && fresh?"preexisting":"observed_only");
             if(execute && fresh && !seen.satisfied && seen.status!=429){
+                sending=true;
                 var sent=request(origin,token,step,member,true,correlation);
+                sending=false;
                 step.put("write_status",sent.status);
                 step.put("changed",sent.status/100==2);
                 step.put("effect_origin",sent.status/100==2?"acknowledged_write":"unconfirmed_write");
                 seen=sent.status==429?sent:request(origin,token,step,member,false,correlation);
             }
+            if (!execute && !fresh && seen.satisfied) {
+                var readback=identity(store,attempt,token,tokenRevision,step.get("oauth"),step.get("alias"));
+                readback.putAll(map("observed_at",java.time.Instant.now().toString(),"correlation_id",correlation,
+                    "origin",origin,"credential_revision",connector.get("revision"),"satisfied",true,"actor",db.viewerId));
+                var prior=get(db,"workflow-readback",attempt);
+                if (prior.get("revision").equals(0)) save(db,"workflow-readback",attempt,0,readback);
+            }
             step.putAll(map("state",seen.satisfied?(step.containsKey("investigation")?"awaiting_acceptance":"done"):seen.status==429?"throttled":"different","observed_http",seen.status,
                     "retry_at",System.currentTimeMillis()+seen.delay,"verified_by",db.viewerId,"verified_at",now()));
         }catch(Exception unavailable){
+            if (sending) save(db,"workflow-uncertain-write",attempt,0,map("correlation_id",correlation,
+                "recorded_at",java.time.Instant.now().toString(),"process_id",PROCESS_ID));
             step.putAll(map("state","unverified","checked_at",now()));
             step.put("investigation",AgentInvestigations.open(db,"connector",b.get("run_id").toString(),run.get("publisher").toString(),map("step",b.get("step"),"attempt",attempt,"alias",step.get("alias"),"result","unverified")));
             if(unavailable instanceof InterruptedException) Thread.currentThread().interrupt();

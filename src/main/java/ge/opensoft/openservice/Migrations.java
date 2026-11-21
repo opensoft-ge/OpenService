@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 102;
+    static final int VERSION = 103;
 
     private Migrations() {}
 
@@ -841,6 +841,11 @@ final class Migrations {
         if(version<102){
             db.update("CREATE TABLE IF NOT EXISTS os_connector_worker(job_id VARCHAR(32) PRIMARY KEY,executor VARCHAR(120) NOT NULL,recovered_by VARCHAR(120) NOT NULL DEFAULT '',retry_at BIGINT NOT NULL DEFAULT 0)");
             db.update("INSERT INTO os_migration(version,name) VALUES(102,?)","connector worker recovery journal");
+        }
+        if(version<103){
+            db.update("CREATE TABLE IF NOT EXISTS os_major_report(incident_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE, revision INTEGER NOT NULL, source VARCHAR(40) NOT NULL, recorded VARCHAR(40) NOT NULL, reviewer VARCHAR(32), impact TEXT NOT NULL, restoration TEXT NOT NULL, cause TEXT NOT NULL, lessons TEXT NOT NULL, actions TEXT NOT NULL, PRIMARY KEY(incident_id,revision))");
+            db.update("INSERT INTO os_major_report(incident_id,revision,source,recorded,reviewer,impact,restoration,cause,lessons,actions) SELECT incident_id,revision,'migration_baseline',updated,NULL,impact,restoration,review_cause,review_lessons,review_actions FROM os_major_incident WHERE status IN ('reviewed','closed') AND review_cause<>''");
+            db.update("INSERT INTO os_migration(version,name) VALUES(103,?)","versioned major incident review evidence");
         }
     }
 

@@ -1,0 +1,518 @@
+{
+  "date": "2026-11-21",
+  "comparison_base": "81e4d31a01ba",
+  "catalog": {
+    "areas": 151,
+    "previous_total_depth": 38.5,
+    "current_total_depth": 39.25,
+    "areas_at_each_depth": {
+      "0": 47,
+      "0.25": 54,
+      "0.5": 47,
+      "0.75": 3
+    }
+  },
+  "search": {
+    "department-search": {
+      "total": 35,
+      "eligible": 30,
+      "expected_handoffs": 5,
+      "prior_published_completed": 26,
+      "prior_comparator": "Previous policy ranker",
+      "databases": {
+        "sqlite": {
+          "native": {
+            "completed_eligible_requests": 8,
+            "verified_successes": 13,
+            "total": 35,
+            "grounded": 8,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 1,
+            "model_cost_usd": 0
+          },
+          "external": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 55,
+            "model_cost_usd": 0
+          },
+          "weighted": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 34,
+            "model_cost_usd": 0
+          },
+          "policy": {
+            "completed_eligible_requests": 30,
+            "verified_successes": 35,
+            "total": 35,
+            "grounded": 30,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 42,
+            "model_cost_usd": 0
+          }
+        },
+        "postgres": {
+          "native": {
+            "completed_eligible_requests": 8,
+            "verified_successes": 13,
+            "total": 35,
+            "grounded": 8,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 34,
+            "model_cost_usd": 0
+          },
+          "external": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 58,
+            "model_cost_usd": 0
+          },
+          "weighted": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 58,
+            "model_cost_usd": 0
+          },
+          "policy": {
+            "completed_eligible_requests": 30,
+            "verified_successes": 35,
+            "total": 35,
+            "grounded": 30,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 102,
+            "model_cost_usd": 0
+          }
+        }
+      },
+      "current_policy_misses": []
+    },
+    "policy-transfer": {
+      "total": 22,
+      "eligible": 18,
+      "expected_handoffs": 4,
+      "prior_published_completed": 18,
+      "prior_comparator": "Previous policy ranker",
+      "databases": {
+        "sqlite": {
+          "native": {
+            "completed_eligible_requests": 5,
+            "verified_successes": 9,
+            "total": 22,
+            "grounded": 5,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 2,
+            "model_cost_usd": 0
+          },
+          "external": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 40,
+            "model_cost_usd": 0
+          },
+          "weighted": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 31,
+            "model_cost_usd": 0
+          },
+          "policy": {
+            "completed_eligible_requests": 18,
+            "verified_successes": 22,
+            "total": 22,
+            "grounded": 18,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 32,
+            "model_cost_usd": 0
+          }
+        },
+        "postgres": {
+          "native": {
+            "completed_eligible_requests": 5,
+            "verified_successes": 9,
+            "total": 22,
+            "grounded": 5,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 98,
+            "model_cost_usd": 0
+          },
+          "external": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 162,
+            "model_cost_usd": 0
+          },
+          "weighted": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 119,
+            "model_cost_usd": 0
+          },
+          "policy": {
+            "completed_eligible_requests": 18,
+            "verified_successes": 22,
+            "total": 22,
+            "grounded": 18,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 120,
+            "model_cost_usd": 0
+          }
+        }
+      },
+      "current_policy_misses": []
+    },
+    "policy-search": {
+      "total": 100,
+      "eligible": 75,
+      "expected_handoffs": 25,
+      "prior_published_completed": 56,
+      "prior_comparator": "Indexed external search",
+      "databases": {
+        "sqlite": {
+          "native": {
+            "completed_eligible_requests": 19,
+            "verified_successes": 44,
+            "total": 100,
+            "grounded": 19,
+            "grounding_trials": 75,
+            "correct_handoff_owner": 25,
+            "handoff_trials": 25,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 0,
+            "model_cost_usd": 0
+          },
+          "external": {
+            "completed_eligible_requests": 56,
+            "verified_successes": 81,
+            "total": 100,
+            "grounded": 56,
+            "grounding_trials": 75,
+            "correct_handoff_owner": 25,
+            "handoff_trials": 25,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 17,
+            "model_cost_usd": 0
+          },
+          "policy": {
+            "completed_eligible_requests": 60,
+            "verified_successes": 85,
+            "total": 100,
+            "grounded": 60,
+            "grounding_trials": 75,
+            "correct_handoff_owner": 25,
+            "handoff_trials": 25,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 21,
+            "model_cost_usd": 0
+          }
+        },
+        "postgres": {
+          "native": {
+            "completed_eligible_requests": 19,
+            "verified_successes": 44,
+            "total": 100,
+            "grounded": 19,
+            "grounding_trials": 75,
+            "correct_handoff_owner": 25,
+            "handoff_trials": 25,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 11,
+            "model_cost_usd": 0
+          },
+          "external": {
+            "completed_eligible_requests": 56,
+            "verified_successes": 81,
+            "total": 100,
+            "grounded": 56,
+            "grounding_trials": 75,
+            "correct_handoff_owner": 25,
+            "handoff_trials": 25,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 18,
+            "model_cost_usd": 0
+          },
+          "policy": {
+            "completed_eligible_requests": 60,
+            "verified_successes": 85,
+            "total": 100,
+            "grounded": 60,
+            "grounding_trials": 75,
+            "correct_handoff_owner": 25,
+            "handoff_trials": 25,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 21,
+            "model_cost_usd": 0
+          }
+        }
+      },
+      "current_policy_misses": [
+        {
+          "question": "How do I work from the hotel",
+          "expected": "vpn",
+          "actual": "handoff"
+        },
+        {
+          "question": "Help me reach work resources while traveling",
+          "expected": "vpn",
+          "actual": "handoff"
+        },
+        {
+          "question": "Can I work away from headquarters",
+          "expected": "vpn",
+          "actual": "handoff"
+        },
+        {
+          "question": "We adopted a child yesterday",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "Where can a new father apply",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "I am expecting a baby soon",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "We are welcoming twins",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "Our family is growing",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "Where do expectant parents apply",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "Find the new parent policy",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "What are my options as a co-parent",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "My partner is pregnant",
+          "expected": "leave",
+          "actual": "handoff"
+        },
+        {
+          "question": "Where does a vendor quote go",
+          "expected": "purchase",
+          "actual": "handoff"
+        },
+        {
+          "question": "Can someone issue a PO",
+          "expected": "purchase",
+          "actual": "handoff"
+        },
+        {
+          "question": "I have a vendor estimate",
+          "expected": "purchase",
+          "actual": "handoff"
+        }
+      ]
+    }
+  },
+  "monitoring": {
+    "sqlite": {
+      "hourly_range": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 2,
+        "false_alarm_episodes": 1,
+        "observations": 48,
+        "correct": 46,
+        "unknown": 2,
+        "false_alarms": 1,
+        "missed_degradations": 1
+      },
+      "contemporaneous_corroborated_metrics": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 1,
+        "false_alarm_episodes": 0,
+        "observations": 48,
+        "correct": 47,
+        "unknown": 2,
+        "false_alarms": 0,
+        "missed_degradations": 1
+      },
+      "retrospective_with_additional_two_location_transaction_data": {
+        "expected_incidents": 2,
+        "missed_incidents": 0,
+        "detected_episodes": 2,
+        "false_alarm_episodes": 0,
+        "observations": 48,
+        "correct": 48,
+        "unknown": 2,
+        "false_alarms": 0,
+        "missed_degradations": 0
+      }
+    },
+    "postgres": {
+      "hourly_range": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 2,
+        "false_alarm_episodes": 1,
+        "observations": 48,
+        "correct": 46,
+        "unknown": 2,
+        "false_alarms": 1,
+        "missed_degradations": 1
+      },
+      "contemporaneous_corroborated_metrics": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 1,
+        "false_alarm_episodes": 0,
+        "observations": 48,
+        "correct": 47,
+        "unknown": 2,
+        "false_alarms": 0,
+        "missed_degradations": 1
+      },
+      "retrospective_with_additional_two_location_transaction_data": {
+        "expected_incidents": 2,
+        "missed_incidents": 0,
+        "detected_episodes": 2,
+        "false_alarm_episodes": 0,
+        "observations": 48,
+        "correct": 48,
+        "unknown": 2,
+        "false_alarms": 0,
+        "missed_degradations": 0
+      }
+    }
+  },
+  "live_qualification": {
+    "entra_jira_rotated_provider_writes": "awaiting designated tenant evidence",
+    "intune_windows_fleet": "awaiting designated tenant evidence",
+    "delegated_confluence_permissions": "awaiting designated tenant evidence"
+  },
+  "interpretation": [
+    "All three search sets are synthetic and use a bounded offering catalog. The original questions were visible during development. Admission requires a persisted matching request. Handoffs, grounding and unauthorized citations are scored separately. The three sets are reported separately and may share language.",
+    "Latency measures local processing on the test machine. There are no external model calls or charges.",
+    "The same 48 labels and raw metrics are used in both monitoring scores. The retrospective replay adds explicitly synthetic two-location HTTP and content evidence at hours 40, 41 and 42. Its 2/2 result measures a diagnosis supported by additional evidence. The original detector still catches 1/2.",
+    "A credential fingerprint change proves the client presented different token material. Administrative rotation and exactly one live effect require independent provider evidence."
+  ],
+  "verification": {
+    "jvm_tests": 2092,
+    "included_chromium_tests": 165,
+    "python_unit_tests": 35,
+    "failures_errors_skips": 0,
+    "production_java_changed_scope": {
+      "files": 17,
+      "lines": [
+        1931,
+        1931
+      ],
+      "branches": [
+        1262,
+        1262
+      ],
+      "methods": [
+        95,
+        95
+      ]
+    },
+    "changed_python_executables": {
+      "files": 2,
+      "lines": [
+        247,
+        247
+      ],
+      "branches": [
+        126,
+        126
+      ]
+    },
+    "https_acceptance": [
+      "Duplicate attended submission retained the same filed permit",
+      "Two simultaneously authenticated browser workers claimed a single queued permit; observed one completed filing and one idle worker"
+    ]
+  }
+}

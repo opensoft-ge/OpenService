@@ -130,9 +130,14 @@ final class TenRecoveryAcceptance {
                     post(h,"studio",TenConnectorAcceptance.call("recheck",key,2,2));
                     var checked=objects(object(doc(h,"workflow-run",key).get("definition")).get("steps")).getLast();
                     assertEquals("awaiting_acceptance",checked.get("state"));
+                    String attempt=ConnectorSynchronization.hash(List.of(key,2,0));
+                    var firstReadback=doc(h,"workflow-readback",attempt);
+                    assertEquals(1,firstReadback.get("revision"));
+                    post(h,"studio",TenConnectorAcceptance.call("recheck",key,2,3));
+                    assertEquals(firstReadback,doc(h,"workflow-readback",attempt));
                     var ticket=checked.get("investigation").toString();
                     post(h,"desk",map("operation","handoff_review","investigation_id",ticket,"note","Confirmed group membership with directory owner","revision",1));
-                    post(h,"studio",TenConnectorAcceptance.call("rearm",key,2,3));
+                    post(h,"studio",TenConnectorAcceptance.call("rearm",key,2,4));
                     var investigated=object(doc(h,"agent-investigation",ticket).get("definition"));
                     assertEquals("accepted_observed_result",investigated.get("authorization"));
                     assertEquals("Confirmed group membership with directory owner",investigated.get("note"));

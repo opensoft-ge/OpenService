@@ -14,6 +14,27 @@ final class ServiceAssurance {
 
   static final List<Entry> COMMANDS =
       List.of(
+          new Entry("apps","register_claim_policy","Register a holder's insurance coverage and deductible","policy_id user_id manifest","admin"),
+          new Entry("apps","import_case_payment","Import an identified payment from a finance statement","source reference manifest","admin"),
+          new Entry("apps","reconcile_case_payment","Match a posted payment to an approved dispute or claim","case_id source reference revision","admin"),
+          new Entry("topology","major_review_version","Retrieve a specific major incident report revision","incident_id revision","staff"),
+          new Entry("apps","data_quality_rules","Set record quality rules for a published projection","new_id manifest revision","admin"),
+          new Entry("apps","check_data_quality","Check a source revision and retain its quality evidence","new_id record_id check_id","all"),
+          new Entry("apps","store_opening_plan","Configure a store checklist and safety team","site_id group_id safety_group_id title entries revision","admin"),
+          new Entry("apps","start_store_opening","Start the store opening for a date","site_id effective","staff"),
+          new Entry("apps","store_opening_status","Review store readiness, hazards and evidence","site_id effective","staff"),
+          new Entry("apps","record_store_check","Record a passed check or report a hazard","site_id effective check_name decision evidence action_id revision","staff"),
+          new Entry("apps","correct_store_hazard","Record corrective work and request a retest","site_id effective check_name evidence action_id revision","staff"),
+          new Entry("apps","verify_store_hazard","Independently retest and release or reject the correction","site_id effective check_name decision evidence action_id revision","staff"),
+          new Entry("apps","robot_pool","Configure an unattended permit robot pool","pool_id group_id revision","admin"),
+          new Entry("apps","queue_robot_permit","Authorize unattended filing of this permit","pool_id job_id reference manifest","all"),
+          new Entry("apps","claim_robot_job","Claim pending permit work for this robot","pool_id","staff"),
+          new Entry("apps","execute_robot_job","Run the exact authorized permit job","pool_id job_id lease_id","staff"),
+          new Entry("apps","robot_job_status","Inspect my permit automation receipt","pool_id job_id","all"),
+          new Entry("apps","cancel_robot_job","Withdraw my pending permit automation","pool_id job_id","all"),
+          new Entry("mapping","backfill_transaction_sample","Attach a delayed transaction measurement to a prior metric interval","objective_id location observed_at manifest","staff"),
+          new Entry("mapping","review_metric_sample","Review late customer transaction evidence","objective_id observed_at","admin"),
+          new Entry("mapping","reviewed_metric_score","Score observations including reviewed customer evidence","objective_id samples","admin"),
           new Entry(
               "apps",
               "register_disputable_transaction",
@@ -101,7 +122,7 @@ final class ServiceAssurance {
           new Entry(
               "apps",
               "file_industry_case",
-              "Submit a dispute, equipment turnaround or permit application",
+              "Submit a dispute, insurance loss, equipment turnaround or permit application",
               "kind new_id reference manifest",
               "all"),
           new Entry(
@@ -282,6 +303,20 @@ final class ServiceAssurance {
 
   static Object run(Store store, Store.Db db, String op, Map<String, Object> b) throws Exception {
     return switch (op) {
+      case "store_opening_plan","start_store_opening","store_opening_status","record_store_check",
+          "correct_store_hazard","verify_store_hazard" -> StoreOpening.run(db,op,b);
+      case "register_claim_policy","import_case_payment","reconcile_case_payment" -> ClaimPayments.run(db,op,b);
+      case "major_review_version" -> {
+        String incident=id(b,"incident_id");
+        WorkTasks.record(db,"incident",incident);
+        var report=db.one("SELECT * FROM os_major_report WHERE incident_id=? AND revision=?",incident,integer(b.get("revision"),1,Integer.MAX_VALUE));
+        if (report==null) throw new Failure(404,"Major incident report revision unavailable");
+        yield report;
+      }
+      case "robot_pool","queue_robot_permit","claim_robot_job","execute_robot_job","robot_job_status",
+          "cancel_robot_job" -> RobotPools.run(db,op,b);
+      case "backfill_transaction_sample" -> TransactionChecks.run(store,db,op,b);
+      case "review_metric_sample","reviewed_metric_score" -> MetricAnomalies.run(store,db,op,b);
       case "license_fact", "license_position" -> PublisherPosition.run(db, op, b);
       case "track_delivery", "delivery_event", "delivery_performance" ->
           DeliveryPerformance.run(db, op, b);
@@ -301,7 +336,10 @@ final class ServiceAssurance {
                     id(b, "run_id"),
                     integer(b.get("step"), 1, 100),
                     integer(b.get("sequence"), 0, Integer.MAX_VALUE)));
-        yield definition(db, "workflow-attempt", attempt);
+        var journal=definition(db, "workflow-attempt", attempt);
+        journal.put("uncertain_write",get(db,"workflow-uncertain-write",attempt).get("definition"));
+        journal.put("readback",get(db,"workflow-readback",attempt).get("definition"));
+        yield journal;
       }
       case "worker_evidence" -> ConnectorFailover.evidence(db, id(b, "job_id"));
       case "propose_fix", "verify_fix" -> PermanentFixes.run(db, op, b);
@@ -313,7 +351,7 @@ final class ServiceAssurance {
           IndustryCases.run(db, op, b);
       case "policy_search" -> ServiceSearch.command(store, db, op, b);
       case "search_dictionary" -> PolicyTerms.publish(db, b);
-      case "publish_data_product", "read_data_product" -> DataProducts.run(db, op, b);
+      case "data_quality_rules","check_data_quality","publish_data_product", "read_data_product" -> DataProducts.run(db, op, b);
       case "resume_search", "weighted_search" -> EmployeeSearchReview.run(store, db, op, b);
       case "intune_authority", "intune_import", "intune_bind", "intune_device" ->
           IntuneInventory.run(store, db, op, b);

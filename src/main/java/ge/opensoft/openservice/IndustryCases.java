@@ -12,6 +12,7 @@ final class IndustryCases {
   private IndustryCases() {}
 
   enum Program {
+    insurance("adjust","approve","deny"),
     dispute("investigate", "uphold", "decline"),
     turnaround("decontaminate", "release", "quarantine"),
     permit("inspect", "issue", "deny");
@@ -114,6 +115,9 @@ final class IndustryCases {
           ServiceAssurance.once(db, "dispute-adjustment", id, adjustment);
           data.put("adjustment", adjustment);
         }
+        if (program == Program.insurance && decision.equals("approve"))
+          data.put("adjustment",map("amount",details.get("payable"),"currency",details.get("currency"),
+              "status","approved_benefit"));
         if (program == Program.turnaround) {
           String ci = details.get("equipment").toString();
           var tracker = get(db, "equipment-readiness", ci);
@@ -131,7 +135,7 @@ final class IndustryCases {
       return put(db, "industry-case", id, b.get("revision"), data);
     }
 
-    String kind = choice(b, "kind", "dispute", "turnaround", "permit");
+    String kind = choice(b, "kind", "dispute", "turnaround", "permit","insurance");
     if (op.equals("case_program")) {
       String team = id(b, "group_id");
       CatalogueRouting.group(db, team);
@@ -219,6 +223,7 @@ final class IndustryCases {
   static Map<String, Object> details(Store.Db db, String kind, Map<String, Object> manifest)
       throws Exception {
     return switch (Program.valueOf(kind)) {
+      case insurance -> ClaimPayments.loss(db,manifest);
       case dispute -> {
         keys(manifest, "amount", "currency", "reason");
         String currency = text(manifest, "currency", 3);

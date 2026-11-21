@@ -120,7 +120,18 @@ final class MetricAnomalies {
               "corroborated",
               op.equals("metric_corroborated_baseline")));
     }
-    if (op.equals("metric_score")) {
+    if (op.equals("review_metric_sample")) {
+      long at=ServiceOutages.time(b.get("observed_at"),System.currentTimeMillis());
+      String ref=key(id,at);
+      var observation=definition(db,"metric-observation",ref);
+      var previous=get(db,"metric-impact-review",ref);
+      if (!object(previous.get("definition")).isEmpty()) return previous;
+      require(observation.containsKey("transaction_rule_revision"),"No historical transaction rule was captured");
+      var evidence=probeEvidence(db,id,((Number)observation.get("probe_bucket")).longValue(),observation.get("transaction_rule_revision"));
+      require(evidence.size()==2,"Two failing locations under the original rule are required");
+      return recordReview(db,id,ref,observation,evidence,"operator");
+    }
+    if (op.equals("metric_score") || op.equals("reviewed_metric_score")) {
       int falseAlarms = 0, misses = 0, unknown = 0, correct = 0;
       var seen = new TreeMap<Long, Classification>();
       for (Object raw : batch(b.get("samples"), 512)) {
@@ -129,6 +140,8 @@ final class MetricAnomalies {
         require(!seen.containsKey(at), "Duplicate evaluation time");
         String truth = choice(label, "state", "up", "down", "unknown"),
             observed = definition(db, "metric-observation", key(id, at)).get("state").toString();
+        if (op.equals("reviewed_metric_score"))
+          observed=object(get(db,"metric-impact-review",key(id,at)).get("definition")).getOrDefault("state",observed).toString();
         seen.put(at, new Classification(truth.equals("down"), observed.equals("down")));
         if (observed.equals("unknown")) unknown++;
         if (truth.equals(observed)) correct++;
@@ -204,18 +217,10 @@ final class MetricAnomalies {
                 : "unknown";
     }
     var evidence = new TreeMap<String, Object>();
+    long bucket = stamp - stamp % interval;
+    Object rule = get(db,"transaction-rule",id).get("revision");
     if (corroborated && !actual.isEmpty()) {
-      long bucket = stamp - stamp % interval;
-      var rule = get(db, "transaction-rule", id).get("revision");
-      for (var probe :
-          db.all(
-              "SELECT location,detail FROM os_transaction_sample WHERE objective=? AND bucket=?",
-              id,
-              bucket)) {
-        var detail = object(probe.get("detail"));
-        if ("down".equals(detail.get("result")) && rule.equals(detail.get("rule_revision")))
-          evidence.put(probe.get("location").toString(), detail);
-      }
+      evidence = probeEvidence(db,id,bucket,rule);
       if (evidence.size() == 2) {
         state = "down";
         warning = false;
@@ -298,6 +303,7 @@ final class MetricAnomalies {
             baseline.get("revision"),
             "uncorroborated_warning",
             warning,
+            "transaction_rule_revision", rule, "probe_bucket", bucket,
             "transaction_evidence",
             evidence,
             "breaches",
@@ -306,5 +312,35 @@ final class MetricAnomalies {
             state,
             "episode",
             episode));
+  }
+
+  static void reviewLateProbes(Store.Db db,String id,long bucket,Object rule) throws Exception {
+    var evidence=probeEvidence(db,id,bucket,rule);
+    if (evidence.size()!=2) return;
+    for (var row:list(db,"metric-observation")) {
+      var data=object(row.get("definition"));
+      if (!id.equals(data.get("objective")) || !Objects.equals(bucket,data.get("probe_bucket"))
+          || !rule.equals(data.get("transaction_rule_revision"))) continue;
+      String ref=row.get("subject").toString();
+      if (get(db,"metric-impact-review",ref).get("revision").equals(0))
+        recordReview(db,id,ref,data,evidence,"late_probes");
+    }
+  }
+
+  private static Map<String,Object> recordReview(Store.Db db,String id,String ref,Map<String,Object> observation,
+      Map<String,Object> evidence,String source)throws Exception {
+    return put(db,"metric-impact-review",ref,0,map("objective",id,"at",observation.get("at"),
+        "original_state",observation.get("state"),"state","down","transaction_evidence",evidence,
+        "reviewer",db.viewerId,"reviewed_at",now(),"source",source));
+  }
+
+  private static TreeMap<String,Object> probeEvidence(Store.Db db,String id,long bucket,Object rule) throws Exception {
+    var evidence=new TreeMap<String,Object>();
+    for (var probe:db.all("SELECT location,detail FROM os_transaction_sample WHERE objective=? AND bucket=?",id,bucket)) {
+      var detail=object(probe.get("detail"));
+      if ("down".equals(detail.get("result")) && rule.equals(detail.get("rule_revision")))
+        evidence.put(probe.get("location").toString(),detail);
+    }
+    return evidence;
   }
 }

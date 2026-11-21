@@ -1,5 +1,9 @@
 # ServiceNow compatibility ledger
 
+## Current catalog assessment, 21 November 2026
+
+104 of 151 products have a demonstrated workflow. Estimated depth is 26.0%. Insurance, retail operations and health and safety each earned their first 0.25. The operator guide includes retained limits, actual request completion and the distinction between live metric detection and retrospective diagnosis. [Assessment and operator guide](parity-remediation.md) · [151-entry scorecard](servicenow-brazil-parity-estimate.csv)
+
 ## Targeted parity work, 21 November 2026
 
 The reference is the generally available [Brazil family](https://www.servicenow.com/platform/latest-release.html). The assessed workflows run on the native OpenService browser and JSON APIs. Application-specific patch equivalence is unverified. These rows extend SA-01, SA-05 through SA-07 and the industry, data and automation portfolios.

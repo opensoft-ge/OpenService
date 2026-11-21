@@ -58,7 +58,7 @@ final class ServiceSearch {
         long start = System.nanoTime();
         String question = text(b, "question", 500);
         boolean policy = op.equals("policy_search");
-        var aliases = policy ? object(object(get(db,"search-dictionary","current").get("definition")).getOrDefault("aliases",map())) : map();
+        var aliases = policy ? PolicyTerms.vocabulary(object(object(get(db,"search-dictionary","current").get("definition")).getOrDefault("aliases",map()))) : map();
         var terms = policy ? PolicyTerms.terms(question,aliases) : words(question);
         var ranked = new ArrayList<Map<String, Object>>();
         for (var entry : list(db, "employee-intent")) {
@@ -95,7 +95,7 @@ final class ServiceSearch {
                                 "citation",
                                 citation));
         }
-        if(policy || op.equals("weighted_search"))EmployeeSearchReview.weight(ranked);
+        if(policy || op.equals("weighted_search"))EmployeeSearchReview.weight(ranked, policy, aliases);
         else for(var match:ranked)match.remove("matched");
         ranked.sort(Comparator.comparingInt(m -> -(Integer) m.get("score")));
         var suggestions = ranked.stream().limit(5).toList();

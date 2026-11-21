@@ -6,3 +6,4 @@ artifacts
 *.db
 *.db-*
 __pycache__
+.servicenow-cache

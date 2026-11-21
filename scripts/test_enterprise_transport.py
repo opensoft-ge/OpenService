@@ -161,6 +161,67 @@ class ProviderEffectsTest(unittest.TestCase):
         self.addCleanup(credentials.stop)
         self.base = {"start": "2020-01-01T09:00Z", "end": "2020-01-01T10:00Z", "auth_env": "QUALIFICATION_TEST_AUTH"}
 
+    def test_native_recovery_joins_independent_audit_to_restart(self):
+        import uuid
+        import copy
+        correlation, proc, other = [str(uuid.uuid4()) for _ in range(3)]
+        audit = script("check-provider-effects.py")["qualification"]
+        common = dict(write_alias="QA",credential_source="alias",correlation_id=correlation,
+                      origin="https://qa.atlassian.net", credential_revision=1)
+        write = dict(common, issue="QA-3", to_status="2", kind="jira_transition", process_id=proc,
+                     recorded_at="2020-01-01T09:12Z",credential_tag="1"*64)
+        write["uncertain_write"] = dict(correlation_id=correlation, process_id=proc, recorded_at="2020-01-01T09:16Z")
+        write["readback"] = dict(common,process_id=other,observed_at="2020-01-01T09:20Z",satisfied=True,
+                                 credential_revision=2,credential_tag="2"*64)
+        cfg = dict(self.base, provider="jira",site="qa.atlassian.net",issue="QA-3",actor="staff",from_status="1",to_status="2",attempt_journal=write)
+        event = dict(id="change",created="2020-01-01T09:15Z",author={"accountId":"staff"},items=[{"field":"status","from":"1","to":"2"}],
+                     historyMetadata={"type":"opensoft.openservice","extraData":{"correlation_id":correlation}})
+        def read(*_):
+            return dict(values=[event],startAt=0,isLast=True)
+        self.assertTrue(audit(cfg,read)["verified_attempt"])
+        self.assertFalse(audit(cfg,lambda *_:dict(values=[],startAt=0,isLast=True))["verified_attempt"])
+        for area,name,value in [(None,"issue","QA-4"),(None,"origin","local"),("readback","origin","local"),
+                ("readback","correlation_id",other),("readback","observed_at","2020-01-01T10:05Z"),
+                ("uncertain_write","process_id",other),("readback","process_id",proc),("readback","satisfied",False),
+                ("readback","credential_tag","bad"),("readback","credential_tag","1"*64),
+                ("readback","write_alias","other"),("readback","credential_source","other")]:
+            changed=copy.deepcopy(cfg)
+            target=changed["attempt_journal"]
+            (target if area is None else target[area])[name]=value
+            with self.assertRaises(ValueError):audit(changed,read)
+        event["created"]="2020-01-01T09:05Z"
+        with self.assertRaisesRegex(ValueError,"outside"):audit(cfg,read)
+        with self.assertRaises(ValueError):audit(dict(cfg,provider="unsupported"),read)
+        group,member,principal=[str(uuid.uuid4()) for _ in range(3)]
+        cfg.update(provider="entra",group=group,member=member,service_principal=principal)
+        write.update(origin="https://graph.microsoft.com",kind="entra_add",group=group,member=member)
+        write["readback"]["origin"]=write["origin"]
+        ge=dict(id="directoryChange",activityDateTime="2020-01-01T09:15Z",result="success",activityDisplayName="Add member to group",
+                initiatedBy={"app":{"servicePrincipalId":principal}},targetResources=[{"type":"Group","id":group},{"type":"User","id":member}],correlationId=correlation)
+        self.assertTrue(audit(cfg,lambda *_:{"value":[ge]})["verified_attempt"])
+
+    def test_fresh_device_and_accessible_control_page(self):
+        import uuid
+        import datetime as dt
+        from unittest.mock import Mock
+        audit=script("check-provider-effects.py")["qualification"]
+        d,e,site=[str(uuid.uuid4()) for _ in range(3)]
+        cfg=dict(provider="intune",auth_env=self.base["auth_env"],managed_device_id=d,entra_device_id=e,max_sync_age_hours=1)
+        device=dict(id=d,azureADDeviceId=e,operatingSystem="Windows",lastSyncDateTime=dt.datetime.now(dt.timezone.utc).isoformat())
+        self.assertEqual(d,audit(cfg,lambda *_:device)["managed_device_id"])
+        for hours in (False,0,721):
+            with self.assertRaises(ValueError):audit(dict(cfg,max_sync_age_hours=hours),lambda *_:device)
+        device["lastSyncDateTime"]="2020-01-01T09:15Z"
+        with self.assertRaises(ValueError):audit(cfg,lambda *_:device)
+        cfg=dict(provider="confluence",cloud_id=site,page_id="42",control_page_id="41",reader_account="u",
+                 expected_reader="allowed",reader_env=self.base["auth_env"],publisher_env=self.base["auth_env"])
+        who=dict(accountId="u");good=dict(id="42",status="current",version={"number":1});control=dict(id="41",status="current")
+        self.assertEqual("41",audit(cfg,Mock(side_effect=[who,control,good,good]))["control_page"])
+        for val in ["42","other"]:
+            with self.assertRaises(ValueError):audit(dict(cfg,control_page_id=val),Mock(side_effect=[who]))
+        for page in [good,dict(control,status="deleted")]:
+            with self.assertRaises(ValueError):audit(cfg,Mock(side_effect=[who,page]))
+
     def test_correlated_native_evidence(self):
         import uuid
         correlation, group, member, principal = [str(uuid.uuid4()) for _ in range(4)]

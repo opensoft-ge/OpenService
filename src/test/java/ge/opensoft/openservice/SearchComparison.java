@@ -138,7 +138,7 @@ final class SearchComparison {
             List.of("legal","counsel"), List.of("insurance","health plan","medical coverage"),
             List.of("marriage","wedding"), List.of("dependent","beneficiaries")));
       }
-      for (String mode : expanded ? List.of("native","external","weighted","policy") : List.of("native", "external")) {
+      for (String mode : expanded ? List.of("native","external","weighted","policy") : List.of("native", "external","policy")) {
         if (mode.equals("external")) {
           try (var db = h.store.open()) {
             for(String person:employees)db.update("INSERT INTO os_group_member(group_id,user_id) VALUES(?,?)", group, person);
@@ -238,10 +238,10 @@ final class SearchComparison {
         }
         var scores = cmd(h, "admin", "assistant", "score", "new_id", suite);
         assertEquals(0, scores.get("unauthorized_citations"));
-        if (mode.equals("policy")) {
-          assertEquals(fresh ? 18 : 26, scores.get("grounded"));
+        if (mode.equals("policy") && expanded) {
+          assertEquals(fresh?18:30,scores.get("grounded"),failures.toString());
           assertEquals(fresh ? 4 : 5, scores.get("correct_handoff_owner"));
-          assertEquals(fresh ? 22 : 31, scores.get("verified_successes"));
+          assertEquals(fresh?22:35,scores.get("verified_successes"),failures.toString());
         }
         scores.put("failures", failures);
         report.put(mode, scores);

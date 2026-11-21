@@ -69,7 +69,7 @@ final class EmployeeSearchReview {
         pending && !suggestions.isEmpty());
   }
 
-  static void weight(List<Map<String, Object>> ranked) {
+  static void weight(List<Map<String, Object>> ranked, boolean policy, Map<String,Object> aliases) {
     // Weight rarer matching terms more heavily, giving extra weight to the offering and policy
     // titles.
     var frequency = new HashMap<String, Integer>();
@@ -78,7 +78,8 @@ final class EmployeeSearchReview {
         frequency.merge(word.toString(), 1, Integer::sum);
     for (var match : ranked) {
       var cite = object(match.get("citation"));
-      var titles = ServiceSearch.words(cite.get("catalog_name") + " " + cite.get("policy_title"));
+      String title = cite.get("catalog_name") + " " + cite.get("policy_title");
+      var titles = policy ? PolicyTerms.terms(title,aliases) : ServiceSearch.words(title);
       int score = 0;
       for (Object raw : (Set<?>) match.remove("matched")) {
         String word = raw.toString();

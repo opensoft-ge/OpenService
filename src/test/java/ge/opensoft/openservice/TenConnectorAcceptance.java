@@ -81,6 +81,10 @@ final class TenConnectorAcceptance {
             var receipt=post(h,"packages",map("operation","provider_attempt","run_id",run,"step",3,"sequence",0));
             assertNotNull(UUID.fromString(receipt.get("correlation_id").toString()));
             assertEquals(provider.alias,receipt.get("write_alias"));
+            assertEquals(group,receipt.get("group"));assertEquals(member,receipt.get("member"));
+            assertNotNull(UUID.fromString(receipt.get("process_id").toString()));
+            assertTrue(receipt.get("credential_tag").toString().matches("[a-f0-9]{64}"));
+            assertFalse(receipt.toString().contains("fixture-access"));
             assertNotNull(receipt.get("credential_revision"));
             assertEquals(1,renewals.get());
             for(int error:List.of(403,422,500)){

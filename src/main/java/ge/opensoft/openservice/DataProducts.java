@@ -39,6 +39,7 @@ final class DataProducts {
     }
     var current = get(db, "data-product", product);
     var spec = object(current.get("definition"));
+    if (operation.equals("data_quality_rules")) return DataQuality.configure(db,product,current,body);
     if (db.count(
             "SELECT COUNT(*) FROM os_group_member WHERE group_id=? AND user_id=?",
             spec.get("group"),
@@ -50,6 +51,7 @@ final class DataProducts {
     var visible = FieldAccess.visible(db, schema, object(source.get("data")));
     visible.keySet().retainAll(object(schema.get("fields")).keySet());
     visible.keySet().retainAll((List<?>) spec.get("fields"));
+    if (operation.equals("check_data_quality")) return DataQuality.check(db,product,current,schema,source,visible,body);
     return map(
         "product",
         product,

@@ -21,19 +21,27 @@ final class PublisherPosition {
       String metric =
           object(model.get("definition")).getOrDefault("metric", "installation").toString();
       if (data.containsKey("metric")) {
-        String requested = choice(data, "metric", "installation", "named_user");
+        String requested = choice(data, "metric", "installation", "named_user", "per_core", "concurrent_user");
         if (model.get("revision").equals(0)) {
-          if (requested.equals("named_user"))
+          if (!requested.equals("installation"))
             require(
                 list(db, "publisher-fact").stream()
                     .noneMatch(row -> product.equals(object(row.get("definition")).get("product"))),
                 "Existing inventory uses per-installation rights");
-          put(db, "publisher-model", product, 0, map("metric", requested));
+          var terms=map("metric",requested);
+          if (requested.equals("per_core"))
+            terms.put("minimum_cores", integer(data.getOrDefault("minimum_cores",1),1,65536));
+          put(db, "publisher-model", product, 0, terms);
           metric = requested;
         } else
           require(requested.equals(metric), "License metric differs from recorded product metric");
       }
-      String kind = choice(data, "kind", "rights", "installation", "removal");
+      if (data.containsKey("minimum_cores")) {
+        var stored=definition(db,"publisher-model",product);
+        require(metric.equals("per_core") && stored.get("minimum_cores").equals(data.get("minimum_cores")),
+            "Core minimum differs from the recorded contract");
+      }
+      String kind = choice(data, "kind", "rights", "installation", "removal", "session");
       var fact = map("product", product, "reference", ref, "day", day, "kind", kind);
       if (kind.equals("rights")) {
         String contract = text(data, "contract", 120);
@@ -47,13 +55,26 @@ final class PublisherPosition {
           fact.put("through", through);
         }
         fact.putAll(map("contract", contract, "covers", List.copyOf(editions), "quantity", qty));
+      } else if (kind.equals("session")) {
+        require(metric.equals("concurrent_user"), "Sessions require concurrent-user rights");
+        String user = id(data, "user_id");
+        Service.account(db, user);
+        Instant start = Instant.ofEpochMilli(ServiceOutages.time(data.get("start"),System.currentTimeMillis()));
+        Instant end = Instant.ofEpochMilli(ServiceOutages.time(data.get("end"),System.currentTimeMillis()));
+        require(start.isBefore(end) && start.atZone(ZoneOffset.UTC).toLocalDate().toString().equals(day),
+            "Use a positive session interval starting on the effective UTC date");
+        fact.putAll(map("user_id", user, "edition", text(data, "edition", 120),
+            "start", start.toString(), "end", end.toString()));
       } else {
+        require(!metric.equals("concurrent_user"), "Concurrent rights require usage sessions");
         String ci = id(data, "ci");
         Service.readRecord(db, "cmdb_ci", ci);
         fact.put("ci", ci);
         if (data.containsKey("sequence"))
           fact.put("sequence", integer(data.get("sequence"), 1, Integer.MAX_VALUE));
         if (kind.equals("installation")) {
+          if (metric.equals("per_core"))
+            fact.put("cores", integer(data.get("cores"), 1, 65536));
           if (metric.equals("named_user")) {
             String user = id(data, "user_id");
             Service.account(db, user);
@@ -94,6 +115,9 @@ final class PublisherPosition {
                     .thenComparing(x -> Objects.toString(x.get("last_used"), ""))
                     .thenComparing(x -> x.get("reference").toString()))
             .toList();
+    String metric = object(get(db, "publisher-model", product).get("definition"))
+        .getOrDefault("metric","installation").toString();
+    var sessions = new ArrayList<Map<String,Object>>();
     var pools = new TreeMap<String, Integer>();
     var covers = new TreeMap<String, List<?>>();
     var installed = new TreeMap<String, Map<String, Object>>();
@@ -108,6 +132,8 @@ final class PublisherPosition {
             "Separate changed rights into a new contract");
         covers.put(pool, allowed);
         pools.merge(pool, ((Number) f.get("quantity")).intValue(), Integer::sum);
+      } else if (f.get("kind").equals("session")) {
+        sessions.add(f);
       } else {
         String ci = f.get("ci").toString();
         var previous = installed.put(ci, f);
@@ -116,7 +142,8 @@ final class PublisherPosition {
             || !Objects.equals(f.get("sequence"), previous.get("sequence"))) {
           ambiguous.remove(ci);
         } else if (!Objects.equals(f.get("edition"), previous.get("edition"))
-            || !Objects.equals(f.get("user_id"), previous.get("user_id"))) {
+            || !Objects.equals(f.get("user_id"), previous.get("user_id"))
+            || !Objects.equals(f.get("cores"), previous.get("cores"))) {
           ambiguous.add(ci);
         }
       }
@@ -124,6 +151,14 @@ final class PublisherPosition {
     require(ambiguous.isEmpty(), "Provide an ordered inventory observation for " + ambiguous);
     installed.values().removeIf(f -> f.get("kind").equals("removal"));
     require(pools.values().stream().allMatch(v -> v >= 0), "Credit exceeds rights");
+    if (metric.equals("per_core") || metric.equals("concurrent_user")) {
+      var result = metric.equals("per_core")
+          ? MeteredLicenses.cores(installed, pools, covers,(Integer)definition(db,"publisher-model",product).get("minimum_cores"))
+          : MeteredLicenses.peak(day, sessions, pools, covers);
+      result.putAll(map("product",product,"day",day,"metric",metric,"rights",pools,
+          "rights_by_edition",covers,"evidence",facts.stream().map(f -> f.get("reference")).toList()));
+      return put(db,"publisher-position",snapshot,0,result);
+    }
     var recovery = new ArrayList<>();
     for (var row : list(db, "seat-receipt")) {
       var receipt = object(row.get("definition"));

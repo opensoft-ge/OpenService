@@ -49,6 +49,11 @@ def qualification(config, read=fetch):
         if (str(uuid.UUID(device["id"])) != managed or str(uuid.UUID(device["azureADDeviceId"])) != directory
                 or device["operatingSystem"] != "Windows"):
             raise ValueError("Designated Windows device identities did not match")
+        if "max_sync_age_hours" in config:
+            hours = config["max_sync_age_hours"]
+            age = dt.datetime.now(dt.timezone.utc) - instant(device["lastSyncDateTime"])
+            if type(hours) is not int or not 1 <= hours <= 720 or not dt.timedelta(0) <= age <= dt.timedelta(hours=hours):
+                raise ValueError("Intune inventory is outside the designated freshness window")
         registration = config.get("windows_registration")
         if registration is not None:
             if (str(uuid.UUID(registration["device_id"])) != directory or
@@ -67,6 +72,13 @@ def qualification(config, read=fetch):
         who = read(origin + "/rest/api/user/current", reader)
         if not config["reader_account"] or who.get("accountId") != config["reader_account"]:
             raise ValueError("Delegated reader account did not match")
+        if "control_page_id" in config:
+            control = str(config["control_page_id"])
+            if control == page or not re.fullmatch(r"[1-9][0-9]*", control):
+                raise ValueError("Choose a separate control page")
+            accessible = read(origin + "/api/v2/pages/" + control, reader)
+            if accessible.get("id") != control or accessible.get("status") != "current":
+                raise ValueError("Control page is unavailable to the delegated reader")
         url = origin + "/api/v2/pages/" + page
         source = read(url, os.environ[config["publisher_env"]])
         if source["id"] != page or source["status"] != "current":
@@ -85,8 +97,53 @@ def qualification(config, read=fetch):
             raise ValueError("Reader visibility differs from the expected phase")
         return {"provider": provider, "site": site, "page": page, "version": source["version"]["number"],
                 "reader_account": who["accountId"], "reader_access": config["expected_reader"],
-                "observation": "delegated_page_read"}
+                "control_page": config.get("control_page_id"), "observation": "delegated_page_read"}
+    if "attempt_journal" in config:
+        return verify_recovery(config, read)
     return observe(config, read)
+
+
+def verify_recovery(config, read):
+    """Join a native journal to a fresh, independently queried provider history."""
+    job = config["attempt_journal"]
+    recovery, uncertain = job["readback"], job["uncertain_write"]
+    provider = config["provider"]
+    if provider == "jira":
+        origin = "https://" + config["site"]
+        target = ("jira_transition", config["issue"], config["to_status"])
+        actual = (job["kind"], job["issue"], job["to_status"])
+    elif provider == "entra":
+        origin = "https://graph.microsoft.com"
+        target = ("entra_add", config["group"].lower(), config["member"].lower())
+        actual = (job["kind"], job["group"].lower(), job["member"].lower())
+    else:
+        raise ValueError("Choose a native Jira transition or Entra membership addition")
+    if actual != target or {job["origin"], recovery["origin"]} != {origin}:
+        raise ValueError("Journal target or origin differs from the designated provider")
+    correlation = str(uuid.UUID(job["correlation_id"]))
+    if {uncertain.get("correlation_id"), recovery.get("correlation_id"), config.get("correlation_id", correlation)} != {correlation}:
+        raise ValueError("Write, uncertainty and readback must share the provider correlation")
+    start, end = instant(config["start"]), instant(config["end"])
+    before, interrupted, after = (instant(job["recorded_at"]), instant(uncertain["recorded_at"]), instant(recovery["observed_at"]))
+    if not start <= before <= interrupted <= after < end:
+        raise ValueError("Observation window must contain the ordered write, lost response and readback")
+    processes = [uuid.UUID(entry["process_id"]) for entry in (job, uncertain, recovery)]
+    if processes[0] != processes[1] or processes[0] == processes[2] or recovery["satisfied"] is not True:
+        raise ValueError("Recovery must be a successful read from a different process")
+    tags = [entry["credential_tag"] for entry in (job, recovery)]
+    if (not all(re.fullmatch(r"[a-f0-9]{64}", tag) for tag in tags) or tags[0] == tags[1]
+            or not job["write_alias"] == recovery["write_alias"] or not job["credential_source"] == recovery["credential_source"]):
+        raise ValueError("Require distinct presented credentials on the same bound connection")
+    report = observe(dict(config, correlation_id=correlation), read)
+    if report["verified_attempt"]:
+        when = instant(next(iter(report["records"].values())))
+        if not before <= when <= after:
+            raise ValueError("Provider change falls outside the attempted write and successful readback")
+    report.update(write_process=str(processes[0]), recovery_process=str(processes[2]),
+                  changed_presented_credential=True, connection=job["write_alias"],
+                  write_binding_revision=job["credential_revision"], recovery_binding_revision=recovery["credential_revision"],
+                  observation="provider_history_and_native_process_recovery")
+    return report
 
 
 def observe(config, read=fetch):

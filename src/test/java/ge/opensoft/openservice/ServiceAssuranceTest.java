@@ -1798,6 +1798,7 @@ class ServiceAssuranceTest {
         training,
         "revision",
         0);
+    if (corroborate) cmd("mapping","transaction_rule","objective_id",objective,"expected","order receipt","limit",2000,"revision",0);
     var labels = new ArrayList<>();
     for (int i = 0; i < 48; i++) {
       int slot = i % 24, peak = slot >= 16 && slot <= 19 ? 120 : 0;
@@ -1837,6 +1838,22 @@ class ServiceAssuranceTest {
     java.nio.file.Files.writeString(
         Path.of("target", (corroborate ? "corroborated-metric-" : "service-metric-holdout-") + (pg ? "postgres" : "sqlite") + ".json"),
         JSON.writeValueAsString(report));
+    if (corroborate) {
+      // An additional synthetic checkout feed arrives after the metric-only decisions are frozen.
+      // Hour 41 returns HTTP 200 with an invalid cart instead of the expected order receipt.
+      for(int slot=40; slot<=42; slot++) for(String site:List.of("east","west")) {
+        var sample=map("latency_ms",250,"status",200,"matched",slot!=41,"expected","order receipt","healthy",true);
+        Object[] args={"objective_id",objective,"location",site,"observed_at",stamp(start+slot*hour),"manifest",sample};
+        cmd("mapping","backfill_transaction_sample",args);
+        assertEquals(true,cmd("mapping","backfill_transaction_sample",args).get("replayed"));
+      }
+      var reviewed=cmd("mapping","reviewed_metric_score","objective_id",objective,"samples",labels);
+      assertEquals(48,reviewed.get("correct"));assertEquals(0,reviewed.get("missed_incidents"));
+      assertEquals(0,reviewed.get("false_alarm_episodes"));assertEquals(2,reviewed.get("detected_episodes"));
+      assertEquals(report,cmd("mapping","metric_score","objective_id",objective,"samples",labels));
+      java.nio.file.Files.writeString(Path.of("target","late-probe-metric-"+(pg?"postgres":"sqlite")+".json"),
+          JSON.writeValueAsString(reviewed));
+    }
   }
 
   @ParameterizedTest

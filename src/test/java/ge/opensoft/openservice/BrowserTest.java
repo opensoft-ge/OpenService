@@ -50,6 +50,20 @@ class BrowserTest {
             EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"read_data_product"),
                 Values.map("new_id",product,"record_id",asset));
             assertTrue(page.locator("[data-operation-result]").innerText().contains("Desk kiosk"));
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"data_quality_rules"),
+                Values.map("new_id",product,"manifest","{\"short_description\":[]}","revision",0));
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"check_data_quality"),
+                Values.map("new_id",product,"record_id",asset,"check_id",id()));
+            assertTrue(page.locator("[data-operation-result]").innerText().contains("passed"));
+            String site=id();
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"store_opening_plan"),
+                map("site_id",site,"group_id",team,"safety_group_id",team,"title","East store","entries","[\"Till\"]","revision",0));
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"start_store_opening"),
+                map("site_id",site,"effective","2026-11-21"));
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"record_store_check"),
+                map("site_id",site,"effective","2026-11-21","check_name","Till","decision","pass","evidence","Counted",
+                    "action_id",id(),"revision",1));
+            assertTrue(page.locator("[data-operation-result]").innerText().contains("ready"));
         }
     }
 

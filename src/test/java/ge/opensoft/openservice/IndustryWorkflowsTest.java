@@ -119,13 +119,16 @@ class IndustryWorkflowsTest {
     db.update("INSERT INTO os_requester_record(record_id,user_id) VALUES(?,?)",equipment,c);
     for (var program:IndustryCases.Program.values()) {
       as(admin);
-      String kind=program.name(), ticket=id(), ref="external-"+kind;
+      String kind=program.name(), ticket=id(), ref="external-"+kind, policy=id();
       run("apps","case_program","kind",kind,"group_id",team,"revision",0);
       Map<String,Object> input=switch(program) {
+        case insurance -> map("policy_id",policy,"loss_date","2026-02-10","peril","water","amount","700","currency","USD","reason","Equipment damage");
         case dispute -> map("amount","240.50","currency","USD","reason","Duplicate debit");
         case turnaround -> map("equipment",equipment,"site","Warehouse A");
         case permit -> map("site","Block 50","activity","Outdoor event");
       };
+      if(program==IndustryCases.Program.insurance)
+        run("apps","register_claim_policy","policy_id",policy,"user_id",c,"manifest",map("start","2026-01-01","end","2026-12-31","perils",List.of("water"),"currency","USD","deductible","100","limit","500"));
       if(program==IndustryCases.Program.dispute)
         run("apps","register_disputable_transaction","reference",ref,"user_id",c,"amount","250","currency","USD");
       as(c);
@@ -137,7 +140,7 @@ class IndustryWorkflowsTest {
         as(a);assertEquals("in_turnaround",object(object(run("apps","equipment_readiness","record_id",equipment)).get("definition")).get("status"));as(c);
       }
       var conflict=new LinkedHashMap<>(input);
-      conflict.put(switch(program){case dispute -> "reason"; case turnaround,permit -> "site";},"Changed");
+      conflict.put(switch(program){case dispute,insurance -> "reason"; case turnaround,permit -> "site";},"Changed");
       assertThrows(Failure.class,()->run("apps","file_industry_case","kind",kind,"new_id",id(),"reference",ref,"manifest",conflict));
       as(admin);
       assertThrows(Failure.class,()->run("apps","industry_case","new_id",ticket));

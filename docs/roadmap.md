@@ -1,5 +1,9 @@
 # OpenService adoption roadmap and build order
 
+## Gaps after the remediation pass
+
+The current implementation covers governed projection checks, unattended permit leases, statement reconciliation, per-core and concurrent-user licensing, and verifiable incident-review amendments. The remaining qualification needs include live SaaS recovery, independently contributed questions, customer-transaction probes for timely detection, and publisher-specific entitlement rules. The scorecard identifies 47 catalog entries without a demonstrated workflow. [Current evidence and product gaps](parity-remediation.md)
+
 ## Qualification and product workflows, 21 November 2026
 
 The current pass extends connector recovery, search, monitoring, software licensing and industry operations. The current acceptance boundaries and provider dependencies are in the [compatibility ledger](servicenow-compatibility.md#targeted-parity-work-21-november-2026) and [operator guide](qualification-and-service-quality.md). The two prerequisites with the largest outstanding effect are designated tenant histories and independently collected employee questions.

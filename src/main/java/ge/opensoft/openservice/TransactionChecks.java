@@ -51,7 +51,7 @@ final class TransactionChecks {
             bucket);
     if (saved != null) {
       var evidence = new LinkedHashMap<>(object(saved.get("detail")));
-      evidence.keySet().removeAll(Set.of("rule_revision", "maximum_ms", "result"));
+      evidence.keySet().removeAll(Set.of("rule_revision", "maximum_ms", "result","collection","observer"));
       require(evidence.equals(raw), "Conflicting observation for the interval");
       return map("bucket", bucket, "replayed", true);
     }
@@ -70,22 +70,21 @@ final class TransactionChecks {
                     && ms <= ((Number) settings.get("maximum_ms")).intValue())
                 ? "up"
                 : "down";
-    var result =
-        object(
-            ReliabilityObjectives.run(
-                store,
-                db,
-                "classified_sample",
-                map(
-                    "objective_id",
-                    id,
-                    "location",
-                    location,
-                    "observed_at",
-                    b.get("observed_at"),
-                    "result",
-                    state)));
+    boolean late=op.equals("backfill_transaction_sample");
+    Map<String,Object> result;
+    if (late) {
+      require(((List<?>)spec.get("locations")).contains(location),"Unregistered probe location");
+      require(System.currentTimeMillis()-observed<=7L*86400000,"Historical probe window is seven days");
+      var observation=object(get(db,"metric-observation",key(id,observed)).get("definition"));
+      require(rule.get("revision").equals(observation.get("transaction_rule_revision")),
+          "Supply a recorded metric timestamp from the same transaction rule");
+      result=map("bucket",bucket,"state",state,"collection","backfill");
+    } else {
+      result=object(ReliabilityObjectives.run(store,db,"classified_sample",map(
+          "objective_id",id,"location",location,"observed_at",b.get("observed_at"),"result",state)));
+    }
     var evidence = new LinkedHashMap<>(raw);
+    evidence.putAll(map("collection",late?"backfill":"live","observer",db.viewerId));
     evidence.putAll(
         map(
             "rule_revision",
@@ -100,6 +99,7 @@ final class TransactionChecks {
         location,
         bucket,
         JSON.writeValueAsString(evidence));
+    if ("down".equals(state)) MetricAnomalies.reviewLateProbes(db,id,bucket,rule.get("revision"));
     return result;
   }
 }
