@@ -17,6 +17,22 @@ final class PublisherPosition {
     if (op.equals("license_fact")) {
       String ref = text(b, "reference", 160), day = ProjectDelivery.date(b.get("effective"));
       var data = object(b.get("manifest"));
+      var model = get(db, "publisher-model", product);
+      String metric =
+          object(model.get("definition")).getOrDefault("metric", "installation").toString();
+      if (data.containsKey("metric")) {
+        String requested = choice(data, "metric", "installation", "named_user");
+        if (model.get("revision").equals(0)) {
+          if (requested.equals("named_user"))
+            require(
+                list(db, "publisher-fact").stream()
+                    .noneMatch(row -> product.equals(object(row.get("definition")).get("product"))),
+                "Existing inventory uses per-installation rights");
+          put(db, "publisher-model", product, 0, map("metric", requested));
+          metric = requested;
+        } else
+          require(requested.equals(metric), "License metric differs from recorded product metric");
+      }
       String kind = choice(data, "kind", "rights", "installation", "removal");
       var fact = map("product", product, "reference", ref, "day", day, "kind", kind);
       if (kind.equals("rights")) {
@@ -37,13 +53,19 @@ final class PublisherPosition {
         fact.put("ci", ci);
         if (data.containsKey("sequence"))
           fact.put("sequence", integer(data.get("sequence"), 1, Integer.MAX_VALUE));
-        if (kind.equals("installation"))
+        if (kind.equals("installation")) {
+          if (metric.equals("named_user")) {
+            String user = id(data, "user_id");
+            Service.account(db, user);
+            fact.put("user_id", user);
+          }
           fact.putAll(
               map(
                   "edition",
                   text(data, "edition", 120),
                   "last_used",
                   ProjectDelivery.date(data.get("last_used"))));
+        }
       }
       if (fact.containsKey("last_used"))
         require(
@@ -93,7 +115,8 @@ final class PublisherPosition {
             || !f.get("day").equals(previous.get("day"))
             || !Objects.equals(f.get("sequence"), previous.get("sequence"))) {
           ambiguous.remove(ci);
-        } else if (!Objects.equals(f.get("edition"), previous.get("edition"))) {
+        } else if (!Objects.equals(f.get("edition"), previous.get("edition"))
+            || !Objects.equals(f.get("user_id"), previous.get("user_id"))) {
           ambiguous.add(ci);
         }
       }
@@ -125,8 +148,14 @@ final class PublisherPosition {
     }
     var matches = new TreeMap<String, String>();
     var missing = new ArrayList<String>();
-    for (String ci : installed.keySet())
-      if (!assign(ci, installed, pools, covers, matches, new HashSet<>())) missing.add(ci);
+    var demand = new TreeMap<String, Set<String>>();
+    installed.forEach(
+        (ci, item) ->
+            demand
+                .computeIfAbsent(item.getOrDefault("user_id", ci).toString(), k -> new TreeSet<>())
+                .add(item.get("edition").toString()));
+    for (String consumer : demand.keySet())
+      if (!assign(consumer, demand, pools, covers, matches, new HashSet<>())) missing.add(consumer);
     return put(
         db,
         "publisher-position",
@@ -137,6 +166,11 @@ final class PublisherPosition {
             product,
             "day",
             day,
+            "metric",
+            object(get(db, "publisher-model", product).get("definition"))
+                .getOrDefault("metric", "installation"),
+            "consumption_by_edition",
+            demand,
             "assignments",
             matches,
             "installations",
@@ -157,14 +191,13 @@ final class PublisherPosition {
 
   static boolean assign(
       String ci,
-      Map<String, Map<String, Object>> installed,
+      Map<String, Set<String>> demand,
       Map<String, Integer> pools,
       Map<String, List<?>> covers,
       Map<String, String> assigned,
       Set<String> visited) {
     for (String pool : pools.keySet()) {
-      if (!covers.get(pool).contains(installed.get(ci).get("edition")) || !visited.add(pool))
-        continue;
+      if (!covers.get(pool).containsAll(demand.get(ci)) || !visited.add(pool)) continue;
       var occupants =
           assigned.entrySet().stream()
               .filter(e -> e.getValue().equals(pool))
@@ -172,7 +205,7 @@ final class PublisherPosition {
               .toList();
       if (occupants.size() < pools.get(pool)
           || occupants.stream()
-              .anyMatch(other -> assign(other, installed, pools, covers, assigned, visited))) {
+              .anyMatch(other -> assign(other, demand, pools, covers, assigned, visited))) {
         assigned.put(ci, pool);
         return true;
       }

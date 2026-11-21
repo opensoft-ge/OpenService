@@ -14,6 +14,62 @@ def script(name):
     return runpy.run_path(str(Path(__file__).with_name(name)))
 
 
+class AttendedEntryTest(unittest.TestCase):
+    def test_batch_validation_and_operator_confirmation(self):
+        from unittest.mock import MagicMock
+        driver=script("attended-case-entry.py")
+        read=driver["read_batch"]
+        header="kind,reference,details\n"
+        row='permit,A,"{}"\n'
+        rows=read(io.StringIO(header+row))
+        for content in ("wrong\n",header+row+row,header+row.replace("permit","archive"),
+                        header+row.replace(",A,",",,"),header+row.replace("{}","[]"),
+                        header+"".join(f'permit,{i},"{{}}"\n' for i in range(101))):
+            with self.assertRaises(ValueError): read(io.StringIO(content))
+        url=driver["destination"]("https://service.example/")
+        for invalid in ("http://service.example","https://","https://name@service.example","https://service.example/a",
+                        "https://service.example/?a","https://service.example/#frag"):
+            with self.assertRaises(ValueError): driver["destination"](invalid)
+        page=MagicMock()
+        page.url=url
+        receipt=page.locator.return_value.inner_text
+        receipt.return_value=json.dumps({"definition":{"program":"permit","reference":"A","case":"abc","state":"submitted"}})
+        driver["run"](page,url,rows,lambda _:"cancel")
+        page.expect_navigation.assert_not_called()
+        acknowledgement=receipt.return_value
+        pending={"rows":[{"status":"pending"}],"conflicts":0}
+        received={"rows":[{"status":"received","case":"abc"}],"conflicts":0}
+        receipt.side_effect=[json.dumps(pending),acknowledgement,'{"received":1}']
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            driver["run"](page,url,rows,lambda _:"SUBMIT")
+        self.assertEqual("abc",json.loads(output.getvalue())["case"])
+        with contextlib.redirect_stdout(io.StringIO()):
+            receipt.side_effect=[json.dumps(received),'{"received":1}']
+            driver["run"](page,url,rows,lambda _:"SUBMIT")
+            for responses in ([json.dumps(dict(received,conflicts=1))],[json.dumps(received),'{"received":0}']):
+                receipt.side_effect=responses
+                with self.assertRaises(ValueError):driver["run"](page,url,rows,lambda _:"SUBMIT")
+        receipt.side_effect=None
+        receipt.return_value=json.dumps({"definition":{"program":"permit","reference":"wrong"}})
+        with self.assertRaises(ValueError):driver["enter"](page,url,rows[0])
+        page.url="https://different.example"
+        with self.assertRaises(ValueError):driver["enter"](page,url,rows[0])
+        page.url=url
+        page.expect_navigation.return_value.__exit__.side_effect=lambda *_:setattr(page,"url","https://elsewhere.example")
+        with self.assertRaises(ValueError):driver["enter"](page,url,rows[0])
+
+    def test_attended_entry_cli_uses_a_fresh_browser(self):
+        from unittest.mock import MagicMock
+        from types import ModuleType
+        api=ModuleType("playwright.sync_api"); api.sync_playwright=MagicMock()
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/"rows.csv"; path.write_text("kind,reference,details\n")
+            tool=Path(__file__).with_name("attended-case-entry.py")
+            with patch.dict(sys.modules,{"playwright.sync_api":api}),patch.object(sys,"argv",[str(tool),"https://desk.example",str(path)]),patch("builtins.input",return_value="cancel"):
+                runpy.run_path(str(tool),run_name="__main__")
+        api.sync_playwright.return_value.__enter__.return_value.chromium.launch.assert_called_once_with(headless=False)
+
+
 class BillingImportTest(unittest.TestCase):
     def test_account_period_currency_and_batch_boundary(self):
         batch = script("aws-billing-import.py")["batches"]
@@ -104,6 +160,77 @@ class ProviderEffectsTest(unittest.TestCase):
         credentials.start()
         self.addCleanup(credentials.stop)
         self.base = {"start": "2020-01-01T09:00Z", "end": "2020-01-01T10:00Z", "auth_env": "QUALIFICATION_TEST_AUTH"}
+
+    def test_correlated_native_evidence(self):
+        import uuid
+        correlation, group, member, principal = [str(uuid.uuid4()) for _ in range(4)]
+        cfg=dict(self.base, provider="jira", site="qa.atlassian.net", issue="QA-3",
+                 actor="staff",from_status="1",to_status="2",correlation_id=correlation)
+        event=dict(id="jira-event",created="2020-01-01T09:15Z",author={"accountId":"staff"},
+                   items=[{"field":"status","from":"1","to":"2"}],
+                   historyMetadata={"type":"opensoft.openservice","extraData":{"correlation_id":correlation}})
+        def verify(rows):
+            return self.observe(cfg, lambda *_:dict(values=rows,startAt=0,isLast=True))
+        self.assertTrue(verify([event])["verified_attempt"])
+        self.assertFalse(verify([event,dict(event,id="competing",historyMetadata={})])["verified_attempt"])
+        self.assertFalse(verify([dict(event,historyMetadata={"type":"opensoft.openservice"})])["verified_attempt"])
+        pages=iter([dict(values=[event],startAt=0,isLast=False,total=2),dict(values=[],startAt=1,isLast=True,total=1)])
+        with self.assertRaisesRegex(ValueError,"changed"):self.observe(cfg,lambda *_:next(pages))
+        with self.assertRaisesRegex(ValueError,"changed"):verify([event,dict(event,historyMetadata={})])
+        cfg.update(provider="entra",group=group,member=member,service_principal=principal)
+        for continuation in ("", None):
+            with self.assertRaisesRegex(ValueError,"continuation"): self.observe(cfg,lambda *_:{"value":[],"@odata.nextLink":continuation})
+        entry=dict(id="directory-event",activityDateTime="2020-01-01T09:15Z",result="success",activityDisplayName="Add member to group",
+                   initiatedBy={"app":{"servicePrincipalId":principal}},targetResources=[{"type":"Group","id":group},{"type":"User","id":member}],correlationId=correlation)
+        self.assertTrue(self.observe(cfg,lambda *_:{"value":[entry]})["verified_attempt"])
+        self.assertFalse(self.observe(cfg,lambda *_:{"value":[dict(entry,correlationId=group)]})["verified_attempt"])
+
+    def test_windows_device_registration_uses_only_join_fields(self):
+        import uuid
+        who, tenant=str(uuid.uuid4()),str(uuid.uuid4())
+        text=f"AzureAdJoined : YES\n DeviceId : {who}\n TenantId : {tenant}\n"
+        path=Path(__file__).with_name("endpoint-collector.py")
+        with patch("platform.system",return_value="Linux"), self.assertRaises(ValueError):
+            script(path.name)["windows_registration"]()
+        with patch("platform.system",return_value="Windows"), patch("subprocess.check_output",return_value=text) as output:
+            with patch.object(sys,"argv",[str(path),"--windows-registration"]),contextlib.redirect_stdout(io.StringIO()) as capture,self.assertRaises(SystemExit):
+                runpy.run_path(str(path),run_name="__main__")
+            self.assertEqual({"device_id":who,"tenant_id":tenant},json.loads(capture.getvalue()))
+            for bad in (text.replace("YES","NO"),text+"DeviceId : "+tenant):
+                output.return_value=bad
+                with self.assertRaises(ValueError):script(path.name)["windows_registration"]()
+        with patch.object(sys,"argv",[str(path)]),contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
+            runpy.run_path(str(path),run_name="__main__")
+
+    def test_designated_fleet_and_repository(self):
+        import uuid
+        from urllib.error import HTTPError
+        inspect=script("check-provider-effects.py")["qualification"]
+        managed, directory, site = [str(uuid.uuid4()) for _ in range(3)]
+        cfg=dict(provider="intune",auth_env=self.base["auth_env"],managed_device_id=managed,entra_device_id=directory)
+        device=dict(id=managed,azureADDeviceId=directory,operatingSystem="Windows",lastSyncDateTime="2020-01-02T12:00Z")
+        self.assertEqual(directory,inspect(cfg,lambda *_:device)["entra_device_id"])
+        registered=dict(cfg,tenant_id=site,windows_registration={"tenant_id":site,"device_id":directory})
+        self.assertTrue(inspect(registered,lambda *_:device)["matched_supplied_windows_registration"])
+        for key in ("tenant_id","device_id"):
+            with self.assertRaises(ValueError):inspect(dict(registered,windows_registration=dict(registered["windows_registration"],**{key:managed})),lambda *_:device)
+        for key,val in (("id",directory),("azureADDeviceId",managed),("operatingSystem","Linux")):
+            with self.assertRaises(ValueError): inspect(cfg,lambda *_:dict(device,**{key:val}))
+        cfg=dict(provider="confluence",cloud_id=site,page_id="42",reader_account="employee",expected_reader="allowed",
+                 reader_env=self.base["auth_env"],publisher_env=self.base["auth_env"])
+        who={"accountId":"employee"}
+        page=dict(id="42",status="current",version={"number":3})
+        from unittest.mock import Mock
+        for expected, result in (("allowed",page),("denied",HTTPError("uri",404,"missing",None,None))):
+            cfg["expected_reader"]=expected
+            self.assertEqual(expected,inspect(cfg,Mock(side_effect=[who,page,result]))["reader_access"])
+        for responses in ([dict(accountId="other")],[who,dict(page,id="44")],[who,dict(page,status="archived")],
+                          [who,page,dict(page,id="33")],[who,page,page]):
+            with self.assertRaises(ValueError): inspect(cfg,Mock(side_effect=responses))
+        with self.assertRaises(HTTPError): inspect(cfg,Mock(side_effect=[who,page,HTTPError("uri",503,"down",None,None)]))
+        for wrong in (4,"/wrong"):
+            with self.assertRaises(ValueError): inspect(dict(cfg,page_id=wrong),Mock())
+        with self.assertRaises(ValueError): inspect(dict(cfg,reader_account=""),Mock(return_value=who))
 
     def test_jira_paginates_and_counts_two_effects(self):
         config = dict(self.base, provider="jira", site="qa.atlassian.net", issue="QA-3",

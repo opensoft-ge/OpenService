@@ -16,6 +16,10 @@ final class SearchComparison {
   }
 
   static void run(WorkflowSupport h,boolean expanded) throws Exception {
+    compare(h,expanded,false);
+  }
+
+  static void compare(WorkflowSupport h,boolean expanded,boolean fresh) throws Exception {
     h.account("SearchEmployee", "requester");
     String employee = uid(h, "SearchEmployee"),
         group = h.add("sys_user_group").get("sys_id").toString();
@@ -59,8 +63,8 @@ final class SearchComparison {
     }
     final var sources=documents;
     var remoteAccess = new java.util.concurrent.atomic.AtomicBoolean(true);
-    var questions = Files.readAllLines(Path.of(expanded?"src/test/resources/department-search-holdout.tsv":"src/test/resources/employee-search-holdout.tsv"));
-    assertEquals(expanded?35:100, new HashSet<>(questions).size());
+    var questions = Files.readAllLines(Path.of("src/test/resources",fresh ? "employee-policy-transfer.tsv" : expanded ? "department-search-holdout.tsv" : "employee-search-holdout.tsv"));
+    assertEquals(fresh?22:expanded?35:100, new HashSet<>(questions).size());
     try (var provider = new RecordQuestionsAcceptance.Provider(h.store, h.environment)) {
       for (var entry : titles.entrySet()) {
         String label = entry.getKey(), title = entry.getValue();
@@ -124,7 +128,17 @@ final class SearchComparison {
       }
       cmd(h, "admin", "assistant", "fallback", "group_id", group, "revision", 0);
       var report = map();
-      for (String mode : expanded ? List.of("native","external","weighted") : List.of("native", "external")) {
+      if (expanded) {
+        cmd(h,"admin","assistant","search_dictionary","revision",0,"entries", List.of(
+            List.of("vpn","secure connection","secure remote session","virtual private network"),
+            List.of("newborn","baby","new parents"), List.of("adoption","adopting"),
+            List.of("repair","fix","servicing"), List.of("broken","damaged","malfunctioning","cracked"),
+            List.of("buy","purchase","buyer","pay for"), List.of("supplier","vendor"),
+            List.of("contract","commercial agreement","licensing terms"),
+            List.of("legal","counsel"), List.of("insurance","health plan","medical coverage"),
+            List.of("marriage","wedding"), List.of("dependent","beneficiaries")));
+      }
+      for (String mode : expanded ? List.of("native","external","weighted","policy") : List.of("native", "external")) {
         if (mode.equals("external")) {
           try (var db = h.store.open()) {
             for(String person:employees)db.update("INSERT INTO os_group_member(group_id,user_id) VALUES(?,?)", group, person);
@@ -182,7 +196,7 @@ final class SearchComparison {
                     ServiceSearch.command(
                         h.store,
                         db,
-                        mode.equals("weighted")?"weighted_search":"search_services",
+                        mode.equals("policy")?"policy_search":mode.equals("weighted")?"weighted_search":"search_services",
                         map("new_id", session, "question", pair[1])));
             var suggestions = objects(matches.get("suggestions"));
             String actual = "handoff";
@@ -224,6 +238,11 @@ final class SearchComparison {
         }
         var scores = cmd(h, "admin", "assistant", "score", "new_id", suite);
         assertEquals(0, scores.get("unauthorized_citations"));
+        if (mode.equals("policy")) {
+          assertEquals(fresh ? 18 : 26, scores.get("grounded"));
+          assertEquals(fresh ? 4 : 5, scores.get("correct_handoff_owner"));
+          assertEquals(fresh ? 22 : 31, scores.get("verified_successes"));
+        }
         scores.put("failures", failures);
         report.put(mode, scores);
       }
@@ -232,7 +251,7 @@ final class SearchComparison {
           h,
           "SearchEmployee",
           "assistant",
-          "search_services",
+          expanded ? "policy_search" : "search_services",
           "new_id",
           session,
           "question",
@@ -310,7 +329,7 @@ final class SearchComparison {
       assertTrue(objects(refreshed.get("suggestions")).isEmpty());
       try (var db = h.store.open()) {
         Files.writeString(
-            Path.of("target", (expanded?"department-search-":"policy-search-") + (db.postgres ? "postgres" : "sqlite") + ".json"),
+            Path.of("target", (fresh?"policy-transfer-":expanded?"department-search-":"policy-search-") + (db.postgres ? "postgres" : "sqlite") + ".json"),
             JSON.writeValueAsString(report));
       }
     }

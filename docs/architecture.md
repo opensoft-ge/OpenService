@@ -1,6 +1,6 @@
 # OpenService architecture
 
-OpenService is a Java 27 / Spring Boot 4.1.2 application with server-rendered Thymeleaf views and CSS. UI and HTTP API entry points share the same validation, workflow and JDBC storage services. No JavaScript frontend build is required.
+OpenService is a Java 27 / Spring Boot 4.2.0 application with server-rendered Thymeleaf views and CSS. UI and HTTP API entry points share the same validation, workflow and JDBC storage services. No JavaScript frontend build is required.
 
 `Application.java` starts the server or invokes the private credential setup command. `Store.java` manages PostgreSQL/SQLite connections, schema bootstrap and initial administrator creation. `Migrations.java` serializes startup upgrades and journals ordered schema changes. `Service.java` implements accounts, queries, aggregates, records, workflows and imports. `WebController.java` owns HTTP authentication, CSRF, sessions, attachments and views. `Passwords.java` creates PBKDF2 hashes and verifies existing PBKDF2 and scrypt hashes. `Invitations.java` and `RecoveryLinks.java` implement hashed, expiring one-time links; `SecurityEvents.java` records committed account lifecycle changes. `SessionLifetime.java` enforces the absolute browser-session age. `catalog.json` supplies initial table/workflow metadata.
 

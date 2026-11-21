@@ -38,6 +38,7 @@ final class TenConnectorAcceptance {
                     else message=JSON.writeValueAsString(map("id",mode.get()==422?"other":group));
                 }
                 else if(verb.equals("POST") || verb.equals("DELETE")){
+                    UUID.fromString(exchange.getRequestHeaders().getFirst("client-request-id"));
                     writes.incrementAndGet();
                     if(mode.get()==503)status=503;
                     else{
@@ -77,10 +78,14 @@ final class TenConnectorAcceptance {
             post(h,"studio",call("act",run,3,9));
             assertFalse(assigned.get());
             assertEquals(3,writes.get());
+            var receipt=post(h,"packages",map("operation","provider_attempt","run_id",run,"step",3,"sequence",0));
+            assertNotNull(UUID.fromString(receipt.get("correlation_id").toString()));
+            assertEquals(provider.alias,receipt.get("write_alias"));
+            assertNotNull(receipt.get("credential_revision"));
             assertEquals(1,renewals.get());
             for(int error:List.of(403,422,500)){
                 mode.set(error);
-                assertThrows(Failure.class,()->VerifiedActions.request(provider.origin(),"fixture-access",remove,member,false));
+                assertThrows(Failure.class,()->VerifiedActions.request(provider.origin(),"fixture-access",remove,member,false,""));
             }
             var saved=object(doc(h,"workflow-run",run).get("definition"));
             assertEquals("complete",saved.get("state"));

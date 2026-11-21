@@ -81,7 +81,7 @@ final class MetricAnomalies {
               ? null
               : definition(db, "service-episode", episode.toString()).get("incident"));
     }
-    if (op.equals("metric_baseline")) {
+    if (op.equals("metric_baseline") || op.equals("metric_corroborated_baseline")) {
       var groups = new TreeMap<String, List<Map<String, Object>>>();
       long latest = 0;
       var timestamps = new HashSet<Long>();
@@ -108,7 +108,17 @@ final class MetricAnomalies {
         ranges.put(entry.getKey(), band);
       }
       return put(
-          db, "metric-baseline", id, b.get("revision"), map("ranges", ranges, "through", latest));
+          db,
+          "metric-baseline",
+          id,
+          b.get("revision"),
+          map(
+              "ranges",
+              ranges,
+              "through",
+              latest,
+              "corroborated",
+              op.equals("metric_corroborated_baseline")));
     }
     if (op.equals("metric_score")) {
       int falseAlarms = 0, misses = 0, unknown = 0, correct = 0;
@@ -177,6 +187,40 @@ final class MetricAnomalies {
     }
     var stream = get(db, "metric-cursor", id);
     var cursor = object(stream.get("definition"));
+    boolean warning = false;
+    boolean corroborated = Boolean.TRUE.equals(profile.get("corroborated"));
+    long interval = ((Number) objective.get("interval")).longValue();
+    if (corroborated && breaches.size() == 1 && !breaches.contains("error_pct")) {
+      var previous =
+          object(get(db, "metric-observation", key(id, stamp - interval)).get("definition"));
+      boolean sustained =
+          baseline.get("revision").equals(previous.get("baseline_revision"))
+              && ((List<?>) previous.get("breaches")).contains(breaches.getFirst());
+      warning = !sustained;
+      if (warning)
+        state =
+            actual.size() == METRICS.size() && !"down".equals(cursor.get("state"))
+                ? "up"
+                : "unknown";
+    }
+    var evidence = new TreeMap<String, Object>();
+    if (corroborated && !actual.isEmpty()) {
+      long bucket = stamp - stamp % interval;
+      var rule = get(db, "transaction-rule", id).get("revision");
+      for (var probe :
+          db.all(
+              "SELECT location,detail FROM os_transaction_sample WHERE objective=? AND bucket=?",
+              id,
+              bucket)) {
+        var detail = object(probe.get("detail"));
+        if ("down".equals(detail.get("result")) && rule.equals(detail.get("rule_revision")))
+          evidence.put(probe.get("location").toString(), detail);
+      }
+      if (evidence.size() == 2) {
+        state = "down";
+        warning = false;
+      }
+    }
     Object episode = null;
     if (!state.equals("unknown") && stamp > ((Number) cursor.getOrDefault("at", 0)).longValue()) {
       if (!state.equals(cursor.get("state"))) {
@@ -252,6 +296,10 @@ final class MetricAnomalies {
             expected,
             "baseline_revision",
             baseline.get("revision"),
+            "uncorroborated_warning",
+            warning,
+            "transaction_evidence",
+            evidence,
             "breaches",
             breaches,
             "state",

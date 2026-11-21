@@ -627,12 +627,15 @@ public class WebController {
                     page.put("case_table", c.arguments().get("table"));
                 }
                 if(area.equals("apps") && "guide_case".equals(operation)){page.put("guided_view",outcome);page.put("guided_case",c.arguments().get("case_id"));}
+                if (area.equals("apps") && Set.of("file_industry_case","advance_industry_case","industry_case").contains(operation))
+                    page.put("industry_receipt",object(outcome).get("definition"));
+                if (area.equals("apps") && "industry_queue".equals(operation)) page.put("industry_queue",object(outcome).get("cases"));
                 if(area.equals("apps") && "guided_queue".equals(operation))page.put("guided_queue",outcome);
                 if(area.equals("sales") && "my_claims".equals(operation))page.put("dealer_claims",outcome);
                 if(area.equals("routing") && "contract_queue".equals(operation))page.put("contract_queue",outcome);
                 if(area.equals("workplace") && "my_agreement".equals(operation))page.put("agreement_view",outcome);
                 if (area.equals("designer") && "review_list".equals(operation)) page.put("approval_review",outcome);
-                if (area.equals("assistant") && "search_services".equals(operation)) page.put("search",outcome);
+                if (area.equals("assistant") && Set.of("search_services","weighted_search","policy_search").contains(operation)) page.put("search",outcome);
                 if ((area.equals("guides") && Set.of("preview", "preview_for").contains(operation))
                         || (area.equals("assistant") && Set.of("ask","choose_service").contains(operation))) {
                     var checkout = new LinkedHashMap<>(object(outcome));

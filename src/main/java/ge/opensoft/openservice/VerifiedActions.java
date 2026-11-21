@@ -74,7 +74,7 @@ final class VerifiedActions {
         }
     }
     record Observation(boolean satisfied,int status,long delay){}
-    static Observation request(String origin,String bearer,Map<String,Object> step,String member,boolean write)throws Exception {
+    static Observation request(String origin,String bearer,Map<String,Object> step,String member,boolean write,String correlation)throws Exception {
         String kind=step.get("kind").toString();
         boolean transition=kind.equals("jira_transition");
         boolean jira=kind.startsWith("jira_"),remove=kind.equals("entra_remove");
@@ -82,12 +82,13 @@ final class VerifiedActions {
         String path=jira?"/rest/api/3/issue/"+step.get("issue"):group+"/"+member;
         String method="GET",payload="";
         if(write){
-            if(transition){method="POST";path+="/transitions";payload=JSON.writeValueAsString(map("transition",map("id",step.get("transition"))));}
+            if(transition){method="POST";path+="/transitions";payload=JSON.writeValueAsString(map("transition",map("id",step.get("transition")), "historyMetadata",map("type","opensoft.openservice","extraData",map("correlation_id",correlation))));}
             else if(jira){ method="PUT";payload=JSON.writeValueAsString(map("update",map("labels",List.of(map("add",step.get("label"))))));}
             else if(remove){method="DELETE";path+="/$ref";}
             else {method="POST";path=group+"/$ref";payload=JSON.writeValueAsString(map("@odata.id","https://graph.microsoft.com/v1.0/directoryObjects/"+member));}
         }else if(jira) path+=transition?"?fields=status":"?fields=labels";
         var builder=HttpRequest.newBuilder(URI.create(origin+path)).timeout(Duration.ofSeconds(15)).header("Authorization","Bearer "+bearer).header("Accept","application/json");
+        if(write && !jira) builder.header("client-request-id",correlation);
         if(write) builder.header("Content-Type","application/json").method(method,ConnectorWrites.body(payload));
         var r=CLIENT.send(builder.build(),HttpResponse.BodyHandlers.limiting(HttpResponse.BodyHandlers.ofByteArray(),1048576));
         int code=r.statusCode();
@@ -146,6 +147,7 @@ final class VerifiedActions {
         }
         require(System.currentTimeMillis()>=((Number)step.getOrDefault("retry_at",0)).longValue(),"Wait for the destination retry interval");
         String token;
+        Object tokenRevision=connector.get("revision");
         if("alias".equals(step.get("oauth"))) token=Outbox.decrypt(store.secret,connector.get("envelope").toString()).get("token").toString();
         else{
             String key=step.get("oauth").toString();
@@ -153,12 +155,15 @@ final class VerifiedActions {
             require(List.of(run.get("publisher"),step.get("alias"),step.get("connector")).equals(List.of(schedule.get("owner"),schedule.get("alias"),schedule.get("connector"))),"OAuth schedule binding changed");
             definition(db,"schedule-token",key);
             token=IssueTokens.access(store,db,key,schedule,connector,true);
+            tokenRevision=get(db,"schedule-token",key).get("revision");
         }
         String origin=connector.get("origin").toString(),member=run.get("directory_id").toString();
         String attempt=ConnectorSynchronization.hash(List.of(b.get("run_id"),b.get("step"),step.getOrDefault("generation",0)));
+        String correlation=UUID.nameUUIDFromBytes(attempt.getBytes(java.nio.charset.StandardCharsets.US_ASCII)).toString();
+        step.put("provider_correlation_id",correlation);
         boolean fresh=get(db,"workflow-attempt",attempt).get("revision").equals(0);
         if(execute && fresh){
-            save(db,"workflow-attempt",attempt,0,map("actor",db.viewerId,"run",b.get("run_id"),"step",b.get("step"),"at",now()));
+            save(db,"workflow-attempt",attempt,0,map("actor",db.viewerId,"run",b.get("run_id"),"step",b.get("step"),"correlation_id",correlation,"write_alias",step.get("alias"),"origin",origin,"credential_revision",connector.get("revision"),"credential_source",step.get("oauth"),"token_revision",tokenRevision,"at",now()));
             db.connection.commit();
             lock(db);
             ProblemInvestigations.revision(b.get("revision"),get(db,"workflow-run",b.get("run_id").toString()).get("revision"));
@@ -166,14 +171,14 @@ final class VerifiedActions {
             authority(store,db,run,step);
         }
         try{
-            var seen=request(origin,token,step,member,false);
+            var seen=request(origin,token,step,member,false,correlation);
             if(seen.satisfied && !step.containsKey("effect_origin"))step.put("effect_origin",execute && fresh?"preexisting":"observed_only");
             if(execute && fresh && !seen.satisfied && seen.status!=429){
-                var sent=request(origin,token,step,member,true);
+                var sent=request(origin,token,step,member,true,correlation);
                 step.put("write_status",sent.status);
                 step.put("changed",sent.status/100==2);
                 step.put("effect_origin",sent.status/100==2?"acknowledged_write":"unconfirmed_write");
-                seen=sent.status==429?sent:request(origin,token,step,member,false);
+                seen=sent.status==429?sent:request(origin,token,step,member,false,correlation);
             }
             step.putAll(map("state",seen.satisfied?(step.containsKey("investigation")?"awaiting_acceptance":"done"):seen.status==429?"throttled":"different","observed_http",seen.status,
                     "retry_at",System.currentTimeMillis()+seen.delay,"verified_by",db.viewerId,"verified_at",now()));

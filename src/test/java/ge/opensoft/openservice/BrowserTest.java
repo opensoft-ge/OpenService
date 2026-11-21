@@ -24,6 +24,35 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BrowserTest {
+    @Test void publishIndustryProgramAndInspectPermittedData() throws Exception {
+        String team, asset, product=Values.id();
+        try (var db=store.open()) {
+            String admin=PlatformFoundationTest.bind(db);
+            team=PlatformFoundationTest.record(db,"sys_user_group","Permit examiners");
+            asset=PlatformFoundationTest.record(db,"cmdb_ci","Desk kiosk");
+            db.update("INSERT INTO os_group_member(group_id,user_id) VALUES(?,?)",team,admin);
+            db.connection.commit();
+        }
+        try(var pw=Playwright.create();var browser=pw.chromium().launch();var session=browser.newContext()) {
+            var page=session.newPage();login(page,"admin");page.navigate(base()+"/enterprise/apps/global");
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"case_program"),
+                Values.map("kind","permit","group_id",team,"revision",0));
+            String ticket=Values.id();
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"file_industry_case"),
+                Values.map("new_id",ticket,"kind","permit","reference","P42","manifest","{\"site\":\"East\",\"activity\":\"Event\"}"));
+            assertTrue(page.locator("[data-operation-result]").innerText().contains(ticket));
+            assertTrue(page.getByRole(AriaRole.HEADING,new Page.GetByRoleOptions().setName("Case receipt")).isVisible());
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"industry_queue"),Values.map("kind","permit"));
+            page.getByRole(AriaRole.BUTTON,new Page.GetByRoleOptions().setName("P42 · submitted")).click();
+            assertTrue(page.locator("[data-operation-result]").innerText().contains(ticket));
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"publish_data_product"),
+                Values.map("new_id",product,"title","Kiosk data","group_id",team,"table","cmdb_ci","fields","[\"short_description\"]","revision",0));
+            EnterpriseBrowserAcceptance.fill(EnterpriseBrowserAcceptance.form(page,"read_data_product"),
+                Values.map("new_id",product,"record_id",asset));
+            assertTrue(page.locator("[data-operation-result]").innerText().contains("Desk kiosk"));
+        }
+    }
+
     @Test void composeSupplierException() throws Exception { SupplierDesignerBrowser.run(this); }
     @org.junit.jupiter.api.Test void composeGuidedWorkspaces() throws Exception { IndustryWorkspaceBrowser.run(this); }
     @org.junit.jupiter.api.Test void walkupAndActionAuthoring() throws Exception { ServiceExpansionBrowser.run(this); }

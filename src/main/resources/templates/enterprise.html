@@ -74,6 +74,17 @@
     <ul><li th:each="item:${page.approval_review.items}"><strong th:text="${item.key}"></strong> <span th:text="${item.value}"></span></li></ul>
     <form method="post" th:if="${page.approval_review.decision=='pending'}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="list_decision"><input type="hidden" name="new_id" th:value="${page.approval_review.run}"><input type="hidden" name="revision" th:value="${page.approval_review.revision}"><button class="button" name="decision" value="approved">Approve my items</button><button class="button" name="decision" value="rejected">Reject my items</button></form>
   </section>
+  <section class="panel" th:if="${page.containsKey('industry_receipt')}">
+    <h2>Case receipt</h2><dl><dt>Reference</dt><dd th:text="${page.industry_receipt.reference}"></dd>
+      <dt>Status</dt><dd th:text="${page.industry_receipt.state}"></dd><dt>Case ID</dt><dd th:text="${page.industry_receipt['case']}"></dd></dl>
+    <ol><li th:each="event : ${page.industry_receipt.history}" th:text="${event.at+' · '+event.decision+' · '+event.evidence}"></li></ol>
+  </section>
+  <section class="panel" th:if="${page.containsKey('industry_queue')}">
+    <h2>Team queue</h2><p th:if="${#lists.isEmpty(page.industry_queue)}">No cases await this team.</p>
+    <form method="post" th:each="entry : ${page.industry_queue}"><input type="hidden" name="csrf" th:value="${csrf}">
+      <input type="hidden" name="operation" value="industry_case"><input type="hidden" name="new_id" th:value="${entry['case']}">
+      <button class="button" th:text="${entry.reference+' · '+entry.state}"></button></form>
+  </section>
   <section class="panel" th:if="${page.containsKey('search')}"><h2>Choose a service</h2>
     <form method="post" th:each="s:${page.search.suggestions}">
       <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="choose_service">
@@ -85,7 +96,7 @@
   </section>
   <th:block th:if="${page.containsKey('checkout') and page.title=='Catalog order guides'}"><th:block th:replace="~{request-checkout :: guide}"></th:block></th:block>
   <th:block th:if="${page.containsKey('checkout') and page.title=='Employee request assistant'}"><th:block th:replace="~{request-checkout :: conversation}"></th:block></th:block>
-  <section class="panel" th:if="${outcome!=null and !page.containsKey('checkout') and !page.containsKey('search') and !page.containsKey('approval_review') and !page.containsKey('agreement_view')}"><div class="panel-heading"><h2>Operation result</h2></div><div class="table-scroll"><pre th:text="${outcome}"></pre></div></section>
+  <section class="panel" th:if="${outcome!=null and !page.containsKey('checkout') and !page.containsKey('search') and !page.containsKey('approval_review') and !page.containsKey('agreement_view')}"><div class="panel-heading"><h2>Operation result</h2></div><div class="table-scroll"><pre data-operation-result th:text="${outcome}"></pre></div></section>
   <section class="panel"><div class="panel-heading"><h2>Current records and review evidence</h2></div><div class="table-scroll"><pre th:text="${details}"></pre></div></section>
   <section class="panel" th:each="operation, oi:${page.forms}">
     <div class="panel-heading"><h2 th:text="${operation.title}"></h2></div>

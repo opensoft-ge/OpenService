@@ -1,0 +1,951 @@
+{
+  "comparison_date": "2026-11-21",
+  "search": {
+    "department_regression": {
+      "cohort": "Original development-visible cohort: 30 eligible requests and five handoffs.",
+      "databases": {
+        "sqlite": {
+          "native": {
+            "completed_eligible_requests": 8,
+            "verified_successes": 13,
+            "total": 35,
+            "grounded": 8,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 0,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Our intranet times out from the hotel. What do I request?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I start a hybrid schedule Monday and need a secure connection home.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can someone enable the tunnel used for remote working?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Which form lets me reach the internal network when offsite?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Where can I apply for time to bond after an adoption?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "We are expecting a baby and I need time away.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Which form covers paternity when a newborn arrives?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "I would like to schedule absence after maternity.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "The supplier quotation is ready, how can I buy monitors?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "We need supplies for our branch opening.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can you route a requisition for keyboards?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "repair"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "How do I send a failing device for diagnosis?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can engineering fix the cracked scanner?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "This counterparty proposes new damages clauses.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "I want a second pair of eyes on licensing terms.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can I put my spouse on my insurance after marriage?",
+                "expected": "benefits",
+                "actual": "handoff"
+              },
+              {
+                "question": "My family grew. How do I add someone to the health plan?",
+                "expected": "benefits",
+                "actual": "handoff"
+              },
+              {
+                "question": "Please update beneficiaries after my wedding.",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "external": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 7,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "I start a hybrid schedule Monday and need a secure connection home.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I would like to schedule absence after maternity.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "leave"
+              },
+              {
+                "question": "Can engineering fix the cracked scanner?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "I want a second pair of eyes on licensing terms.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "My family grew. How do I add someone to the health plan?",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "weighted": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 9,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "I start a hybrid schedule Monday and need a secure connection home.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I would like to schedule absence after maternity.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "repair"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "leave"
+              },
+              {
+                "question": "Can engineering fix the cracked scanner?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "I want a second pair of eyes on licensing terms.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "My family grew. How do I add someone to the health plan?",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "policy": {
+            "completed_eligible_requests": 26,
+            "verified_successes": 31,
+            "total": 35,
+            "grounded": 26,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 7,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "repair"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              }
+            ]
+          }
+        },
+        "postgres": {
+          "native": {
+            "completed_eligible_requests": 8,
+            "verified_successes": 13,
+            "total": 35,
+            "grounded": 8,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 52,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Our intranet times out from the hotel. What do I request?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I start a hybrid schedule Monday and need a secure connection home.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can someone enable the tunnel used for remote working?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Which form lets me reach the internal network when offsite?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Where can I apply for time to bond after an adoption?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "We are expecting a baby and I need time away.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Which form covers paternity when a newborn arrives?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "I would like to schedule absence after maternity.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "The supplier quotation is ready, how can I buy monitors?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "We need supplies for our branch opening.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can you route a requisition for keyboards?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "repair"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "How do I send a failing device for diagnosis?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can engineering fix the cracked scanner?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "This counterparty proposes new damages clauses.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "I want a second pair of eyes on licensing terms.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can I put my spouse on my insurance after marriage?",
+                "expected": "benefits",
+                "actual": "handoff"
+              },
+              {
+                "question": "My family grew. How do I add someone to the health plan?",
+                "expected": "benefits",
+                "actual": "handoff"
+              },
+              {
+                "question": "Please update beneficiaries after my wedding.",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "external": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 50,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "I start a hybrid schedule Monday and need a secure connection home.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I would like to schedule absence after maternity.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "leave"
+              },
+              {
+                "question": "Can engineering fix the cracked scanner?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "I want a second pair of eyes on licensing terms.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "My family grew. How do I add someone to the health plan?",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "weighted": {
+            "completed_eligible_requests": 21,
+            "verified_successes": 26,
+            "total": 35,
+            "grounded": 21,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 63,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "I start a hybrid schedule Monday and need a secure connection home.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I would like to schedule absence after maternity.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "repair"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "leave"
+              },
+              {
+                "question": "Can engineering fix the cracked scanner?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "I want a second pair of eyes on licensing terms.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "My family grew. How do I add someone to the health plan?",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "policy": {
+            "completed_eligible_requests": 26,
+            "verified_successes": 31,
+            "total": 35,
+            "grounded": 26,
+            "grounding_trials": 30,
+            "correct_handoff_owner": 5,
+            "handoff_trials": 5,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 47,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Help me connect safely from a customer's office.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "What do I submit to pay for new office equipment?",
+                "expected": "purchase",
+                "actual": "repair"
+              },
+              {
+                "question": "This workstation keeps powering off under load.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who checks indemnity in a supplier agreement?",
+                "expected": "contract",
+                "actual": "handoff"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "additional_synthetic": {
+      "cohort": "Separate author-created questions: 18 eligible requests and four handoffs. Shared offerings and vocabulary. No staff or tenant traffic.",
+      "databases": {
+        "sqlite": {
+          "native": {
+            "completed_eligible_requests": 5,
+            "verified_successes": 9,
+            "total": 22,
+            "grounded": 5,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 0,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Where do I obtain a managed remote tunnel for fieldwork?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I need the offsite network profile for our lab.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Where is the form for a secure remote session?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "We are adopting a child and need bonding time.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Do new parents submit an absence application?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who can process our requisition for paper?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "Our buyer needs the quotation for replacement monitors.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "My broken handheld needs depot diagnosis.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Where do I send a malfunctioning keyboard?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "The display is damaged and needs servicing.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Legal needs to assess an indemnity clause.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can I enroll my spouse in insurance?",
+                "expected": "benefits",
+                "actual": "handoff"
+              },
+              {
+                "question": "I need to add my spouse to the plan after marriage.",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "external": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 7,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Do new parents submit an absence application?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Our buyer needs the quotation for replacement monitors.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "The display is damaged and needs servicing.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "When will the canteen reopen?",
+                "expected": "handoff",
+                "actual": "vpn"
+              }
+            ]
+          },
+          "weighted": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 7,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Do new parents submit an absence application?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Our buyer needs the quotation for replacement monitors.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "The display is damaged and needs servicing.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "When will the canteen reopen?",
+                "expected": "handoff",
+                "actual": "vpn"
+              }
+            ]
+          },
+          "policy": {
+            "completed_eligible_requests": 18,
+            "verified_successes": 22,
+            "total": 22,
+            "grounded": 18,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 11,
+            "model_cost_usd": 0,
+            "failures": []
+          }
+        },
+        "postgres": {
+          "native": {
+            "completed_eligible_requests": 5,
+            "verified_successes": 9,
+            "total": 22,
+            "grounded": 5,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 27,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Where do I obtain a managed remote tunnel for fieldwork?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "I need the offsite network profile for our lab.",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "Where is the form for a secure remote session?",
+                "expected": "vpn",
+                "actual": "handoff"
+              },
+              {
+                "question": "We are adopting a child and need bonding time.",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Do new parents submit an absence application?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Who can process our requisition for paper?",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "Our buyer needs the quotation for replacement monitors.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "My broken handheld needs depot diagnosis.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Where do I send a malfunctioning keyboard?",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "The display is damaged and needs servicing.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "Legal needs to assess an indemnity clause.",
+                "expected": "contract",
+                "actual": "handoff"
+              },
+              {
+                "question": "Can I enroll my spouse in insurance?",
+                "expected": "benefits",
+                "actual": "handoff"
+              },
+              {
+                "question": "I need to add my spouse to the plan after marriage.",
+                "expected": "benefits",
+                "actual": "handoff"
+              }
+            ]
+          },
+          "external": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 100,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Do new parents submit an absence application?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Our buyer needs the quotation for replacement monitors.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "The display is damaged and needs servicing.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "When will the canteen reopen?",
+                "expected": "handoff",
+                "actual": "vpn"
+              }
+            ]
+          },
+          "weighted": {
+            "completed_eligible_requests": 15,
+            "verified_successes": 18,
+            "total": 22,
+            "grounded": 15,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 3,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 57,
+            "model_cost_usd": 0,
+            "failures": [
+              {
+                "question": "Do new parents submit an absence application?",
+                "expected": "leave",
+                "actual": "handoff"
+              },
+              {
+                "question": "Our buyer needs the quotation for replacement monitors.",
+                "expected": "purchase",
+                "actual": "handoff"
+              },
+              {
+                "question": "The display is damaged and needs servicing.",
+                "expected": "repair",
+                "actual": "handoff"
+              },
+              {
+                "question": "When will the canteen reopen?",
+                "expected": "handoff",
+                "actual": "vpn"
+              }
+            ]
+          },
+          "policy": {
+            "completed_eligible_requests": 18,
+            "verified_successes": 22,
+            "total": 22,
+            "grounded": 18,
+            "grounding_trials": 18,
+            "correct_handoff_owner": 4,
+            "handoff_trials": 4,
+            "unauthorized_citations": 0,
+            "p95_processing_ms": 67,
+            "model_cost_usd": 0,
+            "failures": []
+          }
+        }
+      }
+    }
+  },
+  "monitoring": {
+    "sqlite": {
+      "hourly_range": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 2,
+        "false_alarm_episodes": 1,
+        "observations": 48,
+        "correct": 46,
+        "unknown": 2,
+        "false_alarms": 1,
+        "missed_degradations": 1
+      },
+      "corroborated": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 1,
+        "false_alarm_episodes": 0,
+        "observations": 48,
+        "correct": 47,
+        "unknown": 2,
+        "false_alarms": 0,
+        "missed_degradations": 1
+      }
+    },
+    "postgres": {
+      "hourly_range": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 2,
+        "false_alarm_episodes": 1,
+        "observations": 48,
+        "correct": 46,
+        "unknown": 2,
+        "false_alarms": 1,
+        "missed_degradations": 1
+      },
+      "corroborated": {
+        "expected_incidents": 2,
+        "missed_incidents": 1,
+        "detected_episodes": 1,
+        "false_alarm_episodes": 0,
+        "observations": 48,
+        "correct": 47,
+        "unknown": 2,
+        "false_alarms": 0,
+        "missed_degradations": 1
+      }
+    }
+  },
+  "limits": [
+    "The local search rankers incur zero model charges. Processing latency is measured on this test machine.",
+    "The original two-day monitoring holdout contains two degradation periods. The mild degradation stays within the historical range with no independent transaction evidence.",
+    "Separately tested current-rule transaction evidence and two consecutive single-signal excursions are controlled scenarios.",
+    "Live Entra, Jira, Intune, Windows and Confluence qualification requires designated tenant records and credentials."
+  ]
+}

@@ -46,7 +46,7 @@ Captured from the Java application in automated Chromium tests with synthetic ev
 
 ## Run locally
 
-Requires Java 27 and Docker Compose. Point `JAVA_HOME` at a Java 27 JDK. The project pins Spring Boot 4.1.2 and Maven 3.9.16.
+Requires Java 27 and Docker Compose. Point `JAVA_HOME` at a Java 27 JDK. The project pins Spring Boot 4.2.0 and Maven 3.9.16.
 
 ```bash
 ./mvnw -Dmaven.test.skip=true package
@@ -61,6 +61,8 @@ Open **http://localhost:8090**. Sign in as **admin**, using `ADMIN_PASSWORD` fro
 For a first review with colleagues, follow the [evaluation walkthrough](docs/evaluation.md). Administrators can now open **Accounts** to create individual agent and reader logins directly in the browser.
 
 ## What works
+
+The [industry and qualification guide](docs/qualification-and-service-quality.md) covers bank disputes, equipment readiness, public permits, attended case entry, governed data products, user-based licensing and provider audit evidence. It includes the [measured search and monitoring results](docs/qualification-quality-results.json).
 
 - Incident, problem, change, request, configuration-item, knowledge and group workspaces.
 - Create/edit forms, summary search, pagination, record details and responsive navigation.

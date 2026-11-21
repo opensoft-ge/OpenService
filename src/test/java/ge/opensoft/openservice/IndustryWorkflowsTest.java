@@ -90,6 +90,135 @@ class IndustryWorkflowsTest {
   }
 
   @ParameterizedTest
+  @ValueSource(booleans={false,true})
+  void attendedBatchResumesByBusinessReceiptAndFlagsConflicts(boolean pg) throws Exception {
+    open(pg);
+    run("apps","case_program","kind","permit","group_id",team,"revision",0);as(c);
+    String batch=id();
+    var detail=map("site","Building B","activity","Temporary works");
+    var other=map("site","Building C","activity","Temporary works");
+    var first=map("kind","permit","reference","1","manifest",detail);
+    var second=map("kind","permit","reference","2","manifest",other);
+    for(var bad:List.of(List.of(),List.of(first,first)))
+      assertThrows(Failure.class,()->run("apps","open_attended_batch","new_id",batch,"entries",bad));
+    Object[] args={"new_id",batch,"entries",List.of(first,second)};
+    assertEquals(2,object(run("apps","open_attended_batch",args)).get("pending"));
+    run("apps","file_industry_case","new_id",id(),"kind","permit","reference","1","manifest",detail);
+    var resumed=object(run("apps","open_attended_batch",args));assertEquals(1,resumed.get("received"));assertEquals(1,resumed.get("pending"));
+    run("apps","file_industry_case","new_id",id(),"kind","permit","reference","2","manifest",detail);
+    var report=object(run("apps","attended_batch_status","new_id",batch));assertEquals(1,report.get("conflicts"));
+    assertThrows(Failure.class,()->run("apps","open_attended_batch","new_id",batch,"entries",List.of(first)));
+    as(a);
+    assertThrows(Failure.class,()->run("apps","attended_batch_status","new_id",batch));
+  }
+  @ParameterizedTest
+  @ValueSource(booleans={false,true})
+  void industryCasesRequireIndependentDecisionsAndIsolateSubmitters(boolean pg) throws Exception {
+    open(pg);
+    String equipment=record("cmdb_ci");
+    db.update("INSERT INTO os_requester_record(record_id,user_id) VALUES(?,?)",equipment,c);
+    for (var program:IndustryCases.Program.values()) {
+      as(admin);
+      String kind=program.name(), ticket=id(), ref="external-"+kind;
+      run("apps","case_program","kind",kind,"group_id",team,"revision",0);
+      Map<String,Object> input=switch(program) {
+        case dispute -> map("amount","240.50","currency","USD","reason","Duplicate debit");
+        case turnaround -> map("equipment",equipment,"site","Warehouse A");
+        case permit -> map("site","Block 50","activity","Outdoor event");
+      };
+      if(program==IndustryCases.Program.dispute)
+        run("apps","register_disputable_transaction","reference",ref,"user_id",c,"amount","250","currency","USD");
+      as(c);
+      Object[] filing={"kind",kind,"new_id",ticket,"reference",ref,"manifest",input};
+      var created=object(run("apps","file_industry_case",filing));
+      assertEquals(created,run("apps","file_industry_case","kind",kind,"new_id",id(),"reference",ref,"manifest",input));
+      if(program==IndustryCases.Program.turnaround) {
+        assertThrows(Failure.class,()->run("apps","file_industry_case","kind",kind,"new_id",id(),"reference","duplicate-equipment","manifest",input));
+        as(a);assertEquals("in_turnaround",object(object(run("apps","equipment_readiness","record_id",equipment)).get("definition")).get("status"));as(c);
+      }
+      var conflict=new LinkedHashMap<>(input);
+      conflict.put(switch(program){case dispute -> "reason"; case turnaround,permit -> "site";},"Changed");
+      assertThrows(Failure.class,()->run("apps","file_industry_case","kind",kind,"new_id",id(),"reference",ref,"manifest",conflict));
+      as(admin);
+      assertThrows(Failure.class,()->run("apps","industry_case","new_id",ticket));
+      assertEquals(List.of(),object(run("apps","industry_queue","kind",kind)).get("cases"));
+      as(a);
+      assertEquals(1,objects(object(run("apps","industry_queue","kind",kind)).get("cases")).size());
+      run("apps","advance_industry_case","new_id",ticket,"decision",program.review,"evidence","Evidence 1","revision",1);
+      assertThrows(Failure.class,()->run("apps","advance_industry_case","new_id",ticket,"decision",program.accept,"evidence","Cannot self-approve","revision",2));
+      as(b);
+      run("apps","advance_industry_case","new_id",ticket,"decision",program.accept,"evidence","Evidence 2","revision",2);
+      assertThrows(Failure.class,()->run("apps","advance_industry_case","new_id",ticket,"decision",program.decline,"evidence","Already closed","revision",3));
+      assertEquals(List.of(),object(run("apps","industry_queue","kind",kind)).get("cases"));
+      as(c);
+      var closed=object(object(run("apps","industry_case","new_id",ticket)).get("definition"));
+      if(program==IndustryCases.Program.permit)assertEquals("PERMIT-"+ticket,closed.get("permit_number"));
+      if(program==IndustryCases.Program.dispute)assertEquals("240.50",object(closed.get("adjustment")).get("amount"));
+      if(program==IndustryCases.Program.turnaround){as(a);assertEquals("release",object(object(run("apps","equipment_readiness","record_id",equipment)).get("definition")).get("status"));}
+      assertEquals(program.accept,closed.get("state"));assertEquals(2,objects(closed.get("history")).size());
+    }
+    as(admin);
+    for(var bad:List.of(map("amount","0","currency","USD"),map("amount","1","currency","bad")))
+      assertThrows(Failure.class,()->run("apps","register_disputable_transaction","reference","X","user_id",a,"amount",bad.get("amount"),"currency",bad.get("currency")));
+    run("apps","register_disputable_transaction","reference","X","user_id",a,"amount","2","currency","USD");
+    as(c);
+    assertThrows(Failure.class,()->run("apps","file_industry_case","new_id",id(),"kind","dispute","reference","X","manifest",map("amount","1","currency","USD","reason","not mine")));
+    as(a);String id=id();
+    for(var bad:List.of(map("amount","3","currency","USD","reason","large"),map("amount","1","currency","EUR","reason","wrong currency")))
+      assertThrows(Failure.class,()->run("apps","file_industry_case","new_id",id,"kind","dispute","reference","X","manifest",bad));
+    assertThrows(Failure.class,()->run("apps","file_industry_case","kind","dispute","new_id",id,"reference","X","manifest",map("amount","0","currency","USD","reason","test")));
+    assertThrows(Failure.class,()->run("apps","file_industry_case","kind","dispute","new_id",id,"reference","X","manifest",map("amount","1","currency","usd","reason","test")));
+    run("apps","file_industry_case","kind","dispute","new_id",id,"reference","X","manifest",map("amount","1","currency","USD","reason","test"));
+    assertThrows(Failure.class,()->run("apps","advance_industry_case","new_id",id,"decision","investigate","evidence","mine","revision",1));
+    db.update("DELETE FROM os_group_member WHERE user_id=? AND group_id=?",a,team);
+    assertThrows(Failure.class,()->run("apps","advance_industry_case","new_id",id,"decision","investigate","evidence","removed reviewer","revision",1));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans={false,true})
+  void adverseCaseDecisionsDoNotCreateCreditsOrPermits(boolean pg) throws Exception {
+    open(pg);
+    for(String kind:List.of("dispute","permit")){
+      as(admin);
+      run("apps","case_program","kind",kind,"group_id",team,"revision",0);
+      String id=id();var details=map("site","East","activity","Fair");
+      if(kind.equals("dispute")){
+        run("apps","register_disputable_transaction","reference","charge","user_id",c,"amount","3.00","currency","EUR");
+        details=map("amount","3","currency","EUR","reason","Charged twice");
+      }
+      as(c);run("apps","file_industry_case","new_id",id,"reference","charge","kind",kind,"manifest",details);
+      as(a);run("apps","advance_industry_case","new_id",id,"decision",kind.equals("dispute")?"investigate":"inspect","revision",1,"evidence","Reviewed");
+      as(b);var decision=object(object(run("apps","advance_industry_case","new_id",id,"decision",kind.equals("dispute")?"decline":"deny","revision",2,"evidence","Denied")).get("definition"));
+      assertFalse(decision.containsKey("adjustment")); assertFalse(decision.containsKey("permit_number"));
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans={false,true})
+  void liveDataProductEnforcesConsumerRowFieldAndGroupRights(boolean pg) throws Exception {
+    open(pg);
+    String product=id(), source=record("cmdb_ci");
+    for (var bad:List.of(List.of(),List.of("missing"),List.of("short_description","short_description"))) {
+      assertThrows(Failure.class,()->run("apps","publish_data_product","new_id",product,"title","Fleet","table","cmdb_ci","fields",bad,"group_id",team,"revision",0));
+    }
+    run("apps","publish_data_product","new_id",product,"title","Fleet","table","cmdb_ci","fields",List.of("short_description"),"group_id",team,"revision",0);
+    as(a);
+    Object[] read={"new_id",product,"record_id",source};
+    assertEquals(Set.of("short_description"),object(object(run("apps","read_data_product",read)).get("fields")).keySet());
+    var schema=Service.schema(db,"cmdb_ci");
+    schema.put("field_rules",map("short_description",map("type","string","read_roles",List.of("admin"))));
+    db.update("UPDATE os_schema SET definition="+(db.postgres?"CAST(? AS JSON)":"?")+" WHERE name='cmdb_ci'",JSON.writeValueAsString(schema));
+    assertEquals(map(),object(run("apps","read_data_product",read)).get("fields"));
+    db.update("INSERT INTO os_record_access(record_id,visibility,owner_id) VALUES(?,?,?)",source,"private",b);
+    assertThrows(Failure.class,()->run("apps","read_data_product",read));
+    db.update("DELETE FROM os_group_member WHERE user_id=? AND group_id=?",b,team);as(b);
+    assertThrows(Failure.class,()->run("apps","read_data_product",read));
+    as(admin);
+    for (var bad:List.of(List.of(List.of("one")),List.of(List.of("X","Y")),List.of(List.of("one","one"))))
+      assertThrows(Failure.class,()->run("assistant","search_dictionary","entries",bad,"revision",0));
+  }
+
+  @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void regulatoryCorrectionReopensOnlyChangedRequirement(boolean pg) throws Exception {
     open(pg);

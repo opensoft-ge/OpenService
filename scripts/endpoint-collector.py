@@ -7,6 +7,8 @@ import platform
 import shutil
 import subprocess
 import sys
+import re
+import uuid
 from pathlib import Path
 from urllib import request
 from urllib.parse import urlsplit
@@ -16,6 +18,22 @@ import time
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, *args):
         return None
+
+
+def windows_registration():
+    """Return only the machine's Entra join identifiers."""
+    if platform.system() != "Windows":
+        raise ValueError("Run identity collection on the enrolled Windows device")
+    output = subprocess.check_output(["dsregcmd.exe", "/status"], text=True, timeout=30)
+    def field(name):
+        matches = re.findall(r"(?im)^[ \t]*" + name + r"[ \t]*:[ \t]*([^\r\n]+?)[ \t]*\r?$", output)
+        if len(set(matches)) != 1:
+            raise ValueError("Missing or ambiguous Windows join field " + name)
+        return matches[0]
+    if field("AzureAdJoined").upper() != "YES":
+        raise ValueError("Device is not Entra joined")
+    return {"device_id": str(uuid.UUID(field("DeviceId"))),
+            "tenant_id": str(uuid.UUID(field("TenantId")))}
 
 
 def inventory():
@@ -59,9 +77,15 @@ def report(config):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("configuration", type=Path)
+    parser.add_argument("configuration", type=Path, nargs="?")
     parser.add_argument("--every-minutes", type=int, choices=range(1, 10081), metavar="minutes")
+    parser.add_argument("--windows-registration", action="store_true", help="Print the local join IDs for a designated fleet qualification")
     args = parser.parse_args()
+    if args.windows_registration:
+        print(json.dumps(windows_registration()))
+        raise SystemExit(0)
+    if args.configuration is None:
+        parser.error("Provide the collector configuration")
     config = json.loads(args.configuration.read_text())
     while True:
         try:

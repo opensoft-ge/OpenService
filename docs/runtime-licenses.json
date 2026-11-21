@@ -1,6 +1,6 @@
 [
   {
-    "artifact": "logback-classic-1.5.38.jar",
+    "artifact": "logback-classic-1.6.6.jar",
     "licenses": [
       {
         "name": "EPL-2.0",
@@ -13,7 +13,7 @@
     ]
   },
   {
-    "artifact": "logback-core-1.5.38.jar",
+    "artifact": "logback-core-1.6.6.jar",
     "licenses": [
       {
         "name": "EPL-2.0",
@@ -26,7 +26,7 @@
     ]
   },
   {
-    "artifact": "log4j-to-slf4j-2.25.5.jar",
+    "artifact": "log4j-to-slf4j-2.26.1.jar",
     "licenses": [
       {
         "name": "Apache-2.0",
@@ -35,7 +35,7 @@
     ]
   },
   {
-    "artifact": "log4j-api-2.25.5.jar",
+    "artifact": "log4j-api-2.26.1.jar",
     "licenses": [
       {
         "name": "Apache-2.0",
@@ -53,7 +53,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-autoconfigure-4.1.2.jar",
+    "artifact": "spring-boot-autoconfigure-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -75,7 +75,7 @@
     ]
   },
   {
-    "artifact": "snakeyaml-2.6.jar",
+    "artifact": "snakeyaml-2.7.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -84,7 +84,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-jackson-4.1.2.jar",
+    "artifact": "spring-boot-jackson-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -93,7 +93,7 @@
     ]
   },
   {
-    "artifact": "jackson-databind-3.1.7.jar",
+    "artifact": "jackson-databind-3.1.8.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -111,7 +111,7 @@
     ]
   },
   {
-    "artifact": "jackson-core-3.1.7.jar",
+    "artifact": "jackson-core-3.1.8.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -120,7 +120,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-web-server-4.1.2.jar",
+    "artifact": "spring-boot-web-server-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -156,7 +156,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-tomcat-4.1.2.jar",
+    "artifact": "spring-boot-tomcat-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -165,7 +165,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-http-converter-4.1.2.jar",
+    "artifact": "spring-boot-http-converter-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -174,7 +174,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-4.1.2.jar",
+    "artifact": "spring-boot-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -183,7 +183,7 @@
     ]
   },
   {
-    "artifact": "spring-context-7.0.10.jar",
+    "artifact": "spring-context-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -192,7 +192,7 @@
     ]
   },
   {
-    "artifact": "spring-web-7.0.10.jar",
+    "artifact": "spring-web-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -201,7 +201,7 @@
     ]
   },
   {
-    "artifact": "spring-beans-7.0.10.jar",
+    "artifact": "spring-beans-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -210,7 +210,7 @@
     ]
   },
   {
-    "artifact": "micrometer-observation-1.17.2.jar",
+    "artifact": "micrometer-observation-1.18.0.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -219,7 +219,7 @@
     ]
   },
   {
-    "artifact": "micrometer-commons-1.17.2.jar",
+    "artifact": "micrometer-commons-1.18.0.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -228,7 +228,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-webmvc-4.1.2.jar",
+    "artifact": "spring-boot-webmvc-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -237,7 +237,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-servlet-4.1.2.jar",
+    "artifact": "spring-boot-servlet-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -246,7 +246,7 @@
     ]
   },
   {
-    "artifact": "spring-webmvc-7.0.10.jar",
+    "artifact": "spring-webmvc-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -255,7 +255,7 @@
     ]
   },
   {
-    "artifact": "spring-aop-7.0.10.jar",
+    "artifact": "spring-aop-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -264,7 +264,7 @@
     ]
   },
   {
-    "artifact": "spring-expression-7.0.10.jar",
+    "artifact": "spring-expression-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -291,7 +291,7 @@
     ]
   },
   {
-    "artifact": "spring-core-7.0.10.jar",
+    "artifact": "spring-core-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -300,7 +300,7 @@
     ]
   },
   {
-    "artifact": "commons-logging-1.3.6.jar",
+    "artifact": "commons-logging-1.4.0.jar",
     "licenses": [
       {
         "name": "Apache-2.0",
@@ -309,7 +309,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-thymeleaf-4.1.2.jar",
+    "artifact": "spring-boot-thymeleaf-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -318,7 +318,7 @@
     ]
   },
   {
-    "artifact": "thymeleaf-spring6-3.1.5.RELEASE.jar",
+    "artifact": "thymeleaf-spring6-3.1.7.RELEASE.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -327,7 +327,7 @@
     ]
   },
   {
-    "artifact": "thymeleaf-3.1.5.RELEASE.jar",
+    "artifact": "thymeleaf-3.1.7.RELEASE.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -336,7 +336,7 @@
     ]
   },
   {
-    "artifact": "attoparser-2.0.7.RELEASE.jar",
+    "artifact": "attoparser-2.0.10.RELEASE.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -345,7 +345,7 @@
     ]
   },
   {
-    "artifact": "unbescape-1.1.6.RELEASE.jar",
+    "artifact": "unbescape-1.1.8.RELEASE.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -399,7 +399,7 @@
     ]
   },
   {
-    "artifact": "commons-codec-1.21.0.jar",
+    "artifact": "commons-codec-1.22.1.jar",
     "licenses": [
       {
         "name": "Apache-2.0",
@@ -417,7 +417,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-jarmode-tools-4.1.2.jar",
+    "artifact": "spring-boot-jarmode-tools-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache License, Version 2.0",
@@ -426,7 +426,7 @@
     ]
   },
   {
-    "artifact": "spring-boot-mail-4.1.2.jar",
+    "artifact": "spring-boot-mail-4.2.0.jar",
     "licenses": [
       {
         "name": "Apache-2.0",
@@ -435,7 +435,7 @@
     ]
   },
   {
-    "artifact": "spring-context-support-7.0.10.jar",
+    "artifact": "spring-context-support-7.1.0.jar",
     "licenses": [
       {
         "name": "Apache-2.0",
@@ -523,7 +523,7 @@
     ]
   },
   {
-    "artifact": "json-smart-2.6.0.jar",
+    "artifact": "json-smart-2.6.1.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -532,7 +532,7 @@
     ]
   },
   {
-    "artifact": "accessors-smart-2.6.0.jar",
+    "artifact": "accessors-smart-2.6.1.jar",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -541,7 +541,7 @@
     ]
   },
   {
-    "artifact": "asm-9.7.1.jar",
+    "artifact": "asm-9.11.1.jar",
     "licenses": [
       {
         "name": "BSD-3-Clause",

@@ -55,6 +55,92 @@ class ServiceAssuranceTest {
   }
 
   @ParameterizedTest
+  @ValueSource(booleans = {false,true})
+  void repeatedSingleSignalConfirmsOnlyWithinCurrentBaseline(boolean pg) throws Exception {
+    open(pg);
+    String objective=objective();
+    long cadence=60000, now=System.currentTimeMillis()/cadence*cadence-10*cadence, day=86400000L;
+    var spec=definition(h.db,"service-objective",objective);spec.put("interval",(int)cadence);h.seed("service-objective",objective,spec);
+    var train=new ArrayList<>();
+    for(int slot=0;slot<24;slot++) for(int d=1;d<=3;d++)
+      train.add(map("observed_at",stamp(now/day*day-d*day+slot*3600000L),"metrics",metrics(100,30,1)));
+    cmd("mapping","metric_corroborated_baseline","objective_id",objective,"samples",train,"revision",0);
+    for(int i=0;i<6;i++){
+      if(i==2) cmd("mapping","metric_corroborated_baseline","objective_id",objective,"samples",train,"revision",1);
+      var input=switch(i){case 0 -> map("latency_ms",150);case 3 -> metrics(100,40,1);case 4 -> metrics(110,40,1);case 5 -> metrics(100,30,4);default -> metrics(110,30,1);};
+      var row=def(cmd("mapping","metric_sample","objective_id",objective,"observed_at",stamp(now+i*cadence),"manifest",input));
+      assertEquals(List.of("unknown","down","unknown","unknown","down","down").get(i),row.get("state"));
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans={false,true})
+  void currentCustomerProbeEvidenceDetectsAnInRangeFailure(boolean pg) throws Exception {
+    open(pg);
+    String objective=objective();
+    long cadence=60000L,day=86400000L, now=System.currentTimeMillis()/cadence*cadence;
+    var train=new ArrayList<>();
+    for (int hour=0;hour<24;hour++) for(int d=1;d<=3;d++)
+      train.add(map("observed_at",stamp(now/day*day-d*day+hour*3600000L),"metrics",metrics(100,30,2)));
+    cmd("mapping","metric_corroborated_baseline","objective_id",objective,"samples",train,"revision",0);
+    h.seed("transaction-rule",objective,map("expected","Checkout complete","maximum_ms",2000));
+    var outcomes=new ArrayList<>();
+    for(int i=0;i<5;i++) {
+      long at=now-(4-i)*cadence;
+      for(String site:List.of("east","west")){
+        int version=i==0?0:1;
+        String result=i==1 && site.equals("west")?"probe_error":i==2?"up":"down";
+        h.db.update("INSERT INTO os_transaction_sample(objective,location,bucket,detail) VALUES(?,?,?,?)",
+            objective,site,at,JSON.writeValueAsString(map("rule_revision",version,"result",result)));
+      }
+      var raw=i==4?map():metrics(98,24,1);
+      Object[] input={"objective_id",objective,"observed_at",stamp(at),"manifest",raw};
+      var row=def(cmd("mapping","metric_sample",input));
+      assertEquals(List.of("up","up","up","down","unknown").get(i),row.get("state"));
+      assertEquals(List.of(0,1,0,2,0).get(i),object(row.get("transaction_evidence")).size());
+      assertEquals(row,def(cmd("mapping","metric_sample",input)));
+      outcomes.add(map("observed_at",stamp(at),"state",row.get("state")));
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false,true})
+  void namedUserRightsChargeOnceAcrossDevices(boolean pg) throws Exception {
+    open(pg);
+    String x=h.record("cmdb_ci"), y=h.record("cmdb_ci"), z=h.record("cmdb_ci");
+    fact("grant","2025-01-01",map("kind","rights","metric","named_user","contract","annual","quantity",1,"covers",List.of("A","B")));
+    for(String ci:List.of(x,y,z))
+      fact(ci,"2025-01-02",map("kind","installation","ci",ci,"edition",ci.equals(x)?"A":"B","last_used","2025-01-01","user_id",ci.equals(z)?h.b:h.a));
+    String snapshot=id();
+    Object[] args={"product","Editor","effective","2025-01-31","new_id",snapshot};
+    var report=def(cmd("licenses","license_position",args));
+    assertEquals("named_user",report.get("metric"));
+    assertEquals(3,object(report.get("installations")).size());
+    assertEquals(2,object(report.get("consumption_by_edition")).size());
+    assertEquals(1,object(report.get("assignments")).size());
+    assertEquals(1,((List<?>)report.get("shortfall")).size());
+    assertThrows(Failure.class,()->fact("invalid","2025-02-01",map("kind","rights","metric","installation")));
+    fact("renew","2025-02-01",map("kind","rights","metric","named_user","contract","annual","quantity",1,"covers",List.of("A","B")));
+    assertEquals(report,def(cmd("licenses","license_position",args)));
+    var after=def(cmd("licenses","license_position","product","Editor","effective","2025-02-01","new_id",id()));
+    assertTrue(((List<?>)after.get("shortfall")).isEmpty());
+    fact("owner-conflict","2025-01-02",map("kind","installation","ci",x,"edition","A","last_used","2025-01-01","user_id",h.b));
+    assertThrows(Failure.class,()->cmd("licenses","license_position","product","Editor","effective","2025-02-01","new_id",id()));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false,true})
+  void cannotRelabelHistoricalInstallationRights(boolean pg) throws Exception {
+    open(pg);
+    var grant=map("kind","rights","contract","one","quantity",1,"covers",List.of("A"));
+    fact("first","2025-01-01",grant);
+    grant.put("metric","named_user");
+    assertThrows(Failure.class,()->fact("change","2025-01-02",grant));
+    grant.put("metric","installation");
+    fact("second","2025-01-02",grant);
+  }
+
+  @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void publisherMonthEndSurvivesLaterCredit(boolean pg) throws Exception {
     open(pg);
@@ -1676,6 +1762,16 @@ class ServiceAssuranceTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void twoDayMetricHoldoutScoresWholeIncidents(boolean pg) throws Exception {
+    evaluateTwoDays(pg,false);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false,true})
+  void corroboratedMetricHoldout(boolean pg) throws Exception {
+    evaluateTwoDays(pg,true);
+  }
+
+  void evaluateTwoDays(boolean pg,boolean corroborate) throws Exception {
     open(pg);
     String objective = objective();
     var spec = definition(h.db, "service-objective", objective);
@@ -1695,7 +1791,7 @@ class ServiceAssuranceTest {
       }
     cmd(
         "mapping",
-        "metric_baseline",
+        corroborate ? "metric_corroborated_baseline" : "metric_baseline",
         "objective_id",
         objective,
         "samples",
@@ -1733,13 +1829,13 @@ class ServiceAssuranceTest {
     Collections.reverse(labels);
     var report = cmd("mapping", "metric_score", "objective_id", objective, "samples", labels);
     assertEquals(48, report.get("observations"));
-    assertEquals(46, report.get("correct"));
+    assertEquals(corroborate ? 47 : 46, report.get("correct"));
     assertEquals(2, report.get("unknown"));
     assertEquals(2, report.get("expected_incidents"));
     assertEquals(1, report.get("missed_incidents"));
-    assertEquals(1, report.get("false_alarm_episodes"));
+    assertEquals(corroborate ? 0 : 1, report.get("false_alarm_episodes"));
     java.nio.file.Files.writeString(
-        Path.of("target", "service-metric-holdout-" + (pg ? "postgres" : "sqlite") + ".json"),
+        Path.of("target", (corroborate ? "corroborated-metric-" : "service-metric-holdout-") + (pg ? "postgres" : "sqlite") + ".json"),
         JSON.writeValueAsString(report));
   }
 

@@ -15,6 +15,30 @@ final class ServiceAssurance {
   static final List<Entry> COMMANDS =
       List.of(
           new Entry(
+              "apps",
+              "register_disputable_transaction",
+              "Register a posted transaction for its account holder",
+              "reference user_id amount currency",
+              "admin"),
+          new Entry(
+              "apps",
+              "equipment_readiness",
+              "Inspect operational readiness for a visible device",
+              "record_id",
+              "staff"),
+          new Entry(
+              "apps",
+              "open_attended_batch",
+              "Review or resume an attended case-entry batch",
+              "new_id entries",
+              "all"),
+          new Entry(
+              "apps",
+              "attended_batch_status",
+              "Inspect receipts for my automation batch",
+              "new_id",
+              "all"),
+          new Entry(
               "licenses",
               "license_fact",
               "Import a dated publisher entitlement, credit or installation",
@@ -44,6 +68,64 @@ final class ServiceAssurance {
               "Calculate delivery metrics and inspect contributing records",
               "group_id start end",
               "admin"),
+          new Entry(
+              "packages",
+              "provider_attempt",
+              "Inspect the exact provider attempt used for audit qualification",
+              "run_id step sequence",
+              "admin"),
+          new Entry(
+              "mapping",
+              "metric_corroborated_baseline",
+              "Train hourly ranges with corroborated paging",
+              "objective_id samples revision",
+              "admin"),
+          new Entry(
+              "assistant",
+              "policy_search",
+              "Search eligible policies and service terminology",
+              "new_id question",
+              "all"),
+          new Entry(
+              "assistant",
+              "search_dictionary",
+              "Publish equivalent terms for service search",
+              "entries revision",
+              "admin"),
+          new Entry(
+              "apps",
+              "case_program",
+              "Set the fulfillment team for an industry service",
+              "kind group_id revision",
+              "admin"),
+          new Entry(
+              "apps",
+              "file_industry_case",
+              "Submit a dispute, equipment turnaround or permit application",
+              "kind new_id reference manifest",
+              "all"),
+          new Entry(
+              "apps", "industry_case", "View a case and its decision history", "new_id", "all"),
+          new Entry(
+              "apps", "industry_queue", "My team's outstanding industry cases", "kind", "staff"),
+          new Entry(
+              "apps",
+              "advance_industry_case",
+              "Record a case decision and its evidence",
+              "new_id decision evidence revision",
+              "staff"),
+          new Entry(
+              "apps",
+              "publish_data_product",
+              "Publish a scoped live data product",
+              "new_id title table fields group_id revision",
+              "admin"),
+          new Entry(
+              "apps",
+              "read_data_product",
+              "Read permitted fields from a data product",
+              "new_id record_id",
+              "all"),
           new Entry(
               "mapping",
               "metric_baseline",
@@ -203,11 +285,35 @@ final class ServiceAssurance {
       case "license_fact", "license_position" -> PublisherPosition.run(db, op, b);
       case "track_delivery", "delivery_event", "delivery_performance" ->
           DeliveryPerformance.run(db, op, b);
-      case "metric_status", "metric_baseline", "metric_sample", "metric_score" ->
+      case "metric_status",
+              "metric_corroborated_baseline",
+              "metric_baseline",
+              "metric_sample",
+              "metric_score" ->
           MetricAnomalies.run(store, db, op, b);
       case "business_tolerance", "business_impact" -> BusinessTolerance.run(db, op, b);
+      case "register_disputable_transaction", "equipment_readiness" -> IndustryCases.run(db, op, b);
+      case "open_attended_batch", "attended_batch_status" -> AttendedBatches.run(db, op, b);
+      case "provider_attempt" -> {
+        String attempt =
+            ConnectorSynchronization.hash(
+                List.of(
+                    id(b, "run_id"),
+                    integer(b.get("step"), 1, 100),
+                    integer(b.get("sequence"), 0, Integer.MAX_VALUE)));
+        yield definition(db, "workflow-attempt", attempt);
+      }
       case "worker_evidence" -> ConnectorFailover.evidence(db, id(b, "job_id"));
       case "propose_fix", "verify_fix" -> PermanentFixes.run(db, op, b);
+      case "case_program",
+              "file_industry_case",
+              "industry_case",
+              "industry_queue",
+              "advance_industry_case" ->
+          IndustryCases.run(db, op, b);
+      case "policy_search" -> ServiceSearch.command(store, db, op, b);
+      case "search_dictionary" -> PolicyTerms.publish(db, b);
+      case "publish_data_product", "read_data_product" -> DataProducts.run(db, op, b);
       case "resume_search", "weighted_search" -> EmployeeSearchReview.run(store, db, op, b);
       case "intune_authority", "intune_import", "intune_bind", "intune_device" ->
           IntuneInventory.run(store, db, op, b);

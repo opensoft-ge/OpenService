@@ -1,5 +1,11 @@
 # OpenService adoption roadmap and build order
 
+## Qualification and product workflows, 21 November 2026
+
+The current pass extends connector recovery, search, monitoring, software licensing and industry operations. The current acceptance boundaries and provider dependencies are in the [compatibility ledger](servicenow-compatibility.md#targeted-parity-work-21-november-2026) and [operator guide](qualification-and-service-quality.md). The two prerequisites with the largest outstanding effect are designated tenant histories and independently collected employee questions.
+
+Discovery reviewed Brazil search dictionaries, metric analysis, data products, license metrics, disputes, permitting and clinical-equipment workflows. OS-PORT-07 and OS-PORT-09 now include governed native data projections and attended batch recovery. A next data-product increment should let an owner declare quality checks and reproduce publication approval against a saved dataset revision. A next automation increment should let operators assign and retire versioned robots across a fleet while preserving individual job and recovery evidence. These depend on release identity, target bindings and operator-scoped permissions. Existing banking and healthcare workflows still need external settlement and equipment-system verification respectively.
+
 ## Service assurance, 21 November 2026
 
 The requested batch covers ten bounded journeys. SA-01 and SA-04 cover worker failover and managed-device import in reusable integrations. SA-02 and SA-03 cover composed procurement reviews and problem-to-fix verification in workflow and approvals. SA-05 and SA-08 cover employee retrieval and delivery metrics in reporting and search. SA-06, SA-07 and SA-10 cover metric anomalies, publisher rights and telecom assurance in assets and operations. SA-09 extends the existing continuity exercises in production engineering. Identity, permissions, notifications, SLAs, knowledge and audit evidence are dependencies of these journeys. Independent expansion of those areas, deployment qualification, password lifecycle, migration, model/API breadth and governed AI are deferred in this pass. [Implementation and acceptance guide](service-assurance-workflows.md)

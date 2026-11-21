@@ -57,7 +57,9 @@ final class ServiceSearch {
         require(session.isEmpty(), "Start with a new conversation identifier");
         long start = System.nanoTime();
         String question = text(b, "question", 500);
-        var terms = words(question);
+        boolean policy = op.equals("policy_search");
+        var aliases = policy ? object(object(get(db,"search-dictionary","current").get("definition")).getOrDefault("aliases",map())) : map();
+        var terms = policy ? PolicyTerms.terms(question,aliases) : words(question);
         var ranked = new ArrayList<Map<String, Object>>();
         for (var entry : list(db, "employee-intent")) {
             var intent = object(entry.get("definition"));
@@ -70,20 +72,18 @@ final class ServiceSearch {
                         || "Policy access required".equals(e.getMessage())) continue;
                 throw e;
             }
-            var tokens =
-                    words(
-                            citation.get("catalog_name")
-                                    + " "
-                                    + citation.get("policy_title")
-                                    + " "
-                                    + String.join(
-                                            " ",
-                                            ((List<?>) intent.get("terms"))
-                                                    .stream().map(Object::toString).toList()));
-            if(citation.containsKey("external")) {
-                var external=object(citation.get("external"));
-                tokens.addAll(words(external.get("title")+" "+external.get("body")));
+            String content = citation.get("catalog_name") + " " + citation.get("policy_title") + " "
+                    + String.join(" ", ((List<?>)intent.get("terms")).stream().map(Object::toString).toList());
+            if (citation.containsKey("external")) {
+                var external = object(citation.get("external"));
+                content += " " + external.get("title") + " " + external.get("body");
             }
+            if (policy) {
+                // sources() checked the current publication, both read fields, and the external reader.
+                var article = object(KnowledgeFeedback.page(db,intent.get("article").toString()).get("article"));
+                content += " " + article.get("content");
+            }
+            var tokens = policy ? PolicyTerms.terms(content,aliases) : words(content);
             tokens.retainAll(terms);
             if (!tokens.isEmpty())
                 ranked.add(
@@ -95,7 +95,7 @@ final class ServiceSearch {
                                 "citation",
                                 citation));
         }
-        if(op.equals("weighted_search"))EmployeeSearchReview.weight(ranked);
+        if(policy || op.equals("weighted_search"))EmployeeSearchReview.weight(ranked);
         else for(var match:ranked)match.remove("matched");
         ranked.sort(Comparator.comparingInt(m -> -(Integer) m.get("score")));
         var suggestions = ranked.stream().limit(5).toList();

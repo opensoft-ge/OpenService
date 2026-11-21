@@ -28,6 +28,7 @@ abstract class WorkflowSupport {
     @Test void operatorRecordsProviderDecisionBeforeFailover() throws Exception { WorkerLeaseAcceptance.manual(this,false); }
     @Test void abandonedConnectorWriteLease() throws Exception { WorkerLeaseAcceptance.run(this); }
     @Test void thirdPartyRecoveryContract() throws Exception { ProviderRecoveryAcceptance.run(this); }
+    @Test void newEmployeePolicyCohort() throws Exception { SearchComparison.compare(this,true,true); }
     @Test void departmentSearchHoldout() throws Exception { SearchComparison.run(this,true); }
     @Test void externalPolicyHoldout() throws Exception { SearchComparison.run(this); }
     @Test void expansionDelta() throws Exception { EnterpriseExpansionAcceptance.delta(this); }
