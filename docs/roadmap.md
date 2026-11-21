@@ -1,5 +1,9 @@
 # OpenService adoption roadmap and build order
 
+## Service desk response, 21 November 2026
+
+OS-ITSM-PRB-01 now covers versioned delivery, incident-desk feedback, required follow-up and private known-error drafting through publication. The next connected gaps identified in the Brazil guides are standard parent–child incident state synchronization, audience-specific major incident communication schedules and duplicate known-error article search during authoring. [Core workflow and qualification](problem-response.md)
+
 ## Gaps after the remediation pass
 
 The current implementation covers governed projection checks, unattended permit leases, statement reconciliation, per-core and concurrent-user licensing, and verifiable incident-review amendments. The remaining qualification needs include live SaaS recovery, independently contributed questions, customer-transaction probes for timely detection, and publisher-specific entitlement rules. The scorecard identifies 47 catalog entries without a demonstrated workflow. [Current evidence and product gaps](parity-remediation.md)

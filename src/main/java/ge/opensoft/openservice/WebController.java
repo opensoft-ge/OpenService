@@ -603,6 +603,28 @@ public class WebController {
         if(problemOptions.matches()){
             method(method,"GET");c.uniqueQuery();String id=problemOptions.group(1);var source=ProblemInvestigations.record(c.db,"incident",id);RecordPolicy.require(Service.schema(c.db,"incident"),"update",c.db.viewerRole);var search=ReferenceSearch.search(c.db,"problem",c.arguments());return path.startsWith("/api/")?json(map("result",search),200):view(c,"problem-options",map("table","incident","incident",FieldAccess.serialize(c.db,source),"search",search,"query",c.arguments().getOrDefault("q",""),"pickerPath","/record/incident/"+id+"/problem-options"));
         }
+        Matcher responseDesk = Pattern.compile("/(?:record|api/openservice)/problem/([0-9a-f]{32})/response").matcher(path);
+        if (responseDesk.matches()) {
+            method(method, "GET", "POST");
+            c.noQuery();
+            String problem = responseDesk.group(1);
+            boolean api = path.startsWith("/api/");
+            if (method.equals("POST")) {
+                Map<String,Object> action;
+                if (api) action = object(body(c));
+                else {
+                    action = new LinkedHashMap<>(c.arguments());
+                    action.remove("csrf");
+                    action.put("revision", Service.number(Objects.toString(action.get("revision"), ""), 0, Integer.MAX_VALUE));
+                    if (action.containsKey("feedback_revision"))
+                        action.put("feedback_revision", Service.number(action.get("feedback_revision").toString(), 0, Integer.MAX_VALUE));
+                }
+                ProblemResponse.act(c.db, problem, action);
+                if (!api) return redirect(path);
+            }
+            var response = ProblemResponse.view(c.db, problem);
+            return api ? json(map("result", response), 200) : view(c, "problem-response", map("table", "problem", "desk", response));
+        }
         Matcher investigation=Pattern.compile("/(?:record|api/openservice)/(incident|problem)/([0-9a-f]{32})/investigation").matcher(path);
         if(investigation.matches()){
             method(method,"GET","POST");c.noQuery();c.uniqueQuery();String table=investigation.group(1),id=investigation.group(2);boolean api=path.startsWith("/api/"),incident=table.equals("incident");Map<String,Object> result;

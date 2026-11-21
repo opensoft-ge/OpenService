@@ -336,6 +336,11 @@ public final class Service {
                     "account.group_deleted",
                     map("group_id", item.get("sys_id")));
         db.update("DELETE FROM os_group_member WHERE group_id=?", item.get("sys_id"));
+        // SQLite installations can predate enabled foreign-key enforcement.
+        db.update("DELETE FROM os_problem_feedback WHERE problem_id=? OR incident_id=?", item.get("sys_id"), item.get("sys_id"));
+        db.update("DELETE FROM os_problem_delivery WHERE problem_id=? OR incident_id=?", item.get("sys_id"), item.get("sys_id"));
+        db.update("DELETE FROM os_problem_guidance WHERE problem_id=?", item.get("sys_id"));
+        db.update("DELETE FROM os_problem_article WHERE problem_id=? OR article_id=?", item.get("sys_id"), item.get("sys_id"));
         db.update("DELETE FROM os_problem_link WHERE incident_id=? OR problem_id=?",item.get("sys_id"),item.get("sys_id"));
         db.update("DELETE FROM os_problem_analysis WHERE problem_id=?",item.get("sys_id"));
         db.update("DELETE FROM os_change_plan WHERE change_id=?",item.get("sys_id"));

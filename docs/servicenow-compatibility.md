@@ -1,5 +1,9 @@
 # ServiceNow compatibility ledger
 
+## Core service desk, 21 November 2026
+
+OS-ITSM-PRB-01 connects Incident Management, Problem Management and Knowledge Center. Previously the incident desk could read the current workaround. Coordinators can now communicate a specific edition, collect attributable outcomes, assign required follow-up after failure, and send reviewed known-error guidance through the existing knowledge publication workflow. Permission changes, concurrent sends, withdrawn guidance, draft conflicts and guarded publication are covered by the acceptance suite. Core scope maps to OS-PARITY-02 and OS-PARITY-04. The three product scores retain their previous bands. [Operator guide and limits](problem-response.md)
+
 ## Current catalog assessment, 21 November 2026
 
 104 of 151 products have a demonstrated workflow. Estimated depth is 26.0%. Insurance, retail operations and health and safety each earned their first 0.25. The operator guide includes retained limits, actual request completion and the distinction between live metric detection and retrospective diagnosis. [Assessment and operator guide](parity-remediation.md) · [151-entry scorecard](servicenow-brazil-parity-estimate.csv)

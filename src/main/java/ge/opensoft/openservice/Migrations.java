@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 103;
+    static final int VERSION = 104;
 
     private Migrations() {}
 
@@ -846,6 +846,13 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_major_report(incident_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE, revision INTEGER NOT NULL, source VARCHAR(40) NOT NULL, recorded VARCHAR(40) NOT NULL, reviewer VARCHAR(32), impact TEXT NOT NULL, restoration TEXT NOT NULL, cause TEXT NOT NULL, lessons TEXT NOT NULL, actions TEXT NOT NULL, PRIMARY KEY(incident_id,revision))");
             db.update("INSERT INTO os_major_report(incident_id,revision,source,recorded,reviewer,impact,restoration,cause,lessons,actions) SELECT incident_id,revision,'migration_baseline',updated,NULL,impact,restoration,review_cause,review_lessons,review_actions FROM os_major_incident WHERE status IN ('reviewed','closed') AND review_cause<>''");
             db.update("INSERT INTO os_migration(version,name) VALUES(103,?)","versioned major incident review evidence");
+        }
+        if (version < 104) {
+            db.update("CREATE TABLE IF NOT EXISTS os_problem_guidance (problem_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE, edition INTEGER NOT NULL, workaround TEXT NOT NULL, recorded VARCHAR(40) NOT NULL, PRIMARY KEY(problem_id,edition))");
+            db.update("CREATE TABLE IF NOT EXISTS os_problem_delivery (problem_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE, incident_id VARCHAR(32) NOT NULL REFERENCES os_record(sys_id) ON DELETE CASCADE, edition INTEGER NOT NULL, sent_at VARCHAR(40) NOT NULL, sent_by VARCHAR(32) NOT NULL, followup_task VARCHAR(32) REFERENCES os_case_task(task_id) ON DELETE SET NULL, followup_group VARCHAR(32), PRIMARY KEY(problem_id,incident_id,edition))");
+            db.update("CREATE TABLE IF NOT EXISTS os_problem_feedback (problem_id VARCHAR(32) NOT NULL, incident_id VARCHAR(32) NOT NULL, edition INTEGER NOT NULL, revision INTEGER NOT NULL, outcome VARCHAR(16) NOT NULL, feedback_text TEXT NOT NULL, actor VARCHAR(32) NOT NULL, recorded VARCHAR(40) NOT NULL, PRIMARY KEY(problem_id,incident_id,edition,revision), FOREIGN KEY(problem_id,incident_id,edition) REFERENCES os_problem_delivery(problem_id,incident_id,edition) ON DELETE CASCADE)");
+            db.update("CREATE TABLE IF NOT EXISTS os_problem_article (problem_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE, article_id VARCHAR(32) NOT NULL UNIQUE REFERENCES os_record(sys_id) ON DELETE CASCADE, edition INTEGER NOT NULL, draft_revision INTEGER NOT NULL)");
+            db.update("INSERT INTO os_migration(version,name) VALUES(104,?)","problem response receipts and known error drafts");
         }
     }
 

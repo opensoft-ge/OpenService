@@ -1030,7 +1030,11 @@ class RemediationTest {
     h.as(h.admin);
     major(incident, "close", "reason", "Verified");
     h.db.update("DROP TABLE os_major_report");
-    h.db.update("DELETE FROM os_migration WHERE version=103");
+    h.db.update("DROP TABLE os_problem_feedback");
+    h.db.update("DROP TABLE os_problem_delivery");
+    h.db.update("DROP TABLE os_problem_article");
+    h.db.update("DROP TABLE os_problem_guidance");
+    h.db.update("DELETE FROM os_migration WHERE version>=103");
     Migrations.apply(h.db);
     var retained = h.db.all("SELECT * FROM os_major_report WHERE incident_id=?", incident);
     assertEquals(1, retained.size());

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}">
+<main class="platform-page">
+  <a class="back-link" th:href="@{/record/problem/{id}/investigation(id=${desk.problem.sys_id})}">Back to problem investigation</a>
+  <section class="page-heading"><div><h1>Workaround delivery</h1><p th:text="${desk.problem.getOrDefault('short_description','Problem')}"></p></div></section>
+  <section class="panel retention-panel"><h2>Current guidance</h2>
+    <p th:if="${desk.analysis.published==0}">The workaround is withdrawn or in draft.</p>
+    <th:block th:if="${desk.analysis.published==1}">
+      <p th:text="${'Published revision '+desk.analysis.revision}"></p>
+      <p class="account-name" th:text="${desk.analysis.workaround}"></p>
+      <form th:if="${desk.can_manage and desk.can_feedback}" method="post">
+        <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="communicate">
+        <input type="hidden" name="revision" th:value="${desk.analysis.revision}">
+        <button class="button primary">Notify linked desks</button>
+      </form>
+    </th:block>
+  </section>
+  <section class="panel retention-panel"><h2>Linked incidents</h2>
+    <p th:if="${desk.rows.isEmpty()}">No linked incidents with readable work notes.</p>
+    <article class="retention-panel" th:each="row:${desk.rows}" th:id="${'incident-'+row.incident.sys_id}">
+      <h3><a th:href="@{/record/incident/{id}/investigation(id=${row.incident.sys_id})}" th:text="${row.incident.getOrDefault('short_description','Incident')}"></a></h3>
+      <p th:text="${#strings.replace(row.status,'_',' ')}"></p>
+      <p th:if="${row.delivered}" th:text="${'Sent by '+row.delivery.sender+' · '+row.delivery.sent_at}"></p>
+      <form class="record-form" th:if="${row.delivered and desk.can_feedback and desk.analysis.published==1}" method="post">
+        <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="feedback">
+        <input type="hidden" name="revision" th:value="${desk.analysis.revision}"><input type="hidden" name="incident_id" th:value="${row.incident.sys_id}">
+        <input type="hidden" name="feedback_revision" th:value="${row.feedback_revision}">
+        <label th:for="${'outcome-'+row.incident.sys_id}">Outcome</label><select th:id="${'outcome-'+row.incident.sys_id}" name="outcome"><option value="effective">Effective</option><option value="ineffective">Ineffective</option></select>
+        <label th:for="${'evidence-'+row.incident.sys_id}">What happened</label><textarea th:id="${'evidence-'+row.incident.sys_id}" name="detail" maxlength="1000" required></textarea><button class="button">Record outcome</button>
+      </form>
+      <th:block th:if="${desk.can_read_tasks and (row.status=='ineffective' or row.followup_task!=null)}">
+        <a th:href="@{/record/incident/{id}/work-tasks(id=${row.incident.sys_id})}">Open incident work tasks</a>
+        <form class="record-form" th:if="${row.followup_task==null and desk.can_feedback}" method="post">
+          <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="operation" value="followup">
+          <input type="hidden" name="revision" th:value="${desk.analysis.revision}"><input type="hidden" name="incident_id" th:value="${row.incident.sys_id}">
+          <input type="hidden" name="feedback_revision" th:value="${row.feedback_revision}">
+          <label th:for="${'team-'+row.incident.sys_id}">Follow-up team</label><select th:id="${'team-'+row.incident.sys_id}" name="group_id" required><option value="">Choose a team</option><option th:each="group:${desk.groups}" th:value="${group.sys_id}" th:text="${group.getOrDefault('short_description','Team')}"></option></select>
+          <p>The incident needs a configured work-task plan. Its closure gate will require the follow-up.</p><button class="button">Assign follow-up task</button>
+        </form>
+      </th:block>
+      <ol th:unless="${row.history.isEmpty()}"><li th:each="entry:${row.history}">
+        <span th:text="${'Revision '+entry.edition+' · '+entry.outcome+' · '+entry.author+' · '+entry.recorded}"></span>
+        <p th:text="${entry.feedback_text}"></p>
+      </li></ol>
+    </article>
+  </section>
+  <section class="panel retention-panel" th:unless="${desk.editions.isEmpty()}"><h2>Communicated revisions</h2>
+    <details th:each="edition:${desk.editions}"><summary th:text="${'Revision '+edition.edition+' · '+edition.recorded}"></summary><p th:text="${edition.workaround}"></p></details>
+  </section>
+  <section class="panel retention-panel"><h2>Known error article</h2>
+    <p th:if="${desk.article==null}">Create a private draft from the current cause and workaround for knowledge review.</p>
+    <th:block th:if="${desk.article!=null}">
+      <nav aria-label="Knowledge review" th:if="${user.role=='admin' and !desk.article.containsKey('restricted')}">
+        <a th:href="@{/admin/knowledge/{id}/review(id=${desk.article.article_id})}">Review publication</a>
+        <a th:href="@{/admin/knowledge/{id}/feedback(id=${desk.article.article_id})}">Review employee feedback</a>
+      </nav>
+      <p th:if="${desk.article.containsKey('restricted')}">A linked knowledge article has restricted access.</p>
+      <p th:unless="${desk.article.containsKey('restricted')}"><a th:href="@{/record/kb_knowledge/{id}(id=${desk.article.article_id})}" th:text="${desk.article.title}"></a> · <span th:text="${'Analysis revision '+desk.article.edition}"></span></p>
+    </th:block>
+    <form th:if="${desk.analysis.published==1 and desk.can_manage and (desk.article==null or (!desk.article.containsKey('restricted') and desk.article.edition!=desk.analysis.revision))}" method="post">
+      <input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="revision" th:value="${desk.analysis.revision}">
+      <input type="hidden" name="operation" th:value="${desk.article==null?'draft':'refresh'}"><button class="button" th:text="${desk.article==null?'Create known error draft':'Refresh private draft'}"></button>
+    </form>
+  </section>
+</main>
+</html>

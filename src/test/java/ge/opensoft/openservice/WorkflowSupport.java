@@ -367,6 +367,8 @@ abstract class WorkflowSupport {
     @Test void parentScopesPreventCyclesAndPreserveMutationBoundaries() throws Exception { RecordScopesAcceptance.boundaries(this); }
     @Test void changePlanningRequiresReviewedCurrentPlans() throws Exception { ChangePlanningAcceptance.run(this); }
     @Test void changePlanningPreservesAuthorityAndValidation() throws Exception { ChangePlanningAcceptance.boundaries(this); }
+    @Test void problemResponseReachesLinkedDesksAndTracksRecovery() throws Exception { ProblemResponseAcceptance.delivery(this); }
+    @Test void knownErrorUsesPrivateDraftAndReviewedPublication() throws Exception { ProblemResponseAcceptance.knowledge(this); }
     @Test void problemInvestigationLinksIncidentsAndSharesCurrentWorkaround() throws Exception { ProblemInvestigationsAcceptance.run(this); }
     @Test void problemInvestigationPreservesAuthorityAndBounds() throws Exception { ProblemInvestigationsAcceptance.boundaries(this); }
     @Test void operatorDiagnosticsAreCurrentAndContentFree() throws Exception { OperatorDiagnosticsAcceptance.run(this); }
