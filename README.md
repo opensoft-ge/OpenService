@@ -48,7 +48,7 @@ Captured from the Java application in automated Chromium tests with synthetic ev
 
 ## Run locally
 
-Download and extract the versioned Compose bundle, then use Docker Engine and Docker Compose 2.24.4 or later. From the extracted directory run:
+Download the Compose bundle, checksums and image archive for your Docker host from the [public release](https://github.com/opensoft-ge/OpenService/releases/tag/v0.2.0-beta.1). Verify the checksums. Load the images with `docker load -i openservice-images-linux-amd64.tar.gz` (choose `arm64` on ARM). Extract the Compose bundle. With Docker Engine and Docker Compose 2.24.4 or later, run from that directory:
 
 ```sh
 docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/setup" -w /setup ghcr.io/opensoft-ge/openservice:0.2.0-beta.1 setup

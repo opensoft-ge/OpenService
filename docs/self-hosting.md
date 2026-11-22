@@ -4,14 +4,14 @@ OpenService 0.2.0-beta.1 is an Apache-2.0 self-hosted release for one team's ser
 
 ## Install
 
-Download and extract `openservice-compose-0.2.0-beta.1.tar.gz` from the release. The bundle contains this guide, the Compose files, TLS proxy configuration and the license. Work from its directory. The published app image is `ghcr.io/opensoft-ge/openservice:0.2.0-beta.1`.
+Download `openservice-compose-0.2.0-beta.1.tar.gz`, the image archive for your Docker host (AMD64 or ARM64), and `SHA256SUMS` from the public release. Verify the downloaded files against their entries in the checksum list. Load the image archive with `docker load -i openservice-images-linux-amd64.tar.gz` (use `arm64` on ARM), then extract the Compose bundle. The bundle contains this guide, the Compose files, TLS proxy configuration and the license. Work from its directory. The published app image is `ghcr.io/opensoft-ge/openservice:0.2.0-beta.1`.
 
 ```sh
 docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/setup" -w /setup ghcr.io/opensoft-ge/openservice:0.2.0-beta.1 setup
 docker compose up -d --wait
 ```
 
-Open `http://localhost:8090`. Sign in as `admin` with the password in the generated private `.env`. Running setup twice preserves it. Protect the directory and back up `SECRET_KEY` and credentials separately. For installations using a release image archive, verify the matching SHA-256 in `SHA256SUMS`, run `docker load -i openservice-images-linux-ARCH.tar.gz` first, then use the same commands.
+Open `http://localhost:8090`. Sign in as `admin` with the password in the generated private `.env`. Running setup twice preserves it. Protect the directory and back up `SECRET_KEY` and credentials separately. Docker uses the versioned names already loaded from the archive.
 
 ## Open the desk
 
