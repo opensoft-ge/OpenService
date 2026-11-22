@@ -7,3 +7,9 @@ artifacts
 *.db-*
 __pycache__
 .servicenow-cache
+
+# Local self-hosting credentials and backups
+/tls/
+/probe.env
+/probe/
+/openservice-backups/

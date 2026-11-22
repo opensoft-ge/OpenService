@@ -15,6 +15,25 @@ import java.util.concurrent.*;
 
 class MigrationsTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void starterDeskSurvivesRestart(boolean postgres) throws Exception {
+        var env=configuration(postgres).withProperty("STARTER_DESK","true");
+        var store=new Store(env);
+        String group;
+        try(var db=store.open()) {
+            PlatformFoundationTest.bind(db);
+            group=StarterDesk.settings(db).get("group_id").toString();
+            var item=StarterDesk.settings(db).get("offering_id").toString();
+            var rev=Catalogue.find(db,item,true).get("revision");
+            Catalogue.save(db,db.viewerId,item,Values.map("name","Local equipment","description","Edited by this desk","active",false,"revision",rev));
+            db.connection.commit();
+        }
+        try(var db=new Store(env).open()) {
+            assertEquals(group,StarterDesk.settings(db).get("group_id"));
+            assertEquals(1,db.count("SELECT COUNT(*) FROM os_offering WHERE name='Local equipment' AND active=0"));
+        }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void deliveryArchiveUpgradeAndRecovery(boolean postgres)throws Exception{
         var env=configuration(postgres);var store=new Store(env);String job,batch;Map<String,Object> input;
         try(var db=store.open()){PlatformFoundationTest.bind(db);job=DeliveryArchiveAcceptance.seed(db,"delivered",1);db.update("DROP TABLE os_delivery_archive");db.update("DROP TABLE os_retention_hold");db.update("DROP TABLE os_retention_policy");db.update("DELETE FROM os_migration WHERE version>=98");db.connection.commit();Migrations.apply(db);assertEquals(90,((Number)DeliveryArchive.policy(db).get("days")).intValue());db.connection.rollback();assertEquals(97,db.count("SELECT MAX(version) FROM os_migration"));}

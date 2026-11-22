@@ -325,6 +325,8 @@ public final class Service {
         TypedFields.deleting(db, item);
         audit(db, item, actor, "deleted", map("before", serialize(item)));
         db.update("DELETE FROM os_attachment WHERE record_id=?", item.get("sys_id"));
+        db.update("DELETE FROM os_report_reply WHERE incident_id=?", item.get("sys_id"));
+        db.update("DELETE FROM os_reported_incident WHERE incident_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_requester_record WHERE record_id=?", item.get("sys_id"));
         db.update("DELETE FROM os_fulfilment WHERE request_id=?",item.get("sys_id"));
         for (var member :

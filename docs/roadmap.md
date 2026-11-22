@@ -1,5 +1,9 @@
 # OpenService adoption roadmap and build order
 
+## Self-hosted service desk beta, 22 November 2026
+
+The first Docker beta targets one team. The employee incident receipt, first-boot routing and catalog offering, shared TLS proxy, SMTP invitation and recovery, backup and upgrade are described in the [self-hosting guide](self-hosting.md). Earlier adoption milestones below describe their historical builds and broader enterprise goals.
+
 ## Service desk response, 21 November 2026
 
 OS-ITSM-PRB-01 now covers versioned delivery, incident-desk feedback, required follow-up and private known-error drafting through publication. The next connected gaps identified in the Brazil guides are standard parent–child incident state synchronization, audience-specific major incident communication schedules and duplicate known-error article search during authoring. [Core workflow and qualification](problem-response.md)

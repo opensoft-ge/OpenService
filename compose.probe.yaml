@@ -1,0 +1,12 @@
+services:
+  probe:
+    profiles: [probe]
+    image: ghcr.io/opensoft-ge/openservice:0.2.0-beta.1-probe
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    env_file: ./probe.env
+    volumes:
+      - ./probe:/config:ro
+    command: [/config/location.json, --every-minutes, "5"]

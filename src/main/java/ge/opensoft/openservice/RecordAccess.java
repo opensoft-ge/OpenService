@@ -10,13 +10,22 @@ final class RecordAccess {
     private RecordAccess() {}
 
     static String filter(Store.Db db, String recordId, List<Object> parameters) throws SQLException {
-        String own=directFilter(db,recordId,parameters);
+        return filter(db,recordId,parameters,false);
+    }
+
+    // Only the employee receipt endpoint can substitute report ownership for generic request ownership.
+    static String filter(Store.Db db,String recordId,List<Object> parameters,boolean reportReceipt) throws SQLException {
+        String own=directFilter(db,recordId,parameters,reportReceipt);
         if(db.viewerId==null || "admin".equals(db.viewerRole))return own;
         String parent=directFilter(db,"scope_guard.parent_id",parameters);
         return "("+own+") AND NOT EXISTS (SELECT 1 FROM os_record_scope scope_guard WHERE scope_guard.record_id="+recordId+" AND NOT ("+parent+"))";
     }
 
     static String directFilter(Store.Db db, String recordId, List<Object> parameters) throws SQLException {
+        return directFilter(db,recordId,parameters,false);
+    }
+
+    private static String directFilter(Store.Db db,String recordId,List<Object> parameters,boolean reportReceipt) throws SQLException {
         // Unbound connections are internal setup/test transactions; HTTP binds every principal.
         if (db.viewerId == null || "admin".equals(db.viewerRole)) return db.employeePortal?EmployeeCases.filter(db,recordId,parameters):"1=1";
         var readable=new ArrayList<Object>();
@@ -25,7 +34,7 @@ final class RecordAccess {
         String tableAccess="EXISTS (SELECT 1 FROM os_record readable_record WHERE readable_record.sys_id="+recordId+" AND readable_record.\"table\" IN (''"+String.join("",Collections.nCopies(readable.size(),",?"))+")) AND ";
         String requester = "";
         if ("requester".equals(db.viewerRole)) {
-            requester =
+            requester = reportReceipt ? "EXISTS (SELECT 1 FROM os_reported_incident receipt WHERE receipt.incident_id="+recordId+" AND receipt.reporter=?) AND " :
                     "EXISTS (SELECT 1 FROM os_requester_record request WHERE request.record_id="
                             + recordId
                             + " AND request.user_id=?) AND ";

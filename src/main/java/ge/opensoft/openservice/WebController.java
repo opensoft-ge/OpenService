@@ -218,7 +218,7 @@ public class WebController {
                         && !path.matches(
                                 "/(?:account|api/openservice/me)/sessions/[0-9a-f]{32}/revoke")
                         && !(context.role().equals("requester")
-                                && (path.matches("/(?:enterprise|api/openservice/enterprise)/(?:access|studio|sales|apps|guides|impact|licenses|assistant|workplace|walkup|suppliers)/global") || path.matches("/intake/[0-9a-f]{32}") || path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
+                                && (path.matches("/(?:api/openservice/)?reported-incidents(?:/[0-9a-f]{32})?") || path.matches("/(?:enterprise|api/openservice/enterprise)/(?:access|studio|sales|apps|guides|impact|licenses|assistant|workplace|walkup|suppliers)/global") || path.matches("/intake/[0-9a-f]{32}") || path.matches("/(?:record/customer_case|api/openservice/customer-cases)/[0-9a-f]{32}/resolution") || Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path) || path.matches("/(?:customer-service|api/openservice/customer-service)/entitlements/[0-9a-f]{32}") || path.matches("/(?:catalogue/[0-9a-f]{32}(?:/assistant)?|api/openservice/catalogue/[0-9a-f]{32}/(?:order|assistant))")))
                         && !path.matches("/(?:record/[^/]+/[0-9a-f]{32}/collaboration|api/openservice/collaboration/[^/]+/[0-9a-f]{32})")
                         && !path.matches("/(?:employee-service|api/openservice/employee-service)/(?:services|cases)/[0-9a-f]{32}")
                         && !path.matches("/(?:knowledge|api/openservice/knowledge)/[0-9a-f]{32}/(?:feedback|assistant)")
@@ -1369,6 +1369,40 @@ public class WebController {
                                     method,
                                     method.equals("GET") ? c.arguments() : body(c))),
                     200);
+        }
+        if (path.equals("/admin/starter-desk")) {
+            c.admin(); method(method,"GET","POST"); c.noQuery();
+            if(method.equals("POST")) {
+                String operation=c.parameter("operation","");
+                if(operation.equals("install")) StarterDesk.install(c.db);
+                else if(operation.equals("route")) StarterDesk.route(c.db,c.parameter("group_id",""));
+                else throw new Failure(400,"Choose install or route");
+                return redirect(path);
+            }
+            return view(c,"starter-desk",map("table","starter","desk",StarterDesk.settings(c.db),"groups",RecordAccess.groups(c.db)));
+        }
+        Matcher employeeReportRoute=Pattern.compile("/(?:api/openservice/)?reported-incidents(?:/([0-9a-f]{32}))?").matcher(path);
+        if(employeeReportRoute.matches()) {
+            if(!Set.of("admin","agent","requester").contains(c.role())) throw new Failure(403,"Service desk access required");
+            method(method,"GET","POST"); c.noQuery(); c.uniqueQuery();
+            boolean api=path.startsWith("/api/");
+            String reportId=employeeReportRoute.group(1);
+            if(method.equals("POST")) {
+                Map<String,Object> input=api?object(body(c)):new LinkedHashMap<>(c.arguments());
+                if(!api) input.remove("csrf");
+                if(reportId==null) {
+                    var receipt=EmployeeIncidents.create(c.db,c.name(),input);
+                    return api?json(map("result",receipt),201):redirect("/reported-incidents/"+receipt.get("incident_id"));
+                }
+                EmployeeIncidents.reply(c.db,reportId,c.name(),input);
+                return api?json(map("result",EmployeeIncidents.detail(c.db,reportId)),200):redirect("/reported-incidents/"+reportId);
+            }
+            if(reportId==null) {
+                var rows=EmployeeIncidents.mine(c.db);
+                return api?json(map("result",rows),200):view(c,"report-incident",map("table","incident","reports",rows,"key",id(),"desk",StarterDesk.settings(c.db)));
+            }
+            var receipt=EmployeeIncidents.detail(c.db,reportId);
+            return api?json(map("result",receipt),200):view(c,"reported-incident",map("table","incident","report",receipt,"key",id()));
         }
         if (path.equals("/") && c.role().equals("requester")) return redirect("/requests");
         if (Set.of("/requests", "/api/openservice/requests", "/customer-service/notifications", "/api/openservice/customer-service/notifications").contains(path)) {
@@ -3485,6 +3519,7 @@ public class WebController {
                         table,
                         "definition",
                         definition,
+                        "employeeReport",item!=null && table.equals("incident") && Set.of("admin","agent").contains(c.role()) && c.db.count("SELECT COUNT(*) FROM os_reported_incident WHERE incident_id=?",id)>0,
                         "submittedAnswers",item!=null && table.equals("sc_request") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"description")?CatalogueQuestions.answers(c.db,id):List.of(),
                         "customerIntake",item!=null && table.equals("customer_case") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"description")?CustomerCases.snapshot(c.db,id):null,
                         "catalogueProgress",item!=null && table.equals("sc_request") && FieldAccess.allowed(c.db,Service.schema(c.db,table),"state")?CatalogueWorkflows.progress(c.db,id):null,

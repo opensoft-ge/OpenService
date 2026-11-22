@@ -1,0 +1,11 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main>
+<section class="page-heading"><h1>Set up your service desk</h1></section>
+<section class="panel" th:if="${desk==null}"><p>Create an editable service desk group and a laptop offering routed to that group.</p><form method="post"><input type="hidden" name="csrf" th:value="${csrf}"><button class="button primary" name="operation" value="install">Install starter desk</button></form></section>
+<section class="panel" th:if="${desk!=null}"><h2>Start taking work</h2><ol>
+<li><a href="/admin/accounts">Create or invite your technicians and requesters.</a> Use the agent role for technicians.</li>
+<li><a th:href="@{/record/sys_user_group/{id}(id=${desk.group_id})}">Add technicians to the incident team.</a></li>
+<li><a th:href="@{/admin/catalogue/{id}(id=${desk.offering_id})}">Edit the starter laptop offering and its fulfillment team.</a></li>
+<li>As a requester, <a href="/reported-incidents">report a problem</a> or <a href="/catalogue">order a service</a>.</li>
+<li>As a technician, open <a href="/workspace/incident">Incidents</a> or the <a href="/fulfilment">fulfillment queue</a>.</li></ol>
+<form method="post" class="record-form"><input type="hidden" name="csrf" th:value="${csrf}"><label for="team">Team for new employee incidents</label><select name="group_id" id="team"><option th:each="g : ${groups}" th:value="${g.sys_id}" th:selected="${g.sys_id==desk.group_id}" th:text="${g.data.short_description}"></option></select><button class="button" name="operation" value="route">Save routing</button></form></section>
+</main></html>

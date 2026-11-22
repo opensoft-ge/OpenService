@@ -9,8 +9,12 @@ import org.springframework.test.context.DynamicPropertySource;
         args = "--spring.main.banner-mode=off",
         useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class ContractTest extends ContractSupport {
+    private static final java.nio.file.Path FIXTURE_DATABASE = database();
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         ContractSupport.properties(registry);
+        registry.add("DATABASE_URL", () -> System.getenv().getOrDefault(
+                "OPEN_SERVICE_TEST_DATABASE_URL", "sqlite:///" + FIXTURE_DATABASE));
     }
 }

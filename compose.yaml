@@ -1,10 +1,11 @@
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:f9cf3e1f0066f0eb0c48707d864f0ac5941e9ff454a072077d97a4d278d07d73
+    restart: unless-stopped
     environment:
       POSTGRES_DB: openservice
       POSTGRES_USER: openservice
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?Generate local credentials with the Java setup command first}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Run the Docker setup command first}
     volumes:
       - database:/var/lib/postgresql/data
     healthcheck:
@@ -15,16 +16,15 @@ services:
   app:
     # Optional SMTP settings belong in the generated, private, ignored file.
     env_file: .env
-    build:
-      context: .
-      target: runtime
+    image: ghcr.io/opensoft-ge/openservice:0.2.0-beta.1
     ports: ["127.0.0.1:${PORT:-8090}:8080"]
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+psycopg://openservice:${DB_PASSWORD}@db/openservice
       # PORT in .env chooses the host binding; the container always listens here.
       PORT: "8080"
-      SECRET_KEY: ${SECRET_KEY:?Generate local credentials with the Java setup command first}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Generate local credentials with the Java setup command first}
+      SECRET_KEY: ${SECRET_KEY:?Run the Docker setup command first}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Run the Docker setup command first}
       COOKIE_SECURE: "false"
     depends_on:
       db:

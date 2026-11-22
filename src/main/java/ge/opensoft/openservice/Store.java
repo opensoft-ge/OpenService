@@ -110,6 +110,7 @@ public class Store {
                                 + "("
                                 + index[2]
                                 + ")");
+            boolean firstBoot = db.count("SELECT COUNT(*) FROM os_user") == 0;
             if (db.one("SELECT name FROM os_user WHERE name=?", "admin") == null) {
                 Passwords.requireNewPassword(password);
                 PasswordExclusions.check(db, password);
@@ -131,6 +132,11 @@ public class Store {
                                         + ")",
                                 entry.getKey(),
                                 JSON.writeValueAsString(entry.getValue()));
+            }
+            if (firstBoot && environment.getProperty("STARTER_DESK",Boolean.class,false)) {
+                db.viewerId=RecordAccess.owner(db,"admin");
+                db.viewerRole="admin";
+                StarterDesk.install(db);
             }
             db.connection.commit();
         }

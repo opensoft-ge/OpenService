@@ -9,7 +9,7 @@
   </parent>
   <groupId>ge.opensoft</groupId>
   <artifactId>openservice</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.2.0-beta.1</version>
   <name>OpenService</name>
   <licenses>
     <license>

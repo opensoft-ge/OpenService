@@ -1,10 +1,12 @@
 # OpenService
 
-A service operations foundation for OpenSoft: clear workspaces, shared records, controlled workflows and guided, resumable migration from ServiceNow.
+OpenService is an Apache-2.0 service desk that teams run on their own infrastructure with Docker. Employees can report incidents, follow public replies, request a laptop and see its fulfillment outcome. Technicians work incidents and requests in native queues. Administrators manage access, email and backups.
+
+**[Download the 0.2.0-beta.1 Docker release](https://github.com/opensoft-ge/OpenService/releases/tag/v0.2.0-beta.1)** · [Self-hosting, HTTPS, email, backup and upgrade](docs/self-hosting.md)
 
 OpenService is an independent project, not affiliated with, sponsored by or endorsed by ServiceNow. ServiceNow is a trademark of its respective owner. See [migration support and limits](docs/migration.md), [provenance evidence](docs/provenance.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Development priorities and adoption gates are defined in the [roadmap and build order](docs/roadmap.md). Local identity, emailed invitations/recovery, durable SMTP delivery, requester isolation and configurable field-read controls are implemented and tested as bounded capabilities. Provider qualification, enterprise identity and operational controls remain adoption prerequisites. The current build supports a disposable local walkthrough with synthetic data; shared evaluation and operational pilot gates remain unmet.
+The beta supports one self-hosted desk. Validate your own SMTP delivery, HTTPS endpoint and recovery procedure before inviting staff. The [roadmap](docs/roadmap.md) records additional enterprise and industry capabilities with their qualification limits.
 
 The completed [50-round feature report](docs/auto50-2026-11-18.md) records all new journeys, exact test/coverage results and remaining gaps across HR, field service, assets, security, portfolio management, integrations and AI agents. All seven areas remain partial. Earlier batch evidence retains its original scope. See [platform operations](docs/platform-operations.md) for native API contracts and operator recovery steps.
 
@@ -46,12 +48,11 @@ Captured from the Java application in automated Chromium tests with synthetic ev
 
 ## Run locally
 
-Requires Java 27 and Docker Compose. Point `JAVA_HOME` at a Java 27 JDK. The project pins Spring Boot 4.2.0 and Maven 3.9.16.
+Download and extract the versioned Compose bundle, then use Docker Engine and Docker Compose 2.24.4 or later. From the extracted directory run:
 
-```bash
-./mvnw -Dmaven.test.skip=true package
-java -jar target/openservice-0.2.0-SNAPSHOT.jar setup
-docker compose up --build -d --wait
+```sh
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/setup" -w /setup ghcr.io/opensoft-ge/openservice:0.2.0-beta.1 setup
+docker compose up -d --wait
 ```
 
 Open **http://localhost:8090**. Sign in as **admin**, using `ADMIN_PASSWORD` from the generated `.env` file. The file is ignored by Git, created with private permissions, and never overwritten by the setup helper. PostgreSQL has no host port; the application binds to loopback only. Changing `ADMIN_PASSWORD` after initialization does not reset the existing database user's password. New passwords, including first administrator setup, require 15–1024 Unicode characters; existing credentials remain usable until changed.
@@ -100,6 +101,8 @@ See [API scope](docs/api.md), [migration guide](docs/migration.md), [architectur
 
 ## Development and verification
 
+Source builds use Java 27, Spring Boot 4.2.0 and the Maven wrapper. Operators use the published Docker image.
+
 ```bash
 sh scripts/install-browser.sh
 sh scripts/verify.sh
@@ -111,7 +114,7 @@ The clean Maven build runs the API acceptance and workflow suites against both S
 
 JaCoCo requires **100% executable-line, branch and method coverage** across every production Java class, including credential setup, without exclusions. Exact line, method and branch counts are recorded in [validation](docs/validation.md). Reports are generated at `target/site/jacoco/` and `target/surefire-reports/`. Browser screenshots are in `target/browser-artifacts/`; reviewed copies are in `assets/screenshots/`.
 
-For a local JAR, configure `DATABASE_URL`, `SECRET_KEY`, `ADMIN_PASSWORD`, `COOKIE_SECURE=false` (loopback HTTP only) and optionally `PORT`, then run `java -jar target/openservice-0.2.0-SNAPSHOT.jar`. PostgreSQL and SQLite are supported. Use HTTPS and secure cookies for any shared deployment.
+For a local JAR, configure `DATABASE_URL`, `SECRET_KEY`, `ADMIN_PASSWORD`, `COOKIE_SECURE=false` (loopback HTTP only) and optionally `PORT`, then run `java -jar target/openservice-0.2.0-beta.1.jar`. PostgreSQL and SQLite are supported. Use HTTPS and secure cookies for any shared deployment.
 
 `MAX_BROWSER_SESSIONS` controls the default per-account browser limit (default `10`, valid integers `1`–`100`). Set it in the private Compose `.env` or the JAR environment and restart the application. Each successful sign-in keeps the new session and the newest remaining sessions, ending the oldest excess entries atomically; the account page shows the limit. Basic API credentials are unaffected. Use the same value for every application instance; clustered operation remains unqualified. Changes take effect at sign-in, not through a background sweep. Invalid values prevent startup. Administrators can set a persistent [account-specific override](docs/api.md#account-specific-browser-session-limits) from the account’s Browser sessions page.
 
@@ -122,7 +125,7 @@ Terraform is unchanged by this migration; its separate provider validation and m
 
 Cloud configurations provide HTTPS; secure cookies are enabled outside the loopback Docker demo. Each deployment starts with a single application instance with embedded Tomcat. PostgreSQL locks protect record updates; optional `If-Match` revisions prevent lost updates. Startup applies ordered transactional upgrades with a migration journal and serialized schema changes. Follow the [upgrade procedure](docs/platform-foundations.md#ordered-database-upgrades-adopt-02-os-026), using a database backup and planned downtime; rolling upgrades and production recovery targets remain unverified. Disposable same-version and prior-image upgrade/restore evidence is recorded in the latest platform report.
 
-Explicit-account OIDC sign-in, opt-in TOTP/recovery and optional shared browser sessions now have tested native journeys. Broader federation, required factors/passkeys, inherited roles, multi-organization isolation, attachment malware scanning, isolated business-rule scripts and production high availability remain incomplete. Local account controls, field-read policies, durable account email and bounded business-notification/connector/migration-checkpoint workers are implemented. The [enterprise implementation pass](docs/enterprise-pass-2026-11-18.md) adds bounded workflows across all seven enterprise priority areas. The [50-round feature report](docs/auto50-2026-11-18.md) records identity, workflow, knowledge, reporting, AI and business-module additions; the [operations runbook](docs/platform-operations.md) explains enablement, failure handling and shared-deployment gates. Treat this version as a local evaluation foundation, not a hardened production service. Licensed under the [Apache License 2.0](LICENSE). Earlier MIT notices are preserved; see [third-party and prior-licence notices](THIRD_PARTY_NOTICES.md).
+Explicit-account OIDC sign-in, opt-in TOTP/recovery and optional shared browser sessions now have tested native journeys. Broader federation, required factors/passkeys, inherited roles, multi-organization isolation, attachment malware scanning, isolated business-rule scripts and production high availability remain incomplete. Local account controls, field-read policies, durable account email and bounded business-notification/connector/migration-checkpoint workers are implemented. The [enterprise implementation pass](docs/enterprise-pass-2026-11-18.md) adds bounded workflows across all seven enterprise priority areas. The [50-round feature report](docs/auto50-2026-11-18.md) records identity, workflow, knowledge, reporting, AI and business-module additions; the [operations runbook](docs/platform-operations.md) explains enablement, failure handling and shared-deployment gates. See the [self-hosting guide](docs/self-hosting.md) for the supported service desk deployment and operator acceptance checks. Licensed under the [Apache License 2.0](LICENSE). Earlier MIT notices are preserved; see [third-party and prior-licence notices](THIRD_PARTY_NOTICES.md).
 
 ## Count aggregates
 

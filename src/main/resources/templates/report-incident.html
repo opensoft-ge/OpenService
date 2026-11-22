@@ -1,0 +1,11 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main>
+<a class="back-link" href="/requests">My requests</a>
+<section class="page-heading"><h1>Report a problem</h1></section>
+<section class="panel"><p th:if="${desk==null}">The desk is awaiting administrator setup.</p>
+<form method="post" class="record-form" th:if="${desk!=null}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="key" th:value="${key}">
+<label for="summary">What stopped working?</label><input id="summary" name="short_description" maxlength="200" required>
+<label for="details">What happened?</label><textarea id="details" name="description" rows="4" maxlength="8000"></textarea>
+<button class="button primary">Send to service desk</button></form></section>
+<section class="panel"><h2>My reported problems</h2><p th:if="${reports.isEmpty()}">No problems reported yet.</p>
+<ul><li th:each="r : ${reports}"><a th:href="@{/reported-incidents/{id}(id=${r.incident_id})}" th:text="${r.summary}"></a></li></ul></section>
+</main></html>

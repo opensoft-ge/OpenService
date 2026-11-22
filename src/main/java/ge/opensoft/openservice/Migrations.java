@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 /** Ordered, transactional upgrades. The caller commits schema and bootstrap data together. */
 final class Migrations {
-    static final int VERSION = 104;
+    static final int VERSION = 105;
 
     private Migrations() {}
 
@@ -853,6 +853,12 @@ final class Migrations {
             db.update("CREATE TABLE IF NOT EXISTS os_problem_feedback (problem_id VARCHAR(32) NOT NULL, incident_id VARCHAR(32) NOT NULL, edition INTEGER NOT NULL, revision INTEGER NOT NULL, outcome VARCHAR(16) NOT NULL, feedback_text TEXT NOT NULL, actor VARCHAR(32) NOT NULL, recorded VARCHAR(40) NOT NULL, PRIMARY KEY(problem_id,incident_id,edition,revision), FOREIGN KEY(problem_id,incident_id,edition) REFERENCES os_problem_delivery(problem_id,incident_id,edition) ON DELETE CASCADE)");
             db.update("CREATE TABLE IF NOT EXISTS os_problem_article (problem_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE, article_id VARCHAR(32) NOT NULL UNIQUE REFERENCES os_record(sys_id) ON DELETE CASCADE, edition INTEGER NOT NULL, draft_revision INTEGER NOT NULL)");
             db.update("INSERT INTO os_migration(version,name) VALUES(104,?)","problem response receipts and known error drafts");
+        }
+        if (version < 105) {
+            db.update("CREATE TABLE IF NOT EXISTS os_starter_desk (singleton INTEGER PRIMARY KEY CHECK(singleton=1),group_id VARCHAR(32) NOT NULL,offering_id VARCHAR(32) NOT NULL)");
+            db.update("CREATE TABLE IF NOT EXISTS os_reported_incident (incident_id VARCHAR(32) PRIMARY KEY REFERENCES os_record(sys_id) ON DELETE CASCADE,reporter VARCHAR(32) NOT NULL,submission_key VARCHAR(32) NOT NULL,summary TEXT NOT NULL,details TEXT NOT NULL,UNIQUE(reporter,submission_key))");
+            db.update("CREATE TABLE IF NOT EXISTS os_report_reply (incident_id VARCHAR(32) NOT NULL REFERENCES os_reported_incident(incident_id) ON DELETE CASCADE,author VARCHAR(32) NOT NULL,submission_key VARCHAR(32) NOT NULL,body TEXT NOT NULL,PRIMARY KEY(incident_id,author,submission_key))");
+            db.update("INSERT INTO os_migration(version,name) VALUES(105,?)","employee incident receipts and starter desk");
         }
     }
 

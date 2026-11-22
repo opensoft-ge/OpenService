@@ -1,0 +1,10 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{base :: layout(~{::main})}"><main>
+<a class="back-link" href="/reported-incidents">Reported problems</a>
+<section class="page-heading"><div><span th:text="${report.number}"></span><h1 th:text="${report.summary}"></h1>
+<p>Status <strong th:text="${report.status}"></strong></p><p th:text="${report.details}"></p></div></section>
+<a th:if="${user.role!='requester'}" th:href="@{/record/incident/{id}(id=${report.incident_id})}">Open staff incident</a>
+<section class="panel"><h2>Public replies</h2><ol><li th:each="reply : ${report.replies}"><strong th:text="${reply.author}"></strong> <time th:text="${reply.at}"></time><p th:text="${reply.body}"></p></li></ol>
+<form method="post" class="record-form" th:if="${report.comments_allowed}"><input type="hidden" name="csrf" th:value="${csrf}"><input type="hidden" name="key" th:value="${key}">
+<label for="reply">Message visible to the reporter and service desk</label><textarea id="reply" name="body" rows="3" maxlength="4000" required></textarea>
+<button class="button primary">Post public reply</button></form></section>
+</main></html>
